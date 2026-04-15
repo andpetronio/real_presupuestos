@@ -1,0 +1,71 @@
+<script lang="ts">
+  import { Button, Search, Select, Label } from 'flowbite-svelte';
+
+  type FilterOption = { value: string; label: string };
+
+  type GenericFilterBarProps = {
+    searchPlaceholder?: string;
+    searchName?: string;
+    currentSearch?: string;
+    filterLabel?: string;
+    filterName?: string;
+    filterOptions?: ReadonlyArray<FilterOption>;
+    currentFilter?: string;
+  };
+
+  let {
+    searchPlaceholder = 'Buscar...',
+    searchName = 'q',
+    currentSearch = '',
+    filterLabel = 'Filtro',
+    filterName = 'status',
+    filterOptions = [],
+    currentFilter = 'all'
+  }: GenericFilterBarProps = $props();
+
+  let searchValue = $state('');
+
+  // Sync when parent URL params change (e.g., back navigation)
+  $effect(() => {
+    searchValue = currentSearch;
+  });
+
+  const hasActiveFilters = $derived(
+    currentSearch !== '' || (currentFilter !== 'all' && currentFilter !== '')
+  );
+</script>
+
+<form method="GET" class="mb-4 flex flex-wrap items-end gap-3">
+  <!-- Search -->
+  <div class="min-w-48 flex-1">
+    <Label for="filter-search" class="mb-1">Buscar</Label>
+    <Search
+      id="filter-search"
+      name={searchName}
+      placeholder={searchPlaceholder}
+      bind:value={searchValue}
+    />
+  </div>
+
+  <!-- Filter dropdown (optional) -->
+  {#if filterOptions.length > 0}
+    <div class="w-40">
+      <Label for="filter-select" class="mb-1">{filterLabel}</Label>
+      <Select id="filter-select" name={filterName} value={currentFilter}>
+        {#each filterOptions as option (option.value)}
+          <option value={option.value}>{option.label}</option>
+        {/each}
+      </Select>
+    </div>
+  {/if}
+
+  <!-- Clear filters (if active) -->
+  {#if hasActiveFilters}
+    <Button type="button" color="alternative" size="sm" href="?">
+      Limpiar
+    </Button>
+  {/if}
+
+  <!-- Preserve page on filter submit -->
+  <input type="hidden" name="page" value="1" />
+</form>

@@ -1,19 +1,11 @@
 <script lang="ts">
-  import { resolve } from '$app/paths';
-  import {
-    Alert,
-    Button,
-    Card,
-    Table,
-    TableBody,
-    TableBodyCell,
-    TableBodyRow,
-    TableHead,
-    TableHeadCell
-  } from 'flowbite-svelte';
-  import StatusBadge from '$lib/components/admin/StatusBadge.svelte';
+  import { Button, Card } from 'flowbite-svelte';
+  import FeedbackBanner from '$lib/components/FeedbackBanner.svelte';
+  import RecipeFilterBar from '$lib/components/recipes/RecipeFilterBar.svelte';
+  import RecipeTable from '$lib/components/recipes/RecipeTable.svelte';
+  import RecipePagination from '$lib/components/recipes/RecipePagination.svelte';
+  import RecipeMobileCards from '$lib/components/recipes/RecipeMobileCards.svelte';
 
-import { route } from '$lib/shared/navigation';
   type RecipeRow = {
     id: string;
     dog_id: string;
@@ -27,51 +19,55 @@ import { route } from '$lib/shared/navigation';
     recipes: ReadonlyArray<RecipeRow>;
     tableState: 'idle' | 'success' | 'error' | 'empty';
     tableMessage: { title: string; detail: string } | null;
+    pagination: { page: number; totalPages: number; total: number };
+    filters: {
+      search: string;
+      status: string;
+    };
   };
 
   let { data }: { data: PageData } = $props();
 
-  const newRecipePath = route('/recipes/new');
-  </script>
+  const newRecipePath = '/recipes/new';
+</script>
 
 <div class="mb-4 flex justify-end">
   <Button href={newRecipePath} color="blue">Nueva receta</Button>
 </div>
 
 {#if data.tableState === 'error'}
-  <Alert color="red">{data.tableMessage?.detail ?? 'No pudimos cargar recetas.'}</Alert>
+  <FeedbackBanner message={data.tableMessage?.detail ?? 'No pudimos cargar recetas.'} color="red" />
 {:else if data.tableState === 'empty'}
-  <Alert color="blue">{data.tableMessage?.detail ?? 'Todavía no hay recetas.'}</Alert>
+  <FeedbackBanner message={data.tableMessage?.detail ?? 'Todavía no hay recetas.'} color="blue" />
 {:else}
-  <Card size="xl" class="w-full shadow-sm">
-    <div class="overflow-x-auto">
-      <Table hoverable striped>
-        <TableHead>
-          <TableHeadCell>Receta</TableHeadCell>
-          <TableHeadCell>Perro</TableHeadCell>
-          <TableHeadCell>Notas</TableHeadCell>
-          <TableHeadCell>Estado</TableHeadCell>
-          <TableHeadCell>Acciones</TableHeadCell>
-        </TableHead>
-        <TableBody>
-          {#each data.recipes as recipe (recipe.id)}
-            <TableBodyRow>
-              <TableBodyCell>{recipe.name}</TableBodyCell>
-              <TableBodyCell>{recipe.dog?.name ?? 'Sin perro'}</TableBodyCell>
-              <TableBodyCell>{recipe.notes ?? '—'}</TableBodyCell>
-              <TableBodyCell>
-                <StatusBadge
-                  status={recipe.is_active ? 'accepted' : 'rejected'}
-                  label={recipe.is_active ? 'Activa' : 'Inactiva'}
-                />
-              </TableBodyCell>
-              <TableBodyCell>
-                <Button href={route('/recipes/', recipe.id, '/update')} size="xs" color="light" aria-label="Editar {recipe.name}">Editar</Button>
-              </TableBodyCell>
-            </TableBodyRow>
-          {/each}
-        </TableBody>
-      </Table>
+  <Card size="xl" class="w-full shadow-sm p-0">
+    <!-- Filter bar -->
+    <div class="p-4">
+      <RecipeFilterBar
+        currentSearch={data.filters.search}
+        currentStatus={data.filters.status}
+      />
+    </div>
+
+    <!-- Mobile cards (hidden on md+) -->
+    <div class="px-4 pb-4">
+      <RecipeMobileCards recipes={data.recipes} />
+    </div>
+
+    <!-- Desktop table (hidden on < md) -->
+    <div class="hidden md:block">
+      <RecipeTable recipes={data.recipes} />
+    </div>
+
+    <!-- Pagination -->
+    <div class="px-4 pb-4">
+      <RecipePagination
+        page={data.pagination.page}
+        totalPages={data.pagination.totalPages}
+        total={data.pagination.total}
+        search={data.filters.search}
+        status={data.filters.status}
+      />
     </div>
   </Card>
 {/if}

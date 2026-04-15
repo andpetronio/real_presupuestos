@@ -1,21 +1,15 @@
 <script lang="ts">
-  import { resolve } from '$app/paths';
   import {
     Button,
-    Card,
-    Table,
-    TableBody,
-    TableBodyCell,
-    TableBodyRow,
-    TableHead,
-    TableHeadCell
+    Card
   } from 'flowbite-svelte';
-  import StatusBadge from '$lib/components/admin/StatusBadge.svelte';
   import FeedbackBanner from '$lib/components/FeedbackBanner.svelte';
+  import BudgetFilterBar from '$lib/components/budgets/BudgetFilterBar.svelte';
+  import BudgetTable from '$lib/components/budgets/BudgetTable.svelte';
+  import BudgetPagination from '$lib/components/budgets/BudgetPagination.svelte';
+  import BudgetMobileCards from '$lib/components/budgets/BudgetMobileCards.svelte';
   import type { BudgetStatus } from '$lib/types/budget';
-  import { formatArs } from '$lib/shared/currency';
 
-import { route } from '$lib/shared/navigation';
   type BudgetRow = {
     id: string;
     status: BudgetStatus;
@@ -27,10 +21,19 @@ import { route } from '$lib/shared/navigation';
     expires_at: string | null;
   };
 
+  type TutorOption = { id: string; full_name: string };
+
   type PageData = {
     budgets: ReadonlyArray<BudgetRow>;
     tableState: 'idle' | 'success' | 'error' | 'empty';
     tableMessage: { title: string; detail: string } | null;
+    pagination: { page: number; totalPages: number; total: number };
+    filters: {
+      status: BudgetStatus | 'pending' | 'all';
+      search: string;
+      tutorId: string | null;
+    };
+    tutors: ReadonlyArray<TutorOption>;
   };
 
   type ActionData = {
@@ -41,9 +44,8 @@ import { route } from '$lib/shared/navigation';
 
   let { data, form }: { data: PageData; form: ActionData | null } = $props();
 
-  const budgetsPath = route('/budgets');
-  const newBudgetPath = route('/budgets/new');
-  
+  const newBudgetPath = '/budgets/new';
+
   const formatDate = (value: string | null): string => {
     if (!value) return '—';
     const date = new Date(value);
@@ -68,62 +70,43 @@ import { route } from '$lib/shared/navigation';
 {:else if data.tableState === 'empty'}
   <FeedbackBanner message={data.tableMessage?.detail ?? 'Todavía no hay presupuestos.'} color="blue" />
 {:else}
-  <Card size="xl" class="w-full shadow-sm">
-    <div class="overflow-x-auto">
-      <Table hoverable striped>
-        <TableHead>
-          <TableHeadCell>Tutor</TableHeadCell>
-          <TableHeadCell>Estado</TableHeadCell>
-          <TableHeadCell>Ingredientes</TableHeadCell>
-          <TableHeadCell>Operativos</TableHeadCell>
-          <TableHeadCell>Costo total</TableHeadCell>
-          <TableHeadCell>Precio venta</TableHeadCell>
-          <TableHeadCell>Vence</TableHeadCell>
-          <TableHeadCell>Acciones</TableHeadCell>
-        </TableHead>
-        <TableBody>
-          {#each data.budgets as budget (budget.id)}
-            <TableBodyRow>
-              <TableBodyCell>{budget.tutor?.full_name ?? 'Sin tutor'}</TableBodyCell>
-              <TableBodyCell><StatusBadge status={budget.status} /></TableBodyCell>
-              <TableBodyCell>{formatArs(budget.ingredient_total_global)}</TableBodyCell>
-              <TableBodyCell>{formatArs(budget.operational_total_global)}</TableBodyCell>
-              <TableBodyCell>{formatArs(budget.total_cost)}</TableBodyCell>
-              <TableBodyCell>{formatArs(budget.final_sale_price)}</TableBodyCell>
-              <TableBodyCell>{formatDate(budget.expires_at)}</TableBodyCell>
-              <TableBodyCell>
-                <div class="flex items-center gap-2 whitespace-nowrap">
-                  <Button href={route('/budgets/', budget.id, '/preview')} size="xs" color="light" aria-label="Ver presupuesto">Ver</Button>
-                  {#if budget.status === 'draft' || budget.status === 'ready_to_send'}
-                    <Button href={route('/budgets/', budget.id, '/update')} size="xs" color="light" aria-label="Editar presupuesto">Editar</Button>
-                    <form
-                      method="POST"
-                      action="?/delete"
-                      onsubmit={(event) => {
-                        if (!confirm('¿Eliminar este presupuesto?')) event.preventDefault();
-                      }}
-                    >
-                      <input type="hidden" name="budgetId" value={budget.id} />
-                      <Button type="submit" size="xs" color="red" aria-label="Eliminar presupuesto">Eliminar</Button>
-                    </form>
-                  {:else if budget.status === 'sent'}
-                    <form
-                      method="POST"
-                      action="?/undoSent"
-                      onsubmit={(event) => {
-                        if (!confirm('¿Reabrir este presupuesto? Volverá a borrador.')) event.preventDefault();
-                      }}
-                    >
-                      <input type="hidden" name="budgetId" value={budget.id} />
-                      <Button type="submit" size="xs" color="light">Reabrir</Button>
-                    </form>
-                  {/if}
-                </div>
-              </TableBodyCell>
-            </TableBodyRow>
-          {/each}
-        </TableBody>
-      </Table>
+  <Card size="xl" class="w-full shadow-sm p-0">
+    <!-- Filter bar -->
+    <div class="p-4">
+      <BudgetFilterBar
+        currentStatus={data.filters.status}
+        currentSearch={data.filters.search}
+        tutors={data.tutors}
+        currentTutorId={data.filters.tutorId}
+      />
+    </div>
+
+    <!-- Mobile cards (hidden on md+) -->
+    <div class="px-4 pb-4">
+      <BudgetMobileCards
+        budgets={data.budgets}
+        {formatDate}
+      />
+    </div>
+
+    <!-- Desktop table (hidden on < md) -->
+    <div class="hidden md:block">
+      <BudgetTable
+        budgets={data.budgets}
+        {formatDate}
+      />
+    </div>
+
+    <!-- Pagination -->
+    <div class="px-4 pb-4">
+      <BudgetPagination
+        page={data.pagination.page}
+        totalPages={data.pagination.totalPages}
+        total={data.pagination.total}
+        status={data.filters.status}
+        search={data.filters.search}
+        tutorId={data.filters.tutorId}
+      />
     </div>
   </Card>
 {/if}

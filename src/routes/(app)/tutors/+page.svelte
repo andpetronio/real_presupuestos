@@ -1,17 +1,10 @@
 <script lang="ts">
-  import { resolve } from '$app/paths';
-
-import { route } from '$lib/shared/navigation';  import {
-    Alert,
-    Button,
-    Card,
-    Table,
-    TableBody,
-    TableBodyCell,
-    TableBodyRow,
-    TableHead,
-    TableHeadCell
-  } from 'flowbite-svelte';
+  import { Button, Card } from 'flowbite-svelte';
+  import FeedbackBanner from '$lib/components/FeedbackBanner.svelte';
+  import TutorFilterBar from '$lib/components/tutors/TutorFilterBar.svelte';
+  import TutorTable from '$lib/components/tutors/TutorTable.svelte';
+  import TutorPagination from '$lib/components/tutors/TutorPagination.svelte';
+  import TutorMobileCards from '$lib/components/tutors/TutorMobileCards.svelte';
 
   type TutorRow = {
     id: string;
@@ -25,44 +18,52 @@ import { route } from '$lib/shared/navigation';  import {
     tutors: ReadonlyArray<TutorRow>;
     tableState: 'idle' | 'success' | 'error' | 'empty';
     tableMessage: { title: string; detail: string } | null;
+    pagination: { page: number; totalPages: number; total: number };
+    filters: {
+      search: string;
+    };
   };
 
   let { data }: { data: PageData } = $props();
 
-  const newTutorPath = route('/tutors/new');
-  </script>
+  const newTutorPath = '/tutors/new';
+</script>
 
 <div class="mb-4 flex justify-end">
   <Button href={newTutorPath} color="blue">Nuevo tutor</Button>
 </div>
 
 {#if data.tableState === 'error'}
-  <Alert color="red">{data.tableMessage?.detail ?? 'No pudimos cargar tutores.'}</Alert>
+  <FeedbackBanner message={data.tableMessage?.detail ?? 'No pudimos cargar tutores.'} color="red" />
 {:else if data.tableState === 'empty'}
-  <Alert color="blue">{data.tableMessage?.detail ?? 'Todavía no hay tutores.'}</Alert>
+  <FeedbackBanner message={data.tableMessage?.detail ?? 'Todavía no hay tutores.'} color="blue" />
 {:else}
-  <Card size="xl" class="w-full shadow-sm">
-    <div class="overflow-x-auto">
-      <Table hoverable striped>
-        <TableHead>
-          <TableHeadCell>Nombre</TableHeadCell>
-          <TableHeadCell>WhatsApp</TableHeadCell>
-          <TableHeadCell>Notas</TableHeadCell>
-          <TableHeadCell>Acciones</TableHeadCell>
-        </TableHead>
-        <TableBody>
-          {#each data.tutors as tutor (tutor.id)}
-            <TableBodyRow>
-              <TableBodyCell>{tutor.full_name}</TableBodyCell>
-              <TableBodyCell>{tutor.whatsapp_number}</TableBodyCell>
-              <TableBodyCell>{tutor.notes ?? '—'}</TableBodyCell>
-              <TableBodyCell>
-                <Button href={route('/tutors/', tutor.id, '/update')} size="xs" color="light" aria-label="Editar {tutor.full_name}">Editar</Button>
-              </TableBodyCell>
-            </TableBodyRow>
-          {/each}
-        </TableBody>
-      </Table>
+  <Card size="xl" class="w-full shadow-sm p-0">
+    <!-- Filter bar -->
+    <div class="p-4">
+      <TutorFilterBar
+        currentSearch={data.filters.search}
+      />
+    </div>
+
+    <!-- Mobile cards (hidden on md+) -->
+    <div class="px-4 pb-4">
+      <TutorMobileCards tutors={data.tutors} />
+    </div>
+
+    <!-- Desktop table (hidden on < md) -->
+    <div class="hidden md:block">
+      <TutorTable tutors={data.tutors} />
+    </div>
+
+    <!-- Pagination -->
+    <div class="px-4 pb-4">
+      <TutorPagination
+        page={data.pagination.page}
+        totalPages={data.pagination.totalPages}
+        total={data.pagination.total}
+        search={data.filters.search}
+      />
     </div>
   </Card>
 {/if}

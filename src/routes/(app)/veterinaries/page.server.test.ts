@@ -3,9 +3,12 @@ import { load } from './+page.server';
 
 describe('(app)/veterinaries/+page.server load', () => {
   it('retorna success cuando Supabase devuelve veterinarias', async () => {
-    const order = vi.fn().mockResolvedValue({
-      data: [{ id: 'v-1', name: 'Vet Norte', created_at: '2026-01-01' }],
-      error: null
+    const order = vi.fn().mockReturnValue({
+      range: vi.fn().mockResolvedValue({
+        data: [{ id: 'v-1', name: 'Vet Norte', created_at: '2026-01-01' }],
+        count: 1,
+        error: null
+      })
     });
 
     const data = (await load({

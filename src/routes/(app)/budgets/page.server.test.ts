@@ -8,7 +8,7 @@ describe('(app)/budgets/+page.server load', () => {
         return {
           select: vi.fn().mockReturnValue({
             order: vi.fn().mockReturnValue({
-              limit: vi.fn().mockResolvedValue({
+              range: vi.fn().mockResolvedValue({
                 data: [
                   {
                     id: 'b-1',
@@ -24,6 +24,20 @@ describe('(app)/budgets/+page.server load', () => {
                     tutor: { full_name: 'Ana' }
                   }
                 ],
+                count: 1,
+                error: null
+              })
+            })
+          })
+        };
+      }
+
+      if (table === 'tutors') {
+        return {
+          select: vi.fn().mockReturnValue({
+            order: vi.fn().mockReturnValue({
+              maybeCompressedDataAccess: vi.fn().mockResolvedValue({
+                data: [],
                 error: null
               })
             })
@@ -40,11 +54,16 @@ describe('(app)/budgets/+page.server load', () => {
     } as unknown as Parameters<typeof load>[0])) as {
       tableState: string;
       budgets: ReadonlyArray<unknown>;
+      pagination: { page: number; totalPages: number; total: number };
+      filters: { status: string; search: string; tutorId: string | null };
+      tutors: unknown[];
       // Options are lazy-loaded only on new/update pages, not the table page.
     };
 
     expect(data.tableState).toBe('success');
     expect(data.budgets).toHaveLength(1);
+    expect(data.pagination.total).toBe(1);
+    expect(data.tutors).toEqual([]);
   });
 });
 

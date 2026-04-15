@@ -128,51 +128,121 @@ export const load = async ({ locals, url }: Parameters<PageServerLoad>[0]) => {
 
     const editingBudgetId = url.searchParams.get('edit');
 
-    // Solo carga budgets. Los options van en cada form (new/update).
-    const { data: budgetsResult, error: budgetsError } = await locals.supabase
+    // ── Pagination & filter params ──────────────────────────────────────
+    const page = parsePositiveInteger(url.searchParams.get('page') ?? '') ?? 1;
+    const pageSize = 10;
+    const offset = (page - 1) * pageSize;
+
+    const statusParam = url.searchParams.get('status') as BudgetStatus | 'pending' | 'all' | null;
+    const searchQuery = url.searchParams.get('q')?.trim() ?? '';
+    const tutorIdParam = url.searchParams.get('tutor');
+
+    // ── Build budgets query with filters ────────────────────────────────
+    let query = locals.supabase
       .from('budgets')
       .select(
-        'id, status, tutor_id, reference_month, reference_days, notes, final_sale_price, total_cost, ingredient_total_global, operational_total_global, created_at, expires_at, vacuum_bag_small_qty, vacuum_bag_large_qty, labels_qty, non_woven_bag_qty, labor_hours_qty, cooking_hours_qty, calcium_qty, kefir_qty, tutor:tutors(full_name)'
+        'id, status, tutor_id, reference_month, reference_days, notes, final_sale_price, total_cost, ingredient_total_global, operational_total_global, created_at, expires_at, tutor:tutors(full_name)',
+        { count: 'exact' }
       )
-      .order('created_at', { ascending: false })
-      .limit(50);
+      .order('created_at', { ascending: false });
+
+    // Status filter — "pending" maps to draft + ready_to_send
+    if (statusParam && statusParam !== 'all') {
+      if (statusParam === 'pending') {
+        query = query.in('status', ['draft', 'ready_to_send']);
+      } else {
+        query = query.eq('status', statusParam);
+      }
+    }
+
+    // Tutor filter
+    if (tutorIdParam) {
+      query = query.eq('tutor_id', tutorIdParam);
+    }
+
+    // Search by tutor name (client-side filter for tutor name — use ilike on join)
+    if (searchQuery) {
+      query = query.ilike('tutor:full_name', `%${searchQuery}%`);
+    }
+
+    // Apply pagination
+    const { data: budgetsResult, count, error: budgetsError } = await query
+      .range(offset, offset + pageSize - 1);
 
     if (budgetsError) throw budgetsError;
 
     const budgets = budgetsResult ?? [];
-    const editingBudget = editingBudgetId ? budgets.find((b) => b.id === editingBudgetId) ?? null : null;
+    const total = count ?? 0;
+    const totalPages = Math.ceil(total / pageSize);
 
+    // Editing budget (fetched separately so it always loads regardless of filters)
+    let editingBudget = null;
     let editingRows: Array<{ dogId: string; recipeId: string; assignedDays: string }> = [];
     if (editingBudgetId) {
-      // JOIN: budget_dog_recipes + budget_dogs en una sola query
-      const { data: budgetDogRecipesData, error: budgetDogRecipesError } = await locals.supabase
-        .from('budget_dog_recipes')
-        .select('budget_dog_id, recipe_id, assigned_days, budget_dog:budget_dogs(dog_id)')
-        .eq('budget_dog.budget_id', editingBudgetId)
-        .order('created_at', { ascending: true });
+      const { data: editingBudgetData } = await locals.supabase
+        .from('budgets')
+        .select(
+          'id, status, tutor_id, reference_month, reference_days, notes, final_sale_price, total_cost, ingredient_total_global, operational_total_global, created_at, expires_at, tutor:tutors(full_name)'
+        )
+        .eq('id', editingBudgetId)
+        .single();
+      editingBudget = editingBudgetData ?? null;
 
-      if (budgetDogRecipesError) throw budgetDogRecipesError;
+      // Load editing rows
+      if (editingBudgetId) {
+        const { data: budgetDogRecipesData, error: budgetDogRecipesError } = await locals.supabase
+          .from('budget_dog_recipes')
+          .select('budget_dog_id, recipe_id, assigned_days, budget_dog:budget_dogs(dog_id)')
+          .eq('budget_dog.budget_id', editingBudgetId)
+          .order('created_at', { ascending: true });
 
-      editingRows = (budgetDogRecipesData ?? []).map((row) => ({
-        dogId: (row.budget_dog as { dog_id?: string } | null)?.dog_id ?? '',
-        recipeId: row.recipe_id,
-        assignedDays: String(row.assigned_days)
-      }));
+        if (budgetDogRecipesError) throw budgetDogRecipesError;
+
+        editingRows = (budgetDogRecipesData ?? []).map((row) => ({
+          dogId: (row.budget_dog as { dog_id?: string } | null)?.dog_id ?? '',
+          recipeId: row.recipe_id,
+          assignedDays: String(row.assigned_days)
+        }));
+      }
+    }
+
+    // Load tutors for filter dropdown
+    const { data: tutorsResult } = await locals.supabase
+      .from('tutors')
+      .select('id, full_name')
+      .order('full_name', { ascending: true });
+
+    // Determine if result is "empty" vs "success"
+    let tableState: 'idle' | 'success' | 'error' | 'empty' = 'empty';
+    let tableMessage: { title: string; detail: string } | null = null;
+
+    if (total === 0) {
+      const hasFilters = statusParam !== null || searchQuery !== '' || tutorIdParam !== null;
+      tableState = 'empty';
+      tableMessage = {
+        title: hasFilters ? 'Sin resultados' : 'Todavía no hay presupuestos',
+        detail: hasFilters
+          ? 'No se encontraron presupuestos para los filtros aplicados. Probá modificar o limpiar los filtros.'
+          : 'Creá el primero con tutor, perros, recetas y costos operativos globales.'
+      };
+    } else {
+      tableState = 'success';
+      tableMessage = null;
     }
 
     return {
       budgets,
       editingBudget,
       editingRows,
-      tableState: budgets.length > 0 ? 'success' : 'empty',
-      tableMessage:
-        budgets.length > 0
-          ? null
-          : ({
-              kind: 'empty',
-              title: 'Todavía no hay presupuestos',
-              detail: 'Creá el primero con tutor, perros, recetas y costos operativos globales.'
-            } satisfies OperatorMessage)
+      tableState,
+      tableMessage,
+      pagination: { page, totalPages, total },
+      filters: {
+        status: statusParam ?? 'all',
+        search: searchQuery,
+        tutorId: tutorIdParam ?? null
+      },
+      tutors: tutorsResult ?? []
     };
   } catch {
     return {
@@ -180,7 +250,10 @@ export const load = async ({ locals, url }: Parameters<PageServerLoad>[0]) => {
       editingBudget: null,
       editingRows: [],
       tableState: 'error',
-      tableMessage: fallbackErrorMessage
+      tableMessage: fallbackErrorMessage,
+      pagination: { page: 1, totalPages: 1, total: 0 },
+      filters: { status: 'all' as const, search: '', tutorId: null },
+      tutors: []
     };
   }
 };

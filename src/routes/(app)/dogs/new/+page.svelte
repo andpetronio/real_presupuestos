@@ -1,8 +1,8 @@
 <script lang="ts">
-  import { resolve } from '$app/paths';
-  import { Alert, Button, Card, Input, Label, Select, Textarea } from 'flowbite-svelte';
+  import { Button, Input, Label, Select, Textarea } from 'flowbite-svelte';
+  import FormShell from '$lib/components/admin/FormShell.svelte';
 
-import { route } from '$lib/shared/navigation';
+  import { route } from '$lib/shared/navigation';
   type PageData = {
     tutorOptions: ReadonlyArray<{ id: string; full_name: string }>;
     veterinaryOptions: ReadonlyArray<{ id: string; name: string }>;
@@ -31,65 +31,67 @@ import { route } from '$lib/shared/navigation';
     mealsPerDay: form?.values?.mealsPerDay ?? '',
     notes: form?.values?.notes ?? ''
   });
+
+  let submitting = $state(false);
 </script>
 
-<Card size="xl" class="mx-auto max-w-3xl p-6 md:p-8 shadow-sm">
-  <h1 class="mb-1 text-xl font-bold text-gray-900">Nuevo perro</h1>
-  <p class="mb-6 text-sm text-gray-600">Completá los datos para dar de alta un perro.</p>
+<FormShell
+  title="Nuevo perro"
+  description="Completá los datos para dar de alta un perro."
+  action="?/create"
+  method="POST"
+  form={form as any}
+  primaryLabel="Crear perro"
+>
+  <div>
+    <Label for="tutorId" class="mb-1">Tutor</Label>
+    <Select id="tutorId" name="tutorId" required value={values.tutorId}>
+      {#each data.tutorOptions as tutor (tutor.id)}
+        <option value={tutor.id}>{tutor.full_name}</option>
+      {/each}
+    </Select>
+  </div>
 
-  {#if form?.operatorError}
-    <Alert color="red" class="mb-4">{form.operatorError}</Alert>
-  {/if}
+  <div>
+    <Label for="veterinaryId" class="mb-1">Veterinaria</Label>
+    <Select id="veterinaryId" name="veterinaryId" value={values.veterinaryId}>
+      <option value="">Sin veterinaria</option>
+      {#each data.veterinaryOptions as veterinary (veterinary.id)}
+        <option value={veterinary.id}>{veterinary.name}</option>
+      {/each}
+    </Select>
+  </div>
 
-  <form method="POST" action="?/create" class="grid gap-4">
+  <div>
+    <Label for="name" class="mb-1">Nombre del perro</Label>
+    <Input id="name" name="name" type="text" required value={values.name} />
+  </div>
+
+  <div class="grid gap-4 md:grid-cols-2">
     <div>
-      <Label for="tutorId">Tutor</Label>
-      <Select id="tutorId" name="tutorId" required value={values.tutorId}>
-        {#each data.tutorOptions as tutor (tutor.id)}
-          <option value={tutor.id}>{tutor.full_name}</option>
-        {/each}
+      <Label for="dietType" class="mb-1">Tipo de dieta</Label>
+      <Select id="dietType" name="dietType" required value={values.dietType}>
+        <option value="mixta">Mixta</option>
+        <option value="cocida">Cocida</option>
+        <option value="barf">BARF</option>
       </Select>
     </div>
 
     <div>
-      <Label for="veterinaryId">Veterinaria</Label>
-      <Select id="veterinaryId" name="veterinaryId" value={values.veterinaryId}>
-        <option value="">Sin veterinaria</option>
-        {#each data.veterinaryOptions as veterinary (veterinary.id)}
-          <option value={veterinary.id}>{veterinary.name}</option>
-        {/each}
-      </Select>
+      <Label for="mealsPerDay" class="mb-1">Comidas diarias</Label>
+      <Input id="mealsPerDay" name="mealsPerDay" type="number" min="1" step="1" required value={values.mealsPerDay} />
     </div>
+  </div>
 
-    <div>
-      <Label for="name">Nombre del perro</Label>
-      <Input id="name" name="name" type="text" required value={values.name} />
-    </div>
+  <div>
+    <Label for="notes" class="mb-1">Notas</Label>
+    <Textarea id="notes" name="notes" rows={3} class="w-full" value={values.notes} />
+  </div>
 
-    <div class="grid gap-4 md:grid-cols-2">
-      <div>
-        <Label for="dietType">Tipo de dieta</Label>
-        <Select id="dietType" name="dietType" required value={values.dietType}>
-          <option value="mixta">Mixta</option>
-          <option value="cocida">Cocida</option>
-          <option value="barf">BARF</option>
-        </Select>
-      </div>
-
-      <div>
-        <Label for="mealsPerDay">Comidas diarias</Label>
-        <Input id="mealsPerDay" name="mealsPerDay" type="number" min="1" step="1" required value={values.mealsPerDay} />
-      </div>
-    </div>
-
-    <div>
-      <Label for="notes">Notas</Label>
-      <Textarea id="notes" name="notes" rows={3} class="w-full" value={values.notes} />
-    </div>
-
-    <div class="flex justify-end gap-2">
-      <a href={dogsPath}><Button color="light">Cancelar</Button></a>
-      <Button type="submit">Crear perro</Button>
-    </div>
-  </form>
-</Card>
+  {#snippet actions()}
+    <Button href={dogsPath} color="light">Cancelar</Button>
+    <Button type="submit" disabled={submitting}>
+      {submitting ? 'Guardando…' : 'Crear perro'}
+    </Button>
+  {/snippet}
+</FormShell>

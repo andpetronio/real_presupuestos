@@ -1,8 +1,8 @@
 <script lang="ts">
-  import { resolve } from '$app/paths';
-  import { Alert, Button, Card, Input, Label, Textarea } from 'flowbite-svelte';
+  import { Button, Input, Label, Textarea } from 'flowbite-svelte';
+  import FormShell from '$lib/components/admin/FormShell.svelte';
 
-import { route } from '$lib/shared/navigation';
+  import { route } from '$lib/shared/navigation';
   type PageData = {
     tutor: {
       id: string;
@@ -29,35 +29,37 @@ import { route } from '$lib/shared/navigation';
     whatsappNumber: form?.values?.whatsappNumber ?? data.tutor.whatsapp_number,
     notes: form?.values?.notes ?? (data.tutor.notes ?? '')
   });
+
+  let submitting = $state(false);
 </script>
 
-<Card size="xl" class="mx-auto max-w-3xl p-6 md:p-8 shadow-sm">
-  <h1 class="mb-1 text-xl font-bold text-gray-900">Editar tutor</h1>
-  <p class="mb-6 text-sm text-gray-600">Actualizá los datos del tutor seleccionado.</p>
+<FormShell
+  title="Editar tutor"
+  description="Actualizá los datos del tutor seleccionado."
+  action="?/update"
+  method="POST"
+  form={form as any}
+  primaryLabel="Guardar cambios"
+>
+  <div>
+    <Label for="fullName" class="mb-1">Nombre completo</Label>
+    <Input id="fullName" name="fullName" type="text" required value={values.fullName} />
+  </div>
 
-  {#if form?.operatorError}
-    <Alert color="red" class="mb-4">{form.operatorError}</Alert>
-  {/if}
+  <div>
+    <Label for="whatsappNumber" class="mb-1">WhatsApp</Label>
+    <Input id="whatsappNumber" name="whatsappNumber" type="text" required value={values.whatsappNumber} />
+  </div>
 
-  <form method="POST" action="?/update" class="grid gap-4">
-    <div>
-      <Label for="fullName">Nombre completo</Label>
-      <Input id="fullName" name="fullName" type="text" required value={values.fullName} />
-    </div>
+  <div>
+    <Label for="notes" class="mb-1">Notas</Label>
+    <Textarea id="notes" name="notes" rows={3} class="w-full" value={values.notes} />
+  </div>
 
-    <div>
-      <Label for="whatsappNumber">WhatsApp</Label>
-      <Input id="whatsappNumber" name="whatsappNumber" type="text" required value={values.whatsappNumber} />
-    </div>
-
-    <div>
-      <Label for="notes">Notas</Label>
-      <Textarea id="notes" name="notes" rows={3} class="w-full" value={values.notes} />
-    </div>
-
-    <div class="flex justify-end gap-2">
-      <Button href={tutorsPath} color="light">Cancelar</Button>
-      <Button type="submit">Guardar cambios</Button>
-    </div>
-  </form>
-</Card>
+  {#snippet actions()}
+    <Button href={tutorsPath} color="light">Cancelar</Button>
+    <Button type="submit" disabled={submitting}>
+      {submitting ? 'Guardando…' : 'Guardar cambios'}
+    </Button>
+  {/snippet}
+</FormShell>

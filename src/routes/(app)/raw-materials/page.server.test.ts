@@ -3,7 +3,9 @@ import { load } from './+page.server';
 
 describe('(app)/raw-materials/+page.server load', () => {
   it('retorna empty cuando no hay materias primas', async () => {
-    const order = vi.fn().mockResolvedValue({ data: [], error: null });
+    const order = vi.fn().mockReturnValue({
+      range: vi.fn().mockResolvedValue({ data: [], count: 0, error: null })
+    });
 
     const data = (await load({
       locals: {

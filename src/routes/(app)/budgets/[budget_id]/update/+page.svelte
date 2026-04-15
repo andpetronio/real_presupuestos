@@ -1,5 +1,6 @@
 <script lang="ts">
-  import { Alert, Button, Card, Input, Label, Select, Textarea } from 'flowbite-svelte';
+  import { Button, Input, Label, Select, Textarea } from 'flowbite-svelte';
+  import FormShell from '$lib/components/admin/FormShell.svelte';
   import { formatArs } from '$lib/shared/currency';
   import { sumOperationalCost } from '$lib/shared/costs';
   import { route } from '$lib/shared/navigation';
@@ -112,83 +113,85 @@
         )
       : 0
   );
+
+  let submitting = $state(false);
 </script>
 
-<Card size="xl" class="mx-auto max-w-6xl p-6 md:p-8 shadow-sm">
-  <h1 class="mb-1 text-xl font-bold text-gray-900">Editar presupuesto</h1>
-  <p class="mb-6 text-sm text-gray-600">Ajustá composición y costos globales del borrador seleccionado.</p>
+<FormShell
+  title="Editar presupuesto"
+  description="Ajustá composición y costos globales del borrador seleccionado."
+  action="?/update"
+  method="POST"
+  form={form as any}
+  primaryLabel="Guardar borrador"
+>
+  <input type="hidden" name="budgetId" value={values.budgetId} />
 
-  {#if form?.operatorError}
-    <Alert color="red" class="mb-4">{form.operatorError}</Alert>
-  {/if}
+  <div class="grid gap-1">
+    <Label for="tutorId" class="mb-1">Tutor</Label>
+    <Select
+      id="tutorId"
+      name="tutorId"
+      required
+      value={tutorSelected}
+      onchange={(event) => {
+        tutorSelected = (event.currentTarget as HTMLSelectElement).value;
+        // Clear dog and recipe selections when tutor changes
+        rows = rows.map((row) => ({ ...row, dogId: '', recipeId: '' }));
+      }}
+    >
+      <option value="">Seleccionar tutor</option>
+      {#each data.tutorOptions as tutor (tutor.id)}
+        <option value={tutor.id}>{tutor.fullName}</option>
+      {/each}
+    </Select>
+  </div>
 
-  <form method="POST" action="?/update" class="grid gap-4">
-    <input type="hidden" name="budgetId" value={values.budgetId} />
-
+  <div class="grid gap-3 rounded-lg border border-gray-200 p-4 md:grid-cols-2">
     <div class="grid gap-1">
-      <Label for="tutorId">Tutor</Label>
-      <Select
-        id="tutorId"
-        name="tutorId"
-        required
-        value={tutorSelected}
-        onchange={(event) => {
-          tutorSelected = (event.currentTarget as HTMLSelectElement).value;
-          // Clear dog and recipe selections when tutor changes
-          rows = rows.map((row) => ({ ...row, dogId: '', recipeId: '' }));
-        }}
-      >
-        <option value="">Seleccionar tutor</option>
-        {#each data.tutorOptions as tutor (tutor.id)}
-          <option value={tutor.id}>{tutor.fullName}</option>
-        {/each}
-      </Select>
+      <Label for="budgetMonth" class="mb-1">Mes del presupuesto</Label>
+      <Input id="budgetMonth" name="budgetMonth" type="month" required value={values.budgetMonth} />
     </div>
-
-    <div class="grid gap-3 rounded-lg border border-gray-200 p-4 md:grid-cols-2">
-      <div class="grid gap-1">
-        <Label for="budgetMonth">Mes del presupuesto</Label>
-        <Input id="budgetMonth" name="budgetMonth" type="month" required value={values.budgetMonth} />
-      </div>
-      <div class="grid gap-1">
-        <Label for="budgetDays">Días del presupuesto</Label>
-        <Input id="budgetDays" name="budgetDays" type="number" min="1" step="1" required value={values.budgetDays} />
-      </div>
-    </div>
-
-    <CompositionEditor
-      bind:rows
-      bind:tutorSelected
-      {initialRows}
-      {initialTutor}
-      dogOptions={data.dogOptions}
-      recipeOptions={data.recipeOptions}
-      keyPrefix="edit"
-    />
-
-    <div class="grid gap-3 rounded-lg border border-gray-200 p-4">
-      <p class="text-sm font-semibold text-gray-900">Costos globales del presupuesto</p>
-      <div class="grid gap-3 md:grid-cols-2 xl:grid-cols-4">
-        <div class="grid gap-1"><Label for="vacuumBagSmallQty">Bolsas vacío chicas</Label><Input id="vacuumBagSmallQty" name="vacuumBagSmallQty" type="number" min="0" step="0.001" value={values.vacuumBagSmallQty} /></div>
-        <div class="grid gap-1"><Label for="vacuumBagLargeQty">Bolsas vacío grandes</Label><Input id="vacuumBagLargeQty" name="vacuumBagLargeQty" type="number" min="0" step="0.001" value={values.vacuumBagLargeQty} /></div>
-        <div class="grid gap-1"><Label for="labelsQty">Etiquetas</Label><Input id="labelsQty" name="labelsQty" type="number" min="0" step="0.001" value={values.labelsQty} /></div>
-        <div class="grid gap-1"><Label for="nonWovenBagQty">Bolsas de fiselina</Label><Input id="nonWovenBagQty" name="nonWovenBagQty" type="number" min="0" step="0.001" value={values.nonWovenBagQty} /></div>
-        <div class="grid gap-1"><Label for="laborHoursQty">Horas mano de obra</Label><Input id="laborHoursQty" name="laborHoursQty" type="number" min="0" step="0.001" value={values.laborHoursQty} /></div>
-        <div class="grid gap-1"><Label for="cookingHoursQty">Horas cocción</Label><Input id="cookingHoursQty" name="cookingHoursQty" type="number" min="0" step="0.001" value={values.cookingHoursQty} /></div>
-        <div class="grid gap-1"><Label for="calciumQty">Calcio (u)</Label><Input id="calciumQty" name="calciumQty" type="number" min="0" step="0.001" value={values.calciumQty} /></div>
-        <div class="grid gap-1"><Label for="kefirQty">Kefir (u)</Label><Input id="kefirQty" name="kefirQty" type="number" min="0" step="0.001" value={values.kefirQty} /></div>
-      </div>
-      <p class="text-sm text-gray-600">Costo operativo estimado: {formatArs(costPreview)}</p>
-    </div>
-
     <div class="grid gap-1">
-      <Label for="notes">Notas</Label>
-      <Textarea id="notes" name="notes" rows={2} class="w-full" value={values.notes} />
+      <Label for="budgetDays" class="mb-1">Días del presupuesto</Label>
+      <Input id="budgetDays" name="budgetDays" type="number" min="1" step="1" required value={values.budgetDays} />
     </div>
+  </div>
 
-    <div class="flex justify-end gap-2">
-      <Button href={budgetsPath} color="light">Cancelar</Button>
-      <Button type="submit">Guardar borrador</Button>
+  <CompositionEditor
+    bind:rows
+    bind:tutorSelected
+    {initialRows}
+    {initialTutor}
+    dogOptions={data.dogOptions}
+    recipeOptions={data.recipeOptions}
+    keyPrefix="edit"
+  />
+
+  <div class="grid gap-3 rounded-lg border border-gray-200 p-4">
+    <p class="text-sm font-semibold text-gray-900">Costos globales del presupuesto</p>
+    <div class="grid gap-3 md:grid-cols-2 xl:grid-cols-4">
+      <div class="grid gap-1"><Label for="vacuumBagSmallQty" class="mb-1">Bolsas vacío chicas</Label><Input id="vacuumBagSmallQty" name="vacuumBagSmallQty" type="number" min="0" step="0.001" value={values.vacuumBagSmallQty} /></div>
+      <div class="grid gap-1"><Label for="vacuumBagLargeQty" class="mb-1">Bolsas vacío grandes</Label><Input id="vacuumBagLargeQty" name="vacuumBagLargeQty" type="number" min="0" step="0.001" value={values.vacuumBagLargeQty} /></div>
+      <div class="grid gap-1"><Label for="labelsQty" class="mb-1">Etiquetas</Label><Input id="labelsQty" name="labelsQty" type="number" min="0" step="0.001" value={values.labelsQty} /></div>
+      <div class="grid gap-1"><Label for="nonWovenBagQty" class="mb-1">Bolsas de fiselina</Label><Input id="nonWovenBagQty" name="nonWovenBagQty" type="number" min="0" step="0.001" value={values.nonWovenBagQty} /></div>
+      <div class="grid gap-1"><Label for="laborHoursQty" class="mb-1">Horas mano de obra</Label><Input id="laborHoursQty" name="laborHoursQty" type="number" min="0" step="0.001" value={values.laborHoursQty} /></div>
+      <div class="grid gap-1"><Label for="cookingHoursQty" class="mb-1">Horas cocción</Label><Input id="cookingHoursQty" name="cookingHoursQty" type="number" min="0" step="0.001" value={values.cookingHoursQty} /></div>
+      <div class="grid gap-1"><Label for="calciumQty" class="mb-1">Calcio (u)</Label><Input id="calciumQty" name="calciumQty" type="number" min="0" step="0.001" value={values.calciumQty} /></div>
+      <div class="grid gap-1"><Label for="kefirQty" class="mb-1">Kefir (u)</Label><Input id="kefirQty" name="kefirQty" type="number" min="0" step="0.001" value={values.kefirQty} /></div>
     </div>
-  </form>
-</Card>
+    <p class="text-sm text-gray-600">Costo operativo estimado: {formatArs(costPreview)}</p>
+  </div>
+
+  <div class="grid gap-1">
+    <Label for="notes" class="mb-1">Notas</Label>
+    <Textarea id="notes" name="notes" rows={2} class="w-full" value={values.notes} />
+  </div>
+
+  {#snippet actions()}
+    <Button href={budgetsPath} color="light">Cancelar</Button>
+    <Button type="submit" disabled={submitting}>
+      {submitting ? 'Guardando…' : 'Guardar borrador'}
+    </Button>
+  {/snippet}
+</FormShell>

@@ -1,48 +1,61 @@
 <script lang="ts">
+  import { enhance } from '$app/forms';
   import type { Snippet } from 'svelte';
   import { Alert, Button, Card } from 'flowbite-svelte';
-  import {
-    resolveFormShellMessage,
-    resolvePrimaryActionDisabled,
-    resolvePrimaryLabel,
-    type FormShellState
-  } from '$lib/components/admin/form-shell.model';
+  import { isFormError, isFormSuccess, type EnhancedFormState } from '$lib/components/admin/form-shell.model';
 
   type FormShellProps = {
     title: string;
     description?: string;
-    state?: FormShellState;
-    message?: string;
-    validationErrors?: ReadonlyArray<string>;
+    action?: string;
+    method?: 'POST' | 'GET';
+    form?: EnhancedFormState | null;
     primaryLabel?: string;
-    disablePrimary?: boolean;
     showPrimary?: boolean;
-    onPrimary?: () => void;
     children?: Snippet;
+    actions?: Snippet;
+    loading?: boolean;
+    // For displaying error/success states without a form
+    state?: 'idle' | 'error' | 'success';
   };
 
   let {
     title,
     description,
-    state = 'idle',
-    message,
-    validationErrors = [],
+    action,
+    method = 'POST',
+    form = null,
     primaryLabel = 'Guardar cambios',
-    disablePrimary = false,
     showPrimary = true,
-    onPrimary,
-    children
+    children,
+    actions,
+    loading = false,
+    state: explicitState
   }: FormShellProps = $props();
 
-  const stateMessage = $derived(resolveFormShellMessage(state, message));
-  const primaryDisabled = $derived(resolvePrimaryActionDisabled(state, disablePrimary));
-  const primaryActionLabel = $derived(resolvePrimaryLabel(state, primaryLabel));
-  const feedbackColor = $derived<'blue' | 'red' | 'green'>(
-    state === 'success' ? 'green' : state === 'saving' ? 'blue' : 'red'
+  // Derived state from SvelteKit form
+  const hasError = $derived(isFormError(form) || explicitState === 'error');
+  const hasSuccess = $derived(isFormSuccess(form) || explicitState === 'success');
+  const errorMessage = $derived(
+    form?.state === 'error' ? form.message :
+    explicitState === 'error' && description ? description : undefined
   );
+  const successMessage = $derived(
+    form?.state === 'success' ? form.message : 'Cambios guardados correctamente.'
+  );
+
+  // Get all field errors as flat array for validation summary
+  const fieldErrors = $derived(form?.state === 'error' && form.errors ? form.errors : {});
+
+  // Submitting state - controlled by use:enhance
+  let submitting = $state(false);
+
+  const handleSubmit = () => {
+    submitting = true;
+  };
 </script>
 
-<Card size="xl" class="w-full shadow-sm">
+<Card size="xl" class="w-full shadow-sm p-6">
   <header class="space-y-1">
     <h2 class="text-lg font-semibold text-gray-900">{title}</h2>
     {#if description}
@@ -50,31 +63,52 @@
     {/if}
   </header>
 
-  {#if state !== 'idle'}
-    <Alert color={feedbackColor} role="status" aria-live="polite">
-      {stateMessage}
+  {#if hasError && errorMessage}
+    <Alert color="red" role="status" aria-live="polite" class="mt-4">
+      {errorMessage}
     </Alert>
   {/if}
 
-  {#if state === 'validation' && validationErrors.length > 0}
-    <Alert color="red" role="status" aria-live="polite">
-      <ul class="list-disc ps-4">
-        {#each validationErrors as error (error)}
-          <li>{error}</li>
-        {/each}
-      </ul>
+  {#if hasSuccess}
+    <Alert color="green" role="status" aria-live="polite" class="mt-4">
+      {successMessage}
     </Alert>
   {/if}
 
-  <div class="space-y-4">
+  <form
+    {action}
+    {method}
+    use:enhance={() => {
+      handleSubmit();
+      return async ({ update }) => {
+        await update();
+        submitting = false;
+      };
+    }}
+    class="space-y-4"
+  >
     {@render children?.()}
-  </div>
 
-  {#if showPrimary}
-    <footer class="flex justify-end">
-      <Button type="button" onclick={() => onPrimary?.()} disabled={primaryDisabled}>
-        {primaryActionLabel}
-      </Button>
+    <footer class="flex flex-col-reverse gap-2 sm:flex-row sm:justify-end">
+      {#if actions}
+        {@render actions()}
+      {:else if showPrimary}
+        <Button
+          type="submit"
+          disabled={submitting || loading}
+        >
+          {submitting ? 'Guardando…' : primaryLabel}
+        </Button>
+      {/if}
     </footer>
-  {/if}
+  </form>
 </Card>
+
+<!-- Field error display helper - expose for child components -->
+{#snippet fieldError(name: string)}
+  {#if fieldErrors[name]?.length}
+    <p class="mt-1 text-xs text-red-600" role="alert">
+      {fieldErrors[name].join(', ')}
+    </p>
+  {/if}
+{/snippet}

@@ -7,7 +7,9 @@ describe('(app)/recipes/+page.server load', () => {
       if (table === 'recipes') {
         return {
           select: vi.fn().mockReturnValue({
-            order: vi.fn().mockResolvedValue({ data: null, error: { message: 'db down' } })
+            order: vi.fn().mockReturnValue({
+              range: vi.fn().mockResolvedValue({ data: null, count: 0, error: { message: 'db down' } })
+            })
           })
         };
       }

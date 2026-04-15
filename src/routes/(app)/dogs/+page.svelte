@@ -1,17 +1,10 @@
 <script lang="ts">
-  import { resolve } from '$app/paths';
-
-import { route } from '$lib/shared/navigation';  import {
-    Alert,
-    Button,
-    Card,
-    Table,
-    TableBody,
-    TableBodyCell,
-    TableBodyRow,
-    TableHead,
-    TableHeadCell
-  } from 'flowbite-svelte';
+  import { Button, Card } from 'flowbite-svelte';
+  import FeedbackBanner from '$lib/components/FeedbackBanner.svelte';
+  import DogFilterBar from '$lib/components/dogs/DogFilterBar.svelte';
+  import DogTable from '$lib/components/dogs/DogTable.svelte';
+  import DogPagination from '$lib/components/dogs/DogPagination.svelte';
+  import DogMobileCards from '$lib/components/dogs/DogMobileCards.svelte';
 
   type DogRow = {
     id: string;
@@ -27,6 +20,11 @@ import { route } from '$lib/shared/navigation';  import {
     dogs: ReadonlyArray<DogRow>;
     tableState: 'idle' | 'success' | 'error' | 'empty';
     tableMessage: { title: string; detail: string } | null;
+    pagination: { page: number; totalPages: number; total: number };
+    filters: {
+      search: string;
+      status: string;
+    };
   };
 
   type ActionData = {
@@ -36,70 +34,53 @@ import { route } from '$lib/shared/navigation';  import {
   };
 
   let { data, form }: { data: PageData; form: ActionData | null } = $props();
-  const newDogPath = route('/dogs/new');
-  </script>
+
+  const newDogPath = '/dogs/new';
+  const feedbackMessage = $derived(form?.operatorError ?? form?.operatorSuccess ?? '');
+  const feedbackColor = $derived(form?.operatorError ? 'red' : 'green');
+</script>
 
 <div class="mb-4 flex justify-end">
-  <Button href={newDogPath} color="primary">Nuevo perro</Button>
+  <Button href={newDogPath} color="blue">Nuevo perro</Button>
 </div>
 
-{#if form?.operatorError}
-  <Alert color="red" class="mb-4">{form.operatorError}</Alert>
-{:else if form?.operatorSuccess}
-  <Alert color="green" class="mb-4">{form.operatorSuccess}</Alert>
+{#if feedbackMessage}
+  <FeedbackBanner message={feedbackMessage} color={feedbackColor} />
 {/if}
 
 {#if data.tableState === 'error'}
-  <Alert color="red">{data.tableMessage?.detail ?? 'No pudimos cargar perros.'}</Alert>
+  <FeedbackBanner message={data.tableMessage?.detail ?? 'No pudimos cargar perros.'} color="red" />
 {:else if data.tableState === 'empty'}
-  <Alert color="blue">{data.tableMessage?.detail ?? 'Todavía no hay perros.'}</Alert>
+  <FeedbackBanner message={data.tableMessage?.detail ?? 'Todavía no hay perros.'} color="blue" />
 {:else}
-  <Card size="xl" class="w-full shadow-sm">
-    <div class="overflow-x-auto">
-      <Table hoverable striped>
-        <TableHead>
-          <TableHeadCell>Nombre</TableHeadCell>
-          <TableHeadCell>Tutor</TableHeadCell>
-          <TableHeadCell>Veterinaria</TableHeadCell>
-          <TableHeadCell>Tipo dieta</TableHeadCell>
-          <TableHeadCell>Comidas/día</TableHeadCell>
-          <TableHeadCell>Estado</TableHeadCell>
-          <TableHeadCell>Acciones</TableHeadCell>
-        </TableHead>
-        <TableBody>
-          {#each data.dogs as dog (dog.id)}
-            <TableBodyRow>
-              <TableBodyCell>{dog.name}</TableBodyCell>
-              <TableBodyCell>{dog.tutor?.full_name ?? 'Sin tutor'}</TableBodyCell>
-              <TableBodyCell>{dog.veterinary?.name ?? 'Sin veterinaria'}</TableBodyCell>
-              <TableBodyCell>{dog.diet_type.toUpperCase()}</TableBodyCell>
-              <TableBodyCell>{dog.meals_per_day}</TableBodyCell>
-              <TableBodyCell>
-                <span class={dog.is_active ? 'rounded bg-green-100 px-2 py-1 text-xs font-semibold text-green-700' : 'rounded bg-gray-100 px-2 py-1 text-xs font-semibold text-gray-600'}>
-                  {dog.is_active ? 'Activo' : 'Inactivo'}
-                </span>
-              </TableBodyCell>
-              <TableBodyCell>
-                <div class="flex items-center gap-2">
-                  <Button href={route('/dogs/', dog.id, '/update')} size="xs" color="light" aria-label="Editar {dog.name}">Editar</Button>
-                  {#if dog.is_active}
-                    <form
-                      method="POST"
-                      action="?/delete"
-                      onsubmit={(event) => {
-                        if (!confirm('¿Desactivar este perro?')) event.preventDefault();
-                      }}
-                    >
-                      <input type="hidden" name="dogId" value={dog.id} />
-                      <Button type="submit" size="xs" color="red" aria-label="Desactivar {dog.name}">Eliminar</Button>
-                    </form>
-                  {/if}
-                </div>
-              </TableBodyCell>
-            </TableBodyRow>
-          {/each}
-        </TableBody>
-      </Table>
+  <Card size="xl" class="w-full shadow-sm p-0">
+    <!-- Filter bar -->
+    <div class="p-4">
+      <DogFilterBar
+        currentSearch={data.filters.search}
+        currentStatus={data.filters.status}
+      />
+    </div>
+
+    <!-- Mobile cards (hidden on md+) -->
+    <div class="px-4 pb-4">
+      <DogMobileCards dogs={data.dogs} />
+    </div>
+
+    <!-- Desktop table (hidden on < md) -->
+    <div class="hidden md:block">
+      <DogTable dogs={data.dogs} />
+    </div>
+
+    <!-- Pagination -->
+    <div class="px-4 pb-4">
+      <DogPagination
+        page={data.pagination.page}
+        totalPages={data.pagination.totalPages}
+        total={data.pagination.total}
+        search={data.filters.search}
+        status={data.filters.status}
+      />
     </div>
   </Card>
 {/if}

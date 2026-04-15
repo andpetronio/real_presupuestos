@@ -3,9 +3,12 @@ import { actions, load } from './+page.server';
 
 describe('(app)/dogs/+page.server load', () => {
   it('retorna listado de perros cuando query pasa', async () => {
-    const dogsOrder = vi.fn().mockResolvedValue({
-      data: [{ id: 'd-1', name: 'Mora', diet_type: 'mixta', meals_per_day: 2, is_active: true, tutor: null, veterinary: null }],
-      error: null
+    const dogsOrder = vi.fn().mockReturnValue({
+      range: vi.fn().mockResolvedValue({
+        data: [{ id: 'd-1', name: 'Mora', diet_type: 'mixta', meals_per_day: 2, is_active: true, tutor: null, veterinary: null }],
+        count: 1,
+        error: null
+      })
     });
 
     const from = vi.fn((table: string) => {
@@ -13,7 +16,9 @@ describe('(app)/dogs/+page.server load', () => {
       return { select: vi.fn() };
     });
 
-    const data = (await load({ locals: { supabase: { from } } } as unknown as Parameters<typeof load>[0])) as {
+    const mockUrl = new URL('http://localhost/dogs');
+
+    const data = (await load({ locals: { supabase: { from } }, url: mockUrl } as unknown as Parameters<typeof load>[0])) as {
       tableState: string;
       dogs: ReadonlyArray<unknown>;
     };
