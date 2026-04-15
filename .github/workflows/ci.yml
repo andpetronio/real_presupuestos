@@ -15,6 +15,10 @@ jobs:
     name: Validate
     runs-on: ubuntu-latest
 
+    env:
+      PUBLIC_SUPABASE_URL: https://placeholder.supabase.co
+      PUBLIC_SUPABASE_PUBLISHABLE_KEY: placeholder-key-for-ci
+
     steps:
       - name: Checkout
         uses: actions/checkout@v4
