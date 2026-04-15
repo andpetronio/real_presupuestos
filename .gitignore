@@ -1,2 +1,29 @@
+# Dependencies
+node_modules/
+
+# Environment
 .env
-/node_modules
+.env.*
+!.env.example
+
+# Build outputs
+.svelte-kit/
+build/
+dist/
+
+# Logs
+*.log
+npm-debug.log*
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Editor
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# Test
+coverage/
