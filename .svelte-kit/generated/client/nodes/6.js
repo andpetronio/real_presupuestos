@@ -1,0 +1,1 @@
+export { default as component } from "../../../../src/routes/(app)/budgets/[id]/preview/+page.svelte";

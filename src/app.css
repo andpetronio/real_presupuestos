@@ -1,0 +1,106 @@
+@import "tailwindcss";
+@plugin "flowbite/plugin";
+@custom-variant dark (&:where(.dark, .dark *));
+@source "../node_modules/flowbite-svelte/dist";
+
+@theme {
+  /* Alias paleta */
+  --color-primary: #01646d;
+  --color-primary-50: color-mix(in srgb, #01646d 10%, white);
+  --color-primary-100: color-mix(in srgb, #01646d 20%, white);
+  --color-primary-200: color-mix(in srgb, #01646d 35%, white);
+  --color-primary-300: color-mix(in srgb, #01646d 50%, white);
+  --color-primary-400: color-mix(in srgb, #01646d 65%, white);
+  --color-primary-500: #01646d;
+  --color-primary-600: color-mix(in srgb, #01646d 88%, black);
+  --color-primary-700: color-mix(in srgb, #01646d 76%, black);
+  --color-primary-800: color-mix(in srgb, #01646d 64%, black);
+  --color-primary-900: color-mix(in srgb, #01646d 52%, black);
+
+  --color-secondary: #e16a3d;
+  --color-secondary-50: color-mix(in srgb, #e16a3d 10%, white);
+  --color-secondary-100: color-mix(in srgb, #e16a3d 20%, white);
+  --color-secondary-200: color-mix(in srgb, #e16a3d 35%, white);
+  --color-secondary-300: color-mix(in srgb, #e16a3d 50%, white);
+  --color-secondary-400: color-mix(in srgb, #e16a3d 65%, white);
+  --color-secondary-500: #e16a3d;
+  --color-secondary-600: color-mix(in srgb, #e16a3d 88%, black);
+  --color-secondary-700: color-mix(in srgb, #e16a3d 76%, black);
+  --color-secondary-800: color-mix(in srgb, #e16a3d 64%, black);
+  --color-secondary-900: color-mix(in srgb, #e16a3d 52%, black);
+
+  --color-accent: #81923d;
+  --color-accent-50: color-mix(in srgb, #81923d 10%, white);
+  --color-accent-100: color-mix(in srgb, #81923d 20%, white);
+  --color-accent-500: #81923d;
+  --color-accent-600: color-mix(in srgb, #81923d 88%, black);
+
+  --color-highlight: #ffa45d;
+  --color-highlight-50: color-mix(in srgb, #ffa45d 10%, white);
+  --color-highlight-100: color-mix(in srgb, #ffa45d 20%, white);
+  --color-highlight-500: #ffa45d;
+  --color-highlight-600: color-mix(in srgb, #ffa45d 88%, black);
+
+  --color-black-custom: #2e2e2e;
+  --color-white-custom: #e5e5e5;
+
+  /* Neutral scale (Flowbite-like, no color cast) */
+  --color-gray-50: #f9fafb;
+  --color-gray-100: #f3f4f6;
+  --color-gray-200: #e5e7eb;
+  --color-gray-300: #d1d5db;
+  --color-gray-400: #9ca3af;
+  --color-gray-500: #6b7280;
+  --color-gray-600: #4b5563;
+  --color-gray-700: #374151;
+  --color-gray-800: #1f2937;
+  --color-gray-900: #2e2e2e;
+
+  /* Action scale (Flowbite blue -> secondary) */
+  --color-blue-50: var(--color-secondary-50);
+  --color-blue-100: var(--color-secondary-100);
+  --color-blue-200: var(--color-secondary-200);
+  --color-blue-300: var(--color-secondary-300);
+  --color-blue-400: var(--color-secondary-400);
+  --color-blue-500: var(--color-secondary-500);
+  --color-blue-600: var(--color-secondary-600);
+  --color-blue-700: var(--color-secondary-700);
+  --color-blue-800: var(--color-secondary-800);
+  --color-blue-900: var(--color-secondary-900);
+
+  /* Success/warning/danger scales mapped to palette */
+  --color-green-50: var(--color-accent-50);
+  --color-green-100: var(--color-accent-100);
+  --color-green-500: var(--color-accent-500);
+  --color-green-600: var(--color-accent-600);
+
+  --color-yellow-50: var(--color-highlight-50);
+  --color-yellow-100: var(--color-highlight-100);
+  --color-yellow-500: var(--color-highlight-500);
+  --color-yellow-600: var(--color-highlight-600);
+
+  --color-red-50: var(--color-secondary-50);
+  --color-red-100: var(--color-secondary-100);
+  --color-red-500: var(--color-secondary-500);
+  --color-red-600: var(--color-secondary-600);
+  --color-red-700: var(--color-secondary-700);
+
+  /* Utilities semánticas - sobrescribir Tailwind defaults */
+  --color-surface: #ffffff;
+  --color-surface-subtle: #f9fafb;
+  --color-base: #f8fafc;
+  --surface-sidebar: var(--color-primary-700);
+  --surface-topbar: #ffffff;
+  --text-main: #2e2e2e;
+  --text-subtle: #6b7280;
+  --text-inverse: #e5e5e5;
+}
+
+html,
+body {
+  min-height: 100%;
+}
+
+body {
+  @apply bg-gray-50 text-gray-900 antialiased;
+}

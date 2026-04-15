@@ -1,0 +1,1 @@
+export { default as component } from "../../../../src/routes/(app)/raw-materials/[raw_material_id]/update/+page.svelte";

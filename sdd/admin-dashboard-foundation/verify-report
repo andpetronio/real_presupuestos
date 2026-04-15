@@ -1,0 +1,101 @@
+## Verification Report
+
+**Change**: admin-dashboard-foundation  
+**Version**: N/A  
+**Mode**: Standard (`strict_tdd: false`)
+
+---
+
+### Completeness
+| Metric | Value |
+|--------|-------|
+| Tasks total | 43 |
+| Tasks complete | 43 |
+| Tasks incomplete | 0 |
+
+Todas las tasks de `sdd/admin-dashboard-foundation/tasks` están marcadas como completadas (`[x]`).
+
+---
+
+### Build & Tests Execution
+
+**Build/Type-check**: ✅ Passed (`npm run check`)
+```txt
+svelte-check found 0 errors and 0 warnings
+```
+
+**Tests**: ✅ 48 passed / ❌ 0 failed / ⚠️ 0 skipped (`npm run test -- --run`)
+```txt
+Test Files  18 passed (18)
+Tests  48 passed (48)
+```
+
+**Coverage**: ➖ Not available (sin herramienta/threshold configurado para coverage)
+
+---
+
+### Spec Compliance Matrix
+
+| Requirement | Scenario | Test | Result |
+|-------------|----------|------|--------|
+| Internal Admin Shell | Render shell and navigate modules | `src/routes/smoke-navigation-isolation.test.ts > conserva navegación keyboard-friendly...` + evidencia estructural en `src/routes/(app)/+layout.svelte` | ⚠️ PARTIAL |
+| Internal Admin Shell | Route isolation | `src/routes/(app)/layout.server.test.ts > ...redirecciona al login...` + `src/routes/smoke-navigation-isolation.test.ts > mantiene rutas del menú...` | ✅ COMPLIANT |
+| Iconography Standard (Phosphor Only) | Module icon mapping | `src/lib/constants/navigation.test.ts > usa iconografía Phosphor-only...` + `src/lib/icons/phosphor.test.ts` | ⚠️ PARTIAL |
+| Iconography Standard (Phosphor Only) | Build-time guardrail | `src/lib/icons/phosphor.test.ts > mantiene origen Phosphor-only...` + búsqueda estática de imports | ✅ COMPLIANT |
+| Mandatory Color Palette and Visual Consistency | Tokenized palette usage | `src/lib/design/tokens.test.ts > usa exclusivamente la paleta obligatoria...` | ✅ COMPLIANT |
+| Mandatory Color Palette and Visual Consistency | Consistent state semantics | Evidencia en `StatusBadge.svelte`, `TableShell.svelte`, `FormShell.svelte`; sin test cross-page específico | ⚠️ PARTIAL |
+| Reusable CRUD-Friendly UI Blocks | Table states | `src/lib/components/admin/table-shell.model.test.ts` (loading/empty/error/success) | ✅ COMPLIANT |
+| Reusable CRUD-Friendly UI Blocks | Form states and actions | `src/lib/components/admin/form-shell.model.test.ts` (message/label/disabled por estado) | ✅ COMPLIANT |
+| Accessibility and Separation of Responsibilities | Minimum accessibility | `src/lib/design/tokens.test.ts` (contraste) + `src/routes/smoke-navigation-isolation.test.ts` (anchors/aria-current) | ⚠️ PARTIAL |
+| Accessibility and Separation of Responsibilities | UI/business boundary | Inspección estática: UI base en `src/lib/components/admin/*`, persistencia en `src/lib/server/*` y `+page.server.ts` | ✅ COMPLIANT |
+
+**Compliance summary**: 6/10 compliant, 4 partial, 0 failing, 0 untested.
+
+---
+
+### Correctness (Static — Structural Evidence)
+
+| Requirement | Status | Notes |
+|------------|--------|-------|
+| Internal Admin Shell | ✅ Implemented | Shell `(app)` activo con `AppShell + SidebarNav + Topbar`, auth gating server-side y nav interna tipada. |
+| Iconography Standard (Phosphor Only) | ⚠️ Partial | Se centralizó en adapter único, pero el import real sigue en `phosphor-svelte` (no `@phosphor-icons/svelte`). |
+| Mandatory Color Palette and Visual Consistency | ✅ Implemented | Tokens/CSS variables mapean a los 6 colores obligatorios sin hex extra en `src/`. |
+| Reusable CRUD-Friendly UI Blocks | ✅ Implemented | `TableShell`, `FormShell`, `StatusBadge`, `EmptyState` presentes y reutilizados en rutas `(app)`. |
+| Accessibility and Separation of Responsibilities | ⚠️ Partial | Base de contraste/focus y semántica está; falta validación keyboard end-to-end en runtime real. |
+
+---
+
+### Coherence (Design)
+
+| Decision | Followed? | Notes |
+|----------|-----------|-------|
+| Route boundary `(app)` interno vs `budget-response/[token]` público | ✅ Yes | Menú interno no expone rutas tokenizadas públicas. |
+| Shell-first con componentes base | ✅ Yes | Layout y bloques base implementados/cableados. |
+| Icon set único `@phosphor-icons/svelte` | ⚠️ Deviated | Implementación usa `phosphor-svelte` vía adapter centralizado; desviación literal de design/spec. |
+| Tokens semánticos sobre paleta obligatoria | ✅ Yes | Alineado en `tokens.ts` + `app.css` + tests. |
+| Negocio/persistencia fuera de UI components | ✅ Yes | Persistencia y queries permanecen en server modules/actions/load functions. |
+| Estrategia de testing con smoke E2E real | ⚠️ Deviated | Smoke actual está en Vitest (source/static), no hay evidencia Playwright en ejecución real. |
+
+---
+
+### Issues Found
+
+**CRITICAL** (must fix before archive):
+None.
+
+**WARNING** (should fix):
+1. Desvío literal de icon package: spec/design piden `@phosphor-icons/svelte`, implementación usa `phosphor-svelte` (aunque centralizado y testeado).
+2. Cobertura parcial del escenario “render shell + cambio de navegación activa” en ejecución real (no test de render/integración DOM completo).
+3. Accesibilidad keyboard end-to-end parcial: no hay prueba runtime en navegador real.
+
+**SUGGESTION** (nice to have):
+1. Agregar tests de componente (DOM) para `SidebarNav`, `TableShell` y `FormShell`.
+2. Agregar smoke E2E Playwright para navegación por teclado y aislamiento público/interno.
+3. Definir waiver explícito o actualizar spec/design para resolver drift documental del paquete de iconos.
+
+---
+
+### Verdict
+**PASS WITH WARNINGS**
+
+No se detectan fallas críticas: suite verde (`48/48`) y type-check verde. Persisten warnings de cumplimiento literal (package de iconos) y evidencia parcial de escenarios runtime/E2E.
