@@ -1,0 +1,5 @@
+{
+  "framework": "sveltekit",
+  "buildCommand": "npm install -g pnpm && pnpm build",
+  "installCommand": "npm install -g pnpm && pnpm install --frozen-lockfile"
+}
