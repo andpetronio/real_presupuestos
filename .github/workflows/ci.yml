@@ -28,11 +28,14 @@ jobs:
         with:
           node-version: '20'
 
+      - name: Enable pnpm via corepack
+        run: corepack enable && corepack prepare pnpm@latest --activate
+
       - name: Install dependencies
-        run: npx pnpm install --frozen-lockfile
+        run: pnpm install --frozen-lockfile
 
       - name: Type check
-        run: npx pnpm exec svelte-check --workspace src
+        run: pnpm exec svelte-check --workspace src
 
       - name: Run tests
-        run: npx pnpm test -- --run
+        run: pnpm test -- --run
