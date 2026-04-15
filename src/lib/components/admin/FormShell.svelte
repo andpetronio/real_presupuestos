@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { enhance } from '$app/forms';
+  import { applyAction, enhance } from '$app/forms';
   import type { Snippet } from 'svelte';
   import { Alert, Button, Card } from 'flowbite-svelte';
   import { isFormError, isFormSuccess, type EnhancedFormState } from '$lib/components/admin/form-shell.model';
@@ -36,12 +36,19 @@
   // Derived state from SvelteKit form
   const hasError = $derived(isFormError(form) || explicitState === 'error');
   const hasSuccess = $derived(isFormSuccess(form) || explicitState === 'success');
+  const legacyErrorMessage = $derived((form as { operatorError?: string } | null)?.operatorError);
+  const legacySuccessMessage = $derived((form as { operatorSuccess?: string } | null)?.operatorSuccess);
+  const hasLegacyError = $derived(Boolean(legacyErrorMessage));
+  const hasLegacySuccess = $derived(Boolean(legacySuccessMessage));
   const errorMessage = $derived(
     form?.state === 'error' ? form.message :
+    legacyErrorMessage ? legacyErrorMessage :
     explicitState === 'error' && description ? description : undefined
   );
   const successMessage = $derived(
-    form?.state === 'success' ? form.message : 'Cambios guardados correctamente.'
+    form?.state === 'success'
+      ? form.message
+      : legacySuccessMessage || 'Cambios guardados correctamente.'
   );
 
   // Get all field errors as flat array for validation summary
@@ -63,13 +70,13 @@
     {/if}
   </header>
 
-  {#if hasError && errorMessage}
+  {#if (hasError || hasLegacyError) && errorMessage}
     <Alert color="red" role="status" aria-live="polite" class="mt-4">
       {errorMessage}
     </Alert>
   {/if}
 
-  {#if hasSuccess}
+  {#if hasSuccess || hasLegacySuccess}
     <Alert color="green" role="status" aria-live="polite" class="mt-4">
       {successMessage}
     </Alert>
@@ -80,8 +87,8 @@
     {method}
     use:enhance={() => {
       handleSubmit();
-      return async ({ update }) => {
-        await update();
+      return async ({ result }) => {
+        await applyAction(result);
         submitting = false;
       };
     }}
