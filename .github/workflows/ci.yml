@@ -29,7 +29,10 @@ jobs:
           node-version: '20'
 
       - name: Enable pnpm via corepack
-        run: corepack enable && corepack prepare pnpm@latest --activate
+        run: corepack enable && corepack prepare pnpm@10.32.1 --activate
+
+      - name: Verify pnpm
+        run: pnpm --version
 
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
