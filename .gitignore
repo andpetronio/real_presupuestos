@@ -8,6 +8,7 @@ node_modules/
 
 # Build outputs
 .svelte-kit/
+.vercel/
 build/
 dist/
 

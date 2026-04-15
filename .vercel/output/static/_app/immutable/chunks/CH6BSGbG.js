@@ -1,1 +1,0 @@
-const i=t=>new Intl.NumberFormat("es-AR",{style:"currency",currency:"ARS",minimumFractionDigits:2,maximumFractionDigits:2}).format(t),m=t=>{const n=Math.round(t*100)/100,r=Math.abs(n-Math.round(t))<1e-9;return new Intl.NumberFormat("es-AR",{minimumFractionDigits:r?0:2,maximumFractionDigits:r?0:2}).format(t)};export{m as a,i as f};

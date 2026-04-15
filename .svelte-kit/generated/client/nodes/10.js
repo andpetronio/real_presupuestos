@@ -1,1 +1,0 @@
-export { default as component } from "../../../../src/routes/(app)/dogs/[dog_id]/update/+page.svelte";

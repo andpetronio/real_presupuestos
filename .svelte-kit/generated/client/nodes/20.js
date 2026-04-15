@@ -1,1 +1,0 @@
-export { default as component } from "../../../../src/routes/(app)/tutors/[tutor_id]/update/+page.svelte";

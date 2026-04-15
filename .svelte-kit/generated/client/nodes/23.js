@@ -1,1 +1,0 @@
-export { default as component } from "../../../../src/routes/(app)/veterinaries/[veterinary_id]/update/+page.svelte";
