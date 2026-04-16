@@ -10,7 +10,10 @@ import {
 
 export const load: PageServerLoad = async ({ locals }) => {
   const [dogsResult, rawMaterialsResult] = await Promise.all([
-    locals.supabase.from('dogs').select('id, name').order('name', { ascending: true }),
+    locals.supabase
+      .from('dogs')
+      .select('id, tutor_id, name, tutors(full_name)')
+      .order('name', { ascending: true }),
     locals.supabase
       .from('raw_materials')
       .select('id, name, base_unit, derived_unit_cost')
@@ -19,7 +22,11 @@ export const load: PageServerLoad = async ({ locals }) => {
   ]);
 
   return {
-    dogOptions: (dogsResult.data ?? []).map((dog) => ({ id: dog.id, name: dog.name })),
+    dogOptions: (dogsResult.data ?? []).map((dog) => ({
+      id: dog.id,
+      name: dog.name,
+      tutorName: ((dog.tutors as unknown) as { full_name: string } | null)?.full_name ?? ''
+    })),
     rawMaterialOptions: (rawMaterialsResult.data ?? []).map((material) => ({
       id: material.id,
       name: material.name,

@@ -4,7 +4,7 @@
   import { formatArs } from '$lib/shared/currency';
 
   import { route } from '$lib/shared/navigation';
-  type DogOption = { id: string; name: string };
+  type DogOption = { id: string; name: string; tutorName: string };
   type RawMaterialOption = { id: string; name: string; baseUnit: string };
   type RecipeItemDraft = { rawMaterialId: string; dailyQuantity: string; itemCost?: string };
 
@@ -94,7 +94,7 @@
     <Select id="dogId" name="dogId" required value={values.dogId}>
       <option value="">Seleccionar perro</option>
       {#each data.dogOptions as dog (dog.id)}
-        <option value={dog.id}>{dog.name}</option>
+        <option value={dog.id}>{dog.name} — {dog.tutorName}</option>
       {/each}
     </Select>
   </div>

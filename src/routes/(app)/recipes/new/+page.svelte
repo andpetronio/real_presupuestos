@@ -3,7 +3,7 @@
   import FormShell from '$lib/components/admin/FormShell.svelte';
 
   import { route } from '$lib/shared/navigation';
-  type DogOption = { id: string; name: string };
+  type DogOption = { id: string; name: string; tutorName: string };
   type RawMaterialOption = { id: string; name: string; baseUnit: string };
   type RecipeItemDraft = { rawMaterialId: string; dailyQuantity: string };
 
@@ -72,9 +72,8 @@
   <div class="grid gap-1">
     <Label for="dogId" class="mb-1">Perro</Label>
     <Select id="dogId" name="dogId" required value={values.dogId}>
-      <option value="">Seleccionar perro</option>
       {#each data.dogOptions as dog (dog.id)}
-        <option value={dog.id}>{dog.name}</option>
+        <option value={dog.id}>{dog.name} — {dog.tutorName}</option>
       {/each}
     </Select>
   </div>
@@ -102,7 +101,6 @@
             value={item.rawMaterialId}
             onchange={(event) => updateRow(index, 'rawMaterialId', (event.currentTarget as HTMLSelectElement).value)}
           >
-            <option value="">Seleccionar materia prima</option>
             {#each data.rawMaterialOptions as material (material.id)}
               <option value={material.id}>{material.name} ({material.baseUnit})</option>
             {/each}
