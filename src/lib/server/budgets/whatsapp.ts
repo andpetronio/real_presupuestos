@@ -46,13 +46,17 @@ export const getDateLabel = (isoDate: string | null): string => {
 /**
  * Arma el resumen de perros para el mensaje.
  */
-export const buildDogsSummary = (dogNames: ReadonlyArray<string>): string => {
-  if (dogNames.length === 0) return 'tu perro';
-  if (dogNames.length === 1) return dogNames[0];
-  if (dogNames.length === 2) return `${dogNames[0]} y ${dogNames[1]}`;
+export const buildDogsSummary = (
+  dogs: ReadonlyArray<{ name: string; requestedDays: number }>
+): string => {
+  if (dogs.length === 0) return 'tu perro';
 
-  const head = dogNames.slice(0, -1).join(', ');
-  const tail = dogNames[dogNames.length - 1];
+  const labels = dogs.map((dog) => `${dog.requestedDays} días para ${dog.name}`);
+  if (labels.length === 1) return labels[0];
+  if (labels.length === 2) return `${labels[0]} y ${labels[1]}`;
+
+  const head = labels.slice(0, -1).join(', ');
+  const tail = labels[labels.length - 1];
   return `${head} y ${tail}`;
 };
 
@@ -161,19 +165,22 @@ export const sendBudgetWhatsapp = async (params: {
   // 4. Leer perros del presupuesto
   const { data: budgetDogs, error: budgetDogsError } = await supabase
     .from('budget_dogs')
-    .select('dog:dogs(name)')
+    .select('requested_days, dog:dogs(name)')
     .eq('budget_id', budgetTyped.id);
 
   if (budgetDogsError) {
     return { ok: false, message: 'No pudimos armar el detalle de perros para el mensaje.' };
   }
 
-  const dogNames = (budgetDogs ?? [])
-    .map((row) => (row.dog as { name?: string } | null)?.name ?? '')
-    .filter((name) => Boolean(name));
+  const dogsWithDays = (budgetDogs ?? [])
+    .map((row) => ({
+      name: ((row.dog as { name?: string } | null)?.name ?? '').trim(),
+      requestedDays: Number(row.requested_days ?? 0)
+    }))
+    .filter((dog) => Boolean(dog.name) && dog.requestedDays > 0);
 
   // 5. Construir mensaje
-  const dogsSummary = buildDogsSummary(dogNames);
+  const dogsSummary = buildDogsSummary(dogsWithDays);
   const now = new Date();
   const link = `${origin}/budget-response/${budgetTyped.public_token}`;
 

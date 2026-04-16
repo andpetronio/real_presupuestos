@@ -11,19 +11,30 @@ type TestEventInput = {
 const createEvent = ({ userId, pathname = '/dashboard', search = '' }: TestEventInput) =>
   ({
     locals: {
-      user: userId === undefined ? null : ({ id: userId } as { id: string })
+      user: userId === undefined ? null : ({ id: userId } as { id: string }),
+      supabase: {
+        from: () => ({
+          select: () => ({
+            eq: () => ({
+              is: async () => ({ count: 0, error: null })
+            })
+          })
+        })
+      }
     },
     url: new URL(`https://example.test${pathname}${search}`)
-  }) as Parameters<typeof load>[0];
+  }) as unknown as Parameters<typeof load>[0];
 
 describe('(app)/+layout.server load', () => {
   it('acepta user autenticado desde locals y devuelve nav interna', async () => {
     const result = (await load(createEvent({ userId: '  user-123  ' }))) as {
       actorId: string;
+      pendingAcceptedCount: number;
       navContext: ReadonlyArray<{ key: string; href: string; label: string }>;
     };
 
     expect(result.actorId).toBe('user-123');
+    expect(result.pendingAcceptedCount).toBe(0);
     expect(result.navContext).toEqual(
       navItems.map(({ key, href, label }) => ({ key, href, label }))
     );

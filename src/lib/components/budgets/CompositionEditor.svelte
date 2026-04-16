@@ -73,7 +73,6 @@
           value={row.dogId}
           onchange={(event) => updateRow(index, 'dogId', (event.currentTarget as HTMLSelectElement).value)}
         >
-          <option value="">Seleccionar perro</option>
           {#each getDogsForTutor(tutorSelected) as dog (dog.id)}
             <option value={dog.id}>{dog.name}</option>
           {/each}
@@ -90,7 +89,6 @@
           value={row.recipeId}
           onchange={(event) => updateRow(index, 'recipeId', (event.currentTarget as HTMLSelectElement).value)}
         >
-          <option value="">Seleccionar receta</option>
           {#each getRecipesForDog(row.dogId) as recipe (recipe.id)}
             <option value={recipe.id}>{recipe.name}</option>
           {/each}

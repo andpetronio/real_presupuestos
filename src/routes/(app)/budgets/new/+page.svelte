@@ -31,7 +31,6 @@
     values?: {
       tutorId: string;
       budgetMonth: string;
-      budgetDays: string;
       notes: string;
       vacuumBagSmallQty: string;
       vacuumBagLargeQty: string;
@@ -52,7 +51,6 @@
   const values = $derived({
     tutorId: form?.values?.tutorId ?? '',
     budgetMonth: form?.values?.budgetMonth ?? currentMonth,
-    budgetDays: form?.values?.budgetDays ?? String(data.settings?.default_requested_days ?? 30),
     notes: form?.values?.notes ?? '',
     vacuumBagSmallQty: form?.values?.vacuumBagSmallQty ?? '',
     vacuumBagLargeQty: form?.values?.vacuumBagLargeQty ?? '',
@@ -113,21 +111,16 @@
         rows = rows.map((row) => ({ ...row, dogId: '', recipeId: '' }));
       }}
     >
-      <option value="">Seleccionar tutor</option>
       {#each data.tutorOptions as tutor (tutor.id)}
         <option value={tutor.id}>{tutor.fullName}</option>
       {/each}
     </Select>
   </div>
 
-  <div class="grid gap-3 rounded-lg border border-gray-200 p-4 md:grid-cols-2">
+  <div class="grid gap-3 rounded-lg border border-gray-200 p-4 md:grid-cols-1">
     <div class="grid gap-1">
       <Label for="budgetMonth" class="mb-1">Mes del presupuesto</Label>
       <Input id="budgetMonth" name="budgetMonth" type="month" required value={values.budgetMonth} />
-    </div>
-    <div class="grid gap-1">
-      <Label for="budgetDays" class="mb-1">Días del presupuesto</Label>
-      <Input id="budgetDays" name="budgetDays" type="number" min="1" step="1" required value={values.budgetDays} />
     </div>
   </div>
 

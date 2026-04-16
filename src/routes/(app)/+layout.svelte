@@ -20,6 +20,7 @@
 
   type LayoutData = {
     actorId: string;
+    pendingAcceptedCount: number;
     navContext: ReadonlyArray<{
       key: AdminModule;
       href: string;
@@ -74,6 +75,17 @@
   };
 
   const breadcrumbs = $derived(getBreadcrumbs(page.url.pathname));
+
+  const badgeModules = new Set<AdminModule>(['budgets', 'tracking' as AdminModule]);
+
+  const getBadgeCount = (module: AdminModule): number => {
+    return badgeModules.has(module) ? data.pendingAcceptedCount : 0;
+  };
+
+  const getNavLabel = (item: NavItem): string => {
+    const badge = getBadgeCount(item.key);
+    return badge > 0 ? `${item.label} (${badge})` : item.label;
+  };
 
   const sidebarUi = uiHelpers();
   let isDesktop = $state(false);
@@ -147,7 +159,7 @@
           {#each resolvedNavItems as item (item.href)}
             <SidebarItem
               href={item.href}
-              label={item.label}
+              label={getNavLabel(item)}
               active={page.url.pathname.startsWith(item.href)}
             >
               {#snippet icon()}
@@ -172,7 +184,7 @@
         <SidebarGroup class="mt-12">
           <span class="mb-4 block px-2 text-lg font-semibold text-primary">Menú</span>
           {#each resolvedNavItems as item (item.href)}
-            <SidebarItem href={item.href} label={item.label} active={page.url.pathname.startsWith(item.href)} onclick={closeSidebar}>
+            <SidebarItem href={item.href} label={getNavLabel(item)} active={page.url.pathname.startsWith(item.href)} onclick={closeSidebar}>
               {#snippet icon()}
                 <item.icon class="me-2.5 h-5 w-5" />
               {/snippet}

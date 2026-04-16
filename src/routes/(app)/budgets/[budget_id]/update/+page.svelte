@@ -48,7 +48,6 @@
       budgetId?: string;
       tutorId: string;
       budgetMonth: string;
-      budgetDays: string;
       notes: string;
       vacuumBagSmallQty: string;
       vacuumBagLargeQty: string;
@@ -70,7 +69,6 @@
     budgetId: form?.values?.budgetId ?? data.budget.id,
     tutorId: form?.values?.tutorId ?? (data.budget.tutor_id ?? ''),
     budgetMonth: form?.values?.budgetMonth ?? (data.budget.reference_month?.slice(0, 7) ?? currentMonth),
-    budgetDays: form?.values?.budgetDays ?? String(data.budget.reference_days ?? data.settings?.default_requested_days ?? 30),
     notes: form?.values?.notes ?? (data.budget.notes ?? ''),
     vacuumBagSmallQty: form?.values?.vacuumBagSmallQty ?? String(data.budget.vacuum_bag_small_qty ?? ''),
     vacuumBagLargeQty: form?.values?.vacuumBagLargeQty ?? String(data.budget.vacuum_bag_large_qty ?? ''),
@@ -147,14 +145,10 @@
     </Select>
   </div>
 
-  <div class="grid gap-3 rounded-lg border border-gray-200 p-4 md:grid-cols-2">
+  <div class="grid gap-3 rounded-lg border border-gray-200 p-4 md:grid-cols-1">
     <div class="grid gap-1">
       <Label for="budgetMonth" class="mb-1">Mes del presupuesto</Label>
       <Input id="budgetMonth" name="budgetMonth" type="month" required value={values.budgetMonth} />
-    </div>
-    <div class="grid gap-1">
-      <Label for="budgetDays" class="mb-1">Días del presupuesto</Label>
-      <Input id="budgetDays" name="budgetDays" type="number" min="1" step="1" required value={values.budgetDays} />
     </div>
   </div>
 

@@ -241,7 +241,10 @@ describe('(app)/budgets/+page.server actions.create', () => {
       error: null
     });
     const budgetDogsEq = vi.fn().mockResolvedValue({
-      data: [{ dog: { name: 'Nanuk' } }, { dog: { name: 'Logan' } }],
+      data: [
+        { requested_days: 30, dog: { name: 'Nanuk' } },
+        { requested_days: 20, dog: { name: 'Logan' } }
+      ],
       error: null
     });
 
@@ -294,7 +297,7 @@ describe('(app)/budgets/+page.server actions.create', () => {
     expect(budgetUpdate).toHaveBeenCalled();
     const updatePayload = budgetUpdate.mock.calls[0][0] as Record<string, string | null>;
     expect(updatePayload.whatsapp_message_draft).toContain('Ana Tutor');
-    expect(updatePayload.whatsapp_message_draft).toContain('Nanuk y Logan');
+    expect(updatePayload.whatsapp_message_draft).toContain('30 días para Nanuk y 20 días para Logan');
     expect(updatePayload.whatsapp_message_draft).toContain('https://test.local/budget-response/token1234567890');
     expect(updatePayload.whatsapp_message_sent).toBeNull();
   });
@@ -323,7 +326,7 @@ describe('(app)/budgets/+page.server actions.create', () => {
       },
       error: null
     });
-    const budgetDogsEq = vi.fn().mockResolvedValue({ data: [{ dog: { name: 'Nanuk' } }], error: null });
+    const budgetDogsEq = vi.fn().mockResolvedValue({ data: [{ requested_days: 30, dog: { name: 'Nanuk' } }], error: null });
     const budgetUpdate = vi.fn();
 
     const from = vi.fn((table: string) => {
@@ -396,7 +399,7 @@ describe('(app)/budgets/+page.server actions.create', () => {
       },
       error: null
     });
-    const budgetDogsEq = vi.fn().mockResolvedValue({ data: [{ dog: { name: 'Nanuk' } }], error: null });
+    const budgetDogsEq = vi.fn().mockResolvedValue({ data: [{ requested_days: 30, dog: { name: 'Nanuk' } }], error: null });
     const budgetUpdate = vi.fn();
 
     const from = vi.fn((table: string) => {

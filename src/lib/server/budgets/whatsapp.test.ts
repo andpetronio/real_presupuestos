@@ -48,20 +48,38 @@ describe('buildDogsSummary', () => {
     expect(buildDogsSummary([])).toBe('tu perro');
   });
 
-  it('1 perro → nombre directo', () => {
-    expect(buildDogsSummary(['Mora'])).toBe('Mora');
+  it('1 perro → días + nombre', () => {
+    expect(buildDogsSummary([{ name: 'Mora', requestedDays: 10 }])).toBe('10 días para Mora');
   });
 
-  it('2 perros → "A y B"', () => {
-    expect(buildDogsSummary(['Mora', 'Luna'])).toBe('Mora y Luna');
+  it('2 perros → "A y B" con días por perro', () => {
+    expect(
+      buildDogsSummary([
+        { name: 'Mora', requestedDays: 10 },
+        { name: 'Luna', requestedDays: 20 }
+      ])
+    ).toBe('10 días para Mora y 20 días para Luna');
   });
 
-  it('3+ perros → "A, B y C"', () => {
-    expect(buildDogsSummary(['Mora', 'Luna', 'Rex'])).toBe('Mora, Luna y Rex');
+  it('3+ perros → "A, B y C" con días por perro', () => {
+    expect(
+      buildDogsSummary([
+        { name: 'Mora', requestedDays: 10 },
+        { name: 'Luna', requestedDays: 20 },
+        { name: 'Rex', requestedDays: 15 }
+      ])
+    ).toBe('10 días para Mora, 20 días para Luna y 15 días para Rex');
   });
 
-  it('4 perros → "A, B, C y D"', () => {
-    expect(buildDogsSummary(['A', 'B', 'C', 'D'])).toBe('A, B, C y D');
+  it('4 perros → "A, B, C y D" con días por perro', () => {
+    expect(
+      buildDogsSummary([
+        { name: 'A', requestedDays: 1 },
+        { name: 'B', requestedDays: 2 },
+        { name: 'C', requestedDays: 3 },
+        { name: 'D', requestedDays: 4 }
+      ])
+    ).toBe('1 días para A, 2 días para B, 3 días para C y 4 días para D');
   });
 });
 
@@ -178,8 +196,8 @@ const makeWhatsappSupabase = (overrides: {
         eq: vi.fn().mockResolvedValue(
           overrides.budgetDogsResult ?? {
             data: [
-              { dog: { name: 'Mora' } },
-              { dog: { name: 'Luna' } }
+              { requested_days: 30, dog: { name: 'Mora' } },
+              { requested_days: 20, dog: { name: 'Luna' } }
             ],
             error: null
           }
@@ -456,7 +474,7 @@ describe('sendBudgetWhatsapp', () => {
 
     it('funciona con un solo perro', async () => {
       const supabase = makeWhatsappSupabase({
-        budgetDogsResult: { data: [{ dog: { name: 'Mora' } }], error: null }
+        budgetDogsResult: { data: [{ requested_days: 30, dog: { name: 'Mora' } }], error: null }
       });
       const result = await sendBudgetWhatsapp({ budgetId: 'b-1', supabase, origin: 'https://example.com' });
       expect(result).toMatchObject({ ok: true });

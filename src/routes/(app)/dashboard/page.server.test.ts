@@ -9,6 +9,25 @@ type BudgetMetricRow = {
   final_sale_price: number;
 };
 
+const createSupabaseFromMock = (rows: BudgetMetricRow[], error: unknown = null, unviewedCount = 0) =>
+  vi.fn().mockImplementation((table: string) => {
+    if (table !== 'budgets') return { select: vi.fn() };
+
+    return {
+      select: vi.fn((_columns?: string, options?: { head?: boolean }) => {
+        if (options?.head) {
+          return {
+            eq: () => ({
+              is: async () => ({ count: unviewedCount, error: null })
+            })
+          };
+        }
+
+        return Promise.resolve({ data: rows, error });
+      })
+    };
+  });
+
 const createEvent = (params: {
   rows?: BudgetMetricRow[];
   error?: unknown;
@@ -16,9 +35,7 @@ const createEvent = (params: {
 }) => {
   const { rows = [], error = null, period = '30d' } = params;
 
-  const select = vi.fn().mockResolvedValue({ data: rows, error });
-
-  const from = vi.fn().mockReturnValue({ select });
+  const from = createSupabaseFromMock(rows, error, 0);
 
   return {
     parent: async () => ({ actorId: 'op-1' }),
@@ -207,8 +224,7 @@ describe('(app)/dashboard/+page.server load', () => {
 
 describe('(app)/dashboard/+page.server period options', () => {
   const createPeriodEvent = (period: string | null) => {
-    const select = vi.fn().mockResolvedValue({ data: [], error: null });
-    const from = vi.fn().mockReturnValue({ select });
+    const from = createSupabaseFromMock([], null, 0);
 
     return {
       parent: async () => ({ actorId: 'op-1' }),
@@ -275,8 +291,7 @@ describe('(app)/dashboard/+page.server period options', () => {
 
 describe('(app)/dashboard/+page.server metrics calculation', () => {
   const createMetricsEvent = (rows: BudgetMetricRow[], period = '30d') => {
-    const select = vi.fn().mockResolvedValue({ data: rows, error: null });
-    const from = vi.fn().mockReturnValue({ select });
+    const from = createSupabaseFromMock(rows, null, 0);
 
     return {
       parent: async () => ({ actorId: 'op-1' }),
@@ -490,8 +505,7 @@ describe('(app)/dashboard/+page.server metrics calculation', () => {
   });
 
   it('devuelve error state cuando la query de supabase falla', async () => {
-    const select = vi.fn().mockResolvedValue({ data: null, error: new Error('Network error') });
-    const from = vi.fn().mockReturnValue({ select });
+    const from = createSupabaseFromMock([], new Error('Network error'), 0);
 
     const data = (await load({
       parent: async () => ({ actorId: 'op-1' }),

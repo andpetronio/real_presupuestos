@@ -223,7 +223,6 @@ export const getBudgetById = async (params: {
 // ─── Importaciones para las funciones de save ─────────────────────────────────
 
 import { parseMonthInput } from './parsers';
-import { parsePositiveInteger } from '$lib/server/forms/parsers';
 import { parseComposition, parseOperationalInputs, getSettingsForBudgetFormula, readRecipeDailyCosts, parseDefaultExpiration, createBudgetPublicToken } from './parsers';
 import { calculateBudgetTotals, type BudgetSettingsCosts } from './calculation';
 import type { ActionValues } from './types';
@@ -266,15 +265,18 @@ export const validateBudgetInput = async (params: {
     return { valid: false, operatorError: 'Indicá el mes del presupuesto con formato válido (AAAA-MM).', values };
   }
 
-  const referenceDays = parsePositiveInteger(values.budgetDays);
-  if (referenceDays === null) {
-    return { valid: false, operatorError: 'Indicá para cuántos días corresponde el presupuesto (entero mayor a 0).', values };
-  }
-
   const composition = parseComposition(values.rows);
   if (!composition) {
     return { valid: false, operatorError: 'Cargá al menos una receta con perro y días asignados (sin duplicar receta por perro).', values };
   }
+
+  // reference_days del presupuesto = máximo de días entre perros (no suma total)
+  const requestedDaysByDog = new Map<string, number>();
+  for (const row of composition) {
+    requestedDaysByDog.set(row.dogId, (requestedDaysByDog.get(row.dogId) ?? 0) + row.assignedDays);
+  }
+
+  const referenceDays = Math.max(...Array.from(requestedDaysByDog.values()));
 
   const operationals = parseOperationalInputs(values);
   if (!operationals) {
@@ -527,4 +529,3 @@ export const persistBudget = async (params: {
 
   return { ok: true, budgetId: newBudgetId };
 };
-

@@ -21,6 +21,7 @@ describe('navigation', () => {
       'dogs',
       'recipes',
       'raw-materials',
+      'tracking',
       'settings'
     ]);
   });

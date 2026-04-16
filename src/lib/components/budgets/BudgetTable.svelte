@@ -63,6 +63,11 @@
               >
                 Ver
               </Button>
+              {#if budget.status === 'accepted'}
+                <Button href={route('/seguimiento/', budget.id)} size="xs" color="light">
+                  Seguimiento
+                </Button>
+              {/if}
               {#if budget.status === 'draft' || budget.status === 'ready_to_send'}
                 <Button
                   href={route('/budgets/', budget.id, '/update')}

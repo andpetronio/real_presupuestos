@@ -1,6 +1,7 @@
 import type { PageServerLoad } from './$types';
 import type { OperatorMessage } from '$lib/server/shared/ui-state';
 import type { BudgetStatus } from '$lib/types/budget';
+import { getUnviewedAcceptedBudgetCount } from '$lib/server/budgets/tracking';
 
 type PeriodKey = '7d' | '30d' | '90d' | 'mtd';
 type BucketGranularity = 'day' | 'week';
@@ -247,6 +248,7 @@ export const load: PageServerLoad = async ({ parent, locals, url }) => {
     if (error) throw error;
 
     const rows = (data ?? []) as BudgetMetricRow[];
+    const pendingAcceptedCount = await getUnviewedAcceptedBudgetCount(locals.supabase);
     const current = aggregateMetrics(rows, periodStart, now);
     const previous = aggregateMetrics(rows, previousPeriodStart, previousPeriodEnd);
     const timeseries = buildTimeSeries(rows, periodStart, now, granularity);
@@ -274,7 +276,8 @@ export const load: PageServerLoad = async ({ parent, locals, url }) => {
         acceptanceRateDeltaPct: getDeltaPercentage(current.acceptanceRate, previous.acceptanceRate),
         acceptedTotalDeltaPct: getDeltaPercentage(current.acceptedTotal, previous.acceptedTotal),
         avgAcceptedTicketDeltaPct: getDeltaPercentage(current.avgAcceptedTicket, previous.avgAcceptedTicket)
-      }
+      },
+      pendingAcceptedCount
     };
   } catch {
     return {
@@ -300,7 +303,8 @@ export const load: PageServerLoad = async ({ parent, locals, url }) => {
         acceptanceRateDeltaPct: 0,
         acceptedTotalDeltaPct: 0,
         avgAcceptedTicketDeltaPct: 0
-      }
+      },
+      pendingAcceptedCount: 0
     };
   }
 };

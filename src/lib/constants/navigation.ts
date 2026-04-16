@@ -1,4 +1,4 @@
-import { Gauge, CurrencyDollar, Users, PawPrint, CookingPot, Package, Gear, WarningCircle } from '$lib/icons/phosphor';
+import { Gauge, CurrencyDollar, Users, PawPrint, CookingPot, Package, Gear, WarningCircle, ChartLine } from '$lib/icons/phosphor';
 
 export type AdminModule =
   | 'dashboard'
@@ -8,6 +8,7 @@ export type AdminModule =
   | 'dogs'
   | 'recipes'
   | 'raw-materials'
+  | 'tracking'
   | 'settings';
 
 export type AdminHref =
@@ -18,6 +19,7 @@ export type AdminHref =
   | '/dogs'
   | '/recipes'
   | '/raw-materials'
+  | '/seguimiento'
   | '/settings';
 
 type PhosphorIcon = typeof Gauge;
@@ -44,5 +46,6 @@ export const navItems: ReadonlyArray<NavItem> = [
     icon: Package,
     internalOnly: true
   },
+  { key: 'tracking', href: '/seguimiento', label: 'Seguimiento', icon: ChartLine, internalOnly: true },
   { key: 'settings', href: '/settings', label: 'Configuración', icon: Gear, internalOnly: true }
 ] as const;

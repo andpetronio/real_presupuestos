@@ -44,6 +44,7 @@
       acceptedTotalDeltaPct: number | null;
       avgAcceptedTicketDeltaPct: number | null;
     };
+    pendingAcceptedCount: number;
   };
 
   let { data }: { data: DashboardData } = $props();
@@ -59,6 +60,20 @@
 </script>
 
 <section class="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-12">
+  {#if data.pendingAcceptedCount > 0}
+    <Card size="xl" class="h-full border-l-4 border-l-yellow-400 p-5 shadow-sm md:col-span-2 xl:col-span-12">
+      <div class="flex flex-wrap items-center justify-between gap-3">
+        <div>
+          <p class="text-sm font-semibold text-gray-900">Tenés novedades para gestionar</p>
+          <p class="text-sm text-gray-600">
+            Hay {data.pendingAcceptedCount} presupuesto{data.pendingAcceptedCount === 1 ? '' : 's'} aceptado{data.pendingAcceptedCount === 1 ? '' : 's'} sin revisar.
+          </p>
+        </div>
+        <Button href="/seguimiento" color="light">Ir a seguimiento</Button>
+      </div>
+    </Card>
+  {/if}
+
   <Card size="xl" class="h-full p-6 shadow-sm md:col-span-2 xl:col-span-8">
     <div class="flex flex-wrap items-end justify-between gap-3 border-b border-gray-100 pb-4">
       <div>

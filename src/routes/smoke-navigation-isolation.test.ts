@@ -16,6 +16,7 @@ describe('smoke: navegación admin e aislamiento público', () => {
       '/dogs',
       '/recipes',
       '/raw-materials',
+      '/seguimiento',
       '/settings'
     ]);
     expect(hrefs.some((href) => href.includes('budget-response'))).toBe(false);
