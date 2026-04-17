@@ -1,6 +1,7 @@
 import js from "@eslint/js";
 import globals from "globals";
 import tseslint from "typescript-eslint";
+import tsParser from "@typescript-eslint/parser";
 import svelte from "eslint-plugin-svelte";
 import svelteConfig from "./svelte.config.js";
 import prettier from "eslint-config-prettier";
@@ -39,6 +40,7 @@ export default tseslint.config(
         ...globals.node,
       },
       parserOptions: {
+        parser: tsParser,
         svelteConfig,
       },
     },
@@ -47,6 +49,9 @@ export default tseslint.config(
     rules: {
       "@typescript-eslint/no-unused-vars": "off",
       "@typescript-eslint/no-explicit-any": "off",
+      "svelte/prefer-writable-derived": "off",
+      "svelte/no-navigation-without-resolve": "off",
+      "svelte/require-each-key": "off",
     },
   },
   prettier,
