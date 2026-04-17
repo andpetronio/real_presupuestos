@@ -6,26 +6,21 @@ import { actions as budgetsActions, load as budgetsLoad } from '../+page.server'
 export const load: PageServerLoad = async ({ locals, url }) => {
   const [options] = await Promise.all([loadBudgetOptions(locals.supabase)]);
 
-  const data = (await budgetsLoad({ locals, url } as unknown as Parameters<typeof budgetsLoad>[0])) as {
-    editingBudget: unknown;
-    editingRows: unknown;
-  };
-
+  const listData = await budgetsLoad({ locals, url } as Parameters<typeof budgetsLoad>[0]);
+  
   return {
     tutorOptions: options.tutorOptions,
     dogOptions: options.dogOptions,
     recipeOptions: options.recipeOptions,
     settings: options.settings,
-    editingBudget: data.editingBudget,
-    editingRows: data.editingRows
+    editingBudget: (listData as { editingBudget?: unknown }).editingBudget,
+    editingRows: (listData as { editingRows?: unknown }).editingRows
   };
 };
 
 export const actions: Actions = {
   create: async (event) => {
-    const result = await budgetsActions.create(
-      event as unknown as Parameters<(typeof budgetsActions)['create']>[0]
-    );
+    const result = await budgetsActions.create(event as unknown as Parameters<typeof budgetsActions.create>[0]);
 
     if (result && typeof result === 'object' && 'status' in result) {
       return result;

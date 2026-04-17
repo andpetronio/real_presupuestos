@@ -20,6 +20,37 @@ export type RecipeTrackingRow = {
   deliveredDays: number;
 };
 
+type BudgetDogRecipeDeliveryRow = {
+  recipe_days: number;
+  delivered_at: string | null;
+};
+
+type BudgetDogRecipeRow = {
+  id: string;
+  recipe_id: string;
+  assigned_days: number;
+  recipes: { name: string | null } | null;
+  budget_recipe_deliveries: BudgetDogRecipeDeliveryRow[] | null;
+};
+
+type BudgetDogRow = {
+  id: string;
+  dog_id: string;
+  dogs: {
+    name: string | null;
+    tutors: { full_name: string | null }[];
+  } | null;
+  budget_dog_recipes: BudgetDogRecipeRow[] | null;
+};
+
+type BudgetWithRelations = {
+  id: string;
+  reference_month: string | null;
+  budget_dogs: BudgetDogRow[] | null;
+};
+
+type BudgetsQueryResult = BudgetWithRelations[];
+
 export const getUnviewedAcceptedBudgetCount = async (supabase: SupabaseClient): Promise<number> => {
   const { count, error } = await supabase
     .from('budgets')
@@ -169,15 +200,15 @@ export const getDeliveryAlerts = async (
     budgetsQuery = budgetsQuery.eq('id', filterBudgetId);
   }
 
-  const { data: budgets, error } = await budgetsQuery;
+  const { data: budgets, error } = await budgetsQuery.returns<BudgetsQueryResult>();
 
   if (error || !budgets) {
     return [];
   }
 
   const allDogIds = [...new Set(
-    (budgets as any[]).flatMap((b) =>
-      (b.budget_dogs ?? []).map((bd: any) => bd.dog_id)
+    budgets.flatMap((b) =>
+      (b.budget_dogs ?? []).map((bd) => bd.dog_id)
     )
   )];
 
@@ -187,7 +218,7 @@ export const getDeliveryAlerts = async (
       .from('dog_delivery_schedules')
       .select('dog_id, day_of_month, pct')
       .in('dog_id', allDogIds);
-    scheduleRows = (schedules ?? []) as typeof scheduleRows;
+    scheduleRows = schedules ?? [];
   }
 
   const scheduleByDogId = new Map<string, Array<{ day_of_month: number; pct: number }>>();
@@ -200,28 +231,27 @@ export const getDeliveryAlerts = async (
 
   const alerts: DeliveryAlert[] = [];
 
-  for (const budget of budgets as any[]) {
+  for (const budget of budgets) {
     for (const budgetDog of budget.budget_dogs ?? []) {
       const dogId = budgetDog.dog_id;
       const schedule = scheduleByDogId.get(dogId) ?? [];
 
       if (schedule.length === 0) continue;
 
-      const tutorName =
-        (budgetDog.dogs?.tutors as any)?.full_name ?? 'Sin tutor';
+      const tutorName = budgetDog.dogs?.tutors?.[0]?.full_name ?? 'Sin tutor';
       const dogName = budgetDog.dogs?.name ?? 'Perro';
 
       for (const recipe of budgetDog.budget_dog_recipes ?? []) {
         const assignedDays = Number(recipe.assigned_days ?? 0);
 
-        const deliveriesThisMonth = (recipe.budget_recipe_deliveries ?? []).filter((d: any) => {
+        const deliveriesThisMonth = (recipe.budget_recipe_deliveries ?? []).filter((d) => {
           const deliveredAt = d.delivered_at;
           if (!deliveredAt) return false;
           return deliveredAt >= currentMonthStart && deliveredAt <= currentMonthEnd;
         });
 
         const deliveredMeals = deliveriesThisMonth.reduce(
-          (sum: number, d: any) => sum + Number(d.recipe_days ?? 0),
+          (sum, d) => sum + Number(d.recipe_days ?? 0),
           0
         );
 
@@ -248,7 +278,7 @@ export const getDeliveryAlerts = async (
             dogName,
             tutorName,
             recipeId: recipe.recipe_id,
-            recipeName: (recipe.recipes as any)?.name ?? 'Receta',
+            recipeName: recipe.recipes?.name ?? 'Receta',
             budgetDogRecipeId: recipe.id,
             assignedDays,
             dayOfMonth,
