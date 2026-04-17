@@ -7,10 +7,11 @@ import type { SupabaseClient } from '@supabase/supabase-js';
 import type { BudgetStatus } from '$lib/types/budget';
 import type { BudgetOperationalInputs, CalculatedDogTotals } from './calculation';
 import type { ParsedCompositionRow, OperationResult } from './types';
+import { createTransaction } from '$lib/server/shared/multi-step-transaction';
 
 /**
  * Guarda la composición del presupuesto (budget_dogs + budget_dog_recipes).
- * Primero borra los registros existentes, luego inserta los nuevos.
+ * Ejecuta operaciones en orden seguro con rollback automático.
  *
  * @param params.budgetId ID del presupuesto padre.
  * @param params.supabase Instancia de Supabase.
@@ -25,11 +26,7 @@ export const saveBudgetComposition = async (params: {
 }): Promise<OperationResult> => {
   const { budgetId, supabase, composition, dogTotals } = params;
 
-  // Borrar registros existentes
-  const { error: deleteError } = await supabase.from('budget_dogs').delete().eq('budget_id', budgetId);
-  if (deleteError) {
-    return { ok: false, message: 'No pudimos actualizar el detalle de perros del presupuesto.' };
-  }
+  const tx = createTransaction(supabase);
 
   // Mapear días requeridos por perro
   const requestedDaysByDog = new Map<string, number>();
@@ -37,7 +34,7 @@ export const saveBudgetComposition = async (params: {
     requestedDaysByDog.set(row.dogId, (requestedDaysByDog.get(row.dogId) ?? 0) + row.assignedDays);
   }
 
-  // Insertar budget_dogs
+  // Preparar budget_dogs rows
   const dogRows = dogTotals.map((dogTotal) => ({
     budget_id: budgetId,
     dog_id: dogTotal.dogId,
@@ -48,6 +45,7 @@ export const saveBudgetComposition = async (params: {
     final_sale_price: dogTotal.finalSalePrice
   }));
 
+  // Insertar budget_dogs
   const { data: createdBudgetDogs, error: budgetDogsError } = await supabase
     .from('budget_dogs')
     .insert(dogRows)
@@ -57,10 +55,16 @@ export const saveBudgetComposition = async (params: {
     return { ok: false, message: 'No pudimos guardar los perros del presupuesto.' };
   }
 
+  // Registrar rollback para budget_dogs si falla el siguiente paso
+  const createdBudgetDogIds = createdBudgetDogs.map((b) => b.id);
+  tx.registerRollback(async () => {
+    await supabase.from('budget_dogs').delete().in('id', createdBudgetDogIds);
+  });
+
   // Mapear budget_dog_id por dog_id
   const budgetDogIdByDogId = new Map(createdBudgetDogs.map((row) => [row.dog_id, row.id]));
 
-  // Insertar budget_dog_recipes
+  // Preparar budget_dog_recipes rows
   const recipeRows = composition.map((row) => ({
     budget_dog_id: budgetDogIdByDogId.get(row.dogId) ?? '',
     recipe_id: row.recipeId,
@@ -69,11 +73,14 @@ export const saveBudgetComposition = async (params: {
 
   const hasInvalidBudgetDogReference = recipeRows.some((row) => !row.budget_dog_id);
   if (hasInvalidBudgetDogReference) {
+    await tx.rollback();
     return { ok: false, message: 'No pudimos vincular recetas con perros del presupuesto.' };
   }
 
+  // Insertar budget_dog_recipes
   const { error: recipeRowsError } = await supabase.from('budget_dog_recipes').insert(recipeRows);
   if (recipeRowsError) {
+    await tx.rollback();
     return { ok: false, message: 'No pudimos guardar las recetas asignadas del presupuesto.' };
   }
 

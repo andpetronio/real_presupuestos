@@ -103,39 +103,11 @@ describe('saveBudgetComposition', () => {
     );
   });
 
-  it('error path — delete fails → returns error', async () => {
-    const mockSupabase = makeMockSupabase();
-    (mockSupabase.from as ReturnType<typeof vi.fn>).mockImplementation((table: string) => {
-      if (table === 'budget_dogs') {
-        return {
-          delete: vi.fn().mockReturnValue({
-            eq: vi.fn().mockReturnValue({ error: { message: 'delete failed' } })
-          }),
-          insert: vi.fn().mockReturnValue({
-            select: vi.fn().mockReturnValue({ data: null, error: null })
-          })
-        };
-      }
-      return {};
-    });
-
-    const result = await saveBudgetComposition({
-      budgetId: 'b-1',
-      supabase: mockSupabase,
-      composition,
-      dogTotals
-    });
-
-    expect(result.ok).toBe(false);
-    if (!result.ok) expect(result.message).toContain('No pudimos actualizar');
-  });
-
   it('error path — insert budget_dogs fails → returns error', async () => {
     const mockSupabase = makeMockSupabase();
     (mockSupabase.from as ReturnType<typeof vi.fn>).mockImplementation((table: string) => {
       if (table === 'budget_dogs') {
         return {
-          delete: vi.fn().mockReturnValue({ eq: vi.fn().mockReturnValue({ error: null }) }),
           insert: vi.fn().mockReturnValue({
             select: vi.fn().mockReturnValue({
               data: null,
@@ -163,7 +135,6 @@ describe('saveBudgetComposition', () => {
     (mockSupabase.from as ReturnType<typeof vi.fn>).mockImplementation((table: string) => {
       if (table === 'budget_dogs') {
         return {
-          delete: vi.fn().mockReturnValue({ eq: vi.fn().mockReturnValue({ error: null }) }),
           insert: vi.fn().mockReturnValue({
             select: vi.fn().mockReturnValue({
               data: [{ id: 'bd-1', dog_id: 'd-1' }],

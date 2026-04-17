@@ -8,7 +8,9 @@
     "dev": "vite dev",
     "build": "vite build",
     "check": "svelte-kit sync && svelte-check --tsconfig ./tsconfig.json",
-    "test": "vitest"
+    "test": "vitest",
+    "lint": "prettier --check .",
+    "format": "prettier --write ."
   },
   "devDependencies": {
     "@sveltejs/adapter-auto": "^4.0.0",
@@ -21,6 +23,7 @@
     "flowbite": "^4.0.1",
     "flowbite-svelte": "^1.33.1",
     "postcss": "^8.5.9",
+    "prettier": "^3.8.3",
     "svelte": "^5.0.0",
     "svelte-check": "^4.0.0",
     "tailwindcss": "^4.2.2",
