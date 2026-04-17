@@ -1,7 +1,7 @@
 import type { PageServerLoad } from './$types';
 import type { OperatorMessage } from '$lib/server/shared/ui-state';
 import type { BudgetStatus } from '$lib/types/budget';
-import { getUnviewedAcceptedBudgetCount } from '$lib/server/budgets/tracking';
+import { getUnviewedAcceptedBudgetCount, getDeliveryAlerts } from '$lib/server/budgets/tracking';
 
 type PeriodKey = '7d' | '30d' | '90d' | 'mtd';
 type BucketGranularity = 'day' | 'week';
@@ -274,6 +274,8 @@ export const load: PageServerLoad = async ({ parent, locals, url }) => {
     const prevCollected = prevPayments.reduce((sum, p) => sum + Number(p.amount ?? 0), 0);
     const paymentsDelta = getDeltaPercentage(paymentsCollected, prevCollected);
 
+    const deliveryAlerts = await getDeliveryAlerts(locals.supabase, 5).catch(() => []);
+
     return {
       state: 'success' as const,
       message: null,
@@ -304,9 +306,12 @@ export const load: PageServerLoad = async ({ parent, locals, url }) => {
         count: paymentsCount,
         avgAmount: paymentsAvgAmount
       },
-      pendingAcceptedCount
+      pendingAcceptedCount,
+      deliveryAlerts
     };
   } catch {
+    const deliveryAlerts = await getDeliveryAlerts(locals.supabase, 5).catch(() => []);
+
     return {
       state: 'error' as const,
       message: fallbackErrorMessage,
@@ -337,7 +342,8 @@ export const load: PageServerLoad = async ({ parent, locals, url }) => {
         count: 0,
         avgAmount: 0
       },
-      pendingAcceptedCount: 0
+      pendingAcceptedCount: 0,
+      deliveryAlerts
     };
   }
 };

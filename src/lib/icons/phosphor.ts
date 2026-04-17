@@ -18,7 +18,8 @@ import {
   Trash,
   ArrowCounterClockwise,
   List,
-  Dog
+  Dog,
+  CalendarBlank
 } from 'phosphor-svelte';
 
 export {
@@ -41,5 +42,6 @@ export {
   Trash,
   ArrowCounterClockwise,
   List,
-  Dog
+  Dog,
+  CalendarBlank
 };

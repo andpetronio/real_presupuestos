@@ -2,6 +2,7 @@
   import { Badge, Button, Card, Input, Label, Select, Textarea } from 'flowbite-svelte';
   import FeedbackBanner from '$lib/components/FeedbackBanner.svelte';
   import { formatArs } from '$lib/shared/currency';
+  import { CalendarBlank } from '$lib/icons/phosphor';
 
   type RecipeTracking = {
     budgetDogRecipeId: string;
@@ -14,6 +15,19 @@
     pendingDeliveryDays: number;
     preparedPct: number;
     deliveredPct: number;
+  };
+
+  type DeliveryAlert = {
+    budgetId: string;
+    dogName: string;
+    tutorName: string;
+    recipeName: string;
+    dayOfMonth: number;
+    pct: number;
+    totalMealsForPortion: number;
+    deliveredMeals: number;
+    remainingMeals: number;
+    daysUntil: number;
   };
 
   type PageData = {
@@ -58,6 +72,7 @@
       paidAmount: number;
       pendingAmount: number;
     };
+    deliveryAlerts: DeliveryAlert[];
   };
 
   type ActionData = {
@@ -88,6 +103,25 @@
   <FeedbackBanner message={form.operatorError} color="red" />
 {:else if form?.operatorSuccess}
   <FeedbackBanner message={form.operatorSuccess} color="green" />
+{/if}
+
+{#if data.deliveryAlerts && data.deliveryAlerts.length > 0}
+  <div class="mb-4 rounded-lg border border-yellow-300 bg-yellow-50 p-4 xl:col-span-12">
+    <div class="flex items-start gap-3">
+      <CalendarBlank class="h-5 w-5 flex-shrink-0 text-yellow-600 mt-0.5" />
+      <div>
+        <p class="font-semibold text-yellow-800">Próximas entregas</p>
+        <ul class="mt-1 space-y-1 text-sm text-yellow-700">
+          {#each data.deliveryAlerts as alert}
+            <li>
+              <span class="font-medium">{alert.dogName}</span>
+              ({alert.tutorName}): {alert.pct}% el día {alert.dayOfMonth} — en {alert.daysUntil} día{alert.daysUntil !== 1 ? 's' : ''}
+            </li>
+          {/each}
+        </ul>
+      </div>
+    </div>
+  </div>
 {/if}
 
 <section class="grid grid-cols-1 gap-4 xl:grid-cols-12">

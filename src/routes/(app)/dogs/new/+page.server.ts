@@ -25,6 +25,7 @@ export const actions: Actions = {
     const dietType = parseFormValue(formData.get('dietType')).toLowerCase();
     const mealsPerDayRaw = parseFormValue(formData.get('mealsPerDay'));
     const notes = parseFormValue(formData.get('notes'));
+    const deliveryScheduleRaw = parseFormValue(formData.get('deliverySchedule'));
 
     const mealsPerDay = parsePositiveInteger(mealsPerDayRaw);
 
@@ -42,7 +43,41 @@ export const actions: Actions = {
       });
     }
 
-    const { error } = await locals.supabase.from('dogs').insert({
+    let parsedSchedule: Array<{ day_of_month: number; pct: number }> = [];
+    if (deliveryScheduleRaw) {
+      try {
+        parsedSchedule = JSON.parse(deliveryScheduleRaw);
+      } catch {
+        return fail(400, {
+          operatorError: 'Formato de calendario de entregas inválido.',
+          values: {
+            tutorId,
+            veterinaryId: veterinaryIdRaw,
+            name,
+            dietType,
+            mealsPerDay: mealsPerDayRaw,
+            notes
+          }
+        });
+      }
+
+      const totalPct = parsedSchedule.reduce((sum, e) => sum + Number(e.pct), 0);
+      if (totalPct > 100) {
+        return fail(400, {
+          operatorError: `La suma de los porcentajes no puede exceder 100% (actual: ${totalPct}%).`,
+          values: {
+            tutorId,
+            veterinaryId: veterinaryIdRaw,
+            name,
+            dietType,
+            mealsPerDay: mealsPerDayRaw,
+            notes
+          }
+        });
+      }
+    }
+
+    const { data: dogData, error: dogError } = await locals.supabase.from('dogs').insert({
       tutor_id: tutorId,
       veterinary_id: veterinaryIdRaw || null,
       name,
@@ -50,9 +85,9 @@ export const actions: Actions = {
       meals_per_day: mealsPerDay,
       notes: notes || null,
       is_active: true
-    });
+    }).select('id').single();
 
-    if (error) {
+    if (dogError || !dogData) {
       return fail(400, {
         operatorError: 'No pudimos crear el perro. Revisá los datos e intentá nuevamente.',
         values: {
@@ -64,6 +99,32 @@ export const actions: Actions = {
           notes
         }
       });
+    }
+
+    if (parsedSchedule.length > 0) {
+      const scheduleEntries = parsedSchedule.map((entry) => ({
+        dog_id: dogData.id,
+        day_of_month: Number(entry.day_of_month),
+        pct: Number(entry.pct)
+      }));
+
+      const { error: scheduleError } = await locals.supabase
+        .from('dog_delivery_schedules')
+        .insert(scheduleEntries);
+
+      if (scheduleError) {
+        return fail(400, {
+          operatorError: 'No pudimos guardar el calendario de entregas.',
+          values: {
+            tutorId,
+            veterinaryId: veterinaryIdRaw,
+            name,
+            dietType,
+            mealsPerDay: mealsPerDayRaw,
+            notes
+          }
+        });
+      }
     }
 
     throw redirect(303, '/dogs');

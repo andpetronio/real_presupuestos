@@ -1,7 +1,7 @@
 import { fail, redirect } from '@sveltejs/kit';
 import type { Actions, PageServerLoad } from './$types';
 import { parseFormValue, parsePositiveInteger } from '$lib/server/forms/parsers';
-import { buildRecipeTracking, getPaymentSummary, markBudgetViewed, type PaymentMethod } from '$lib/server/budgets/tracking';
+import { buildRecipeTracking, getPaymentSummary, markBudgetViewed, getDeliveryAlerts, type PaymentMethod } from '$lib/server/budgets/tracking';
 
 const paymentMethods = new Set<PaymentMethod>(['cash', 'transfer', 'mercadopago', 'other']);
 
@@ -116,6 +116,8 @@ export const load: PageServerLoad = async ({ locals, params }) => {
       recipeName: recipeNameById.get(d.budget_dog_recipe_id) ?? 'Receta'
     }));
 
+    const deliveryAlerts = await getDeliveryAlerts(locals.supabase, 5, budgetId).catch(() => []);
+
     return {
       budget: {
         id: budget.id,
@@ -132,7 +134,8 @@ export const load: PageServerLoad = async ({ locals, params }) => {
       preparations: enrichedPreparations,
       deliveries: enrichedDeliveries,
       payments,
-      paymentSummary: getPaymentSummary(payments, Number(budget.final_sale_price ?? 0))
+      paymentSummary: getPaymentSummary(payments, Number(budget.final_sale_price ?? 0)),
+      deliveryAlerts
     };
 };
 

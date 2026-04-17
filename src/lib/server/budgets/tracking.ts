@@ -107,3 +107,140 @@ export const getPaymentSummary = (payments: ReadonlyArray<PaymentRow>, totalPric
     pendingAmount: Math.max(totalPrice - paidAmount, 0)
   };
 };
+
+export type DeliveryAlertEntry = {
+  budgetId: string;
+  budgetReferenceMonth: string;
+  dogId: string;
+  dogName: string;
+  tutorName: string;
+  recipeId: string;
+  recipeName: string;
+  budgetDogRecipeId: string;
+  assignedDays: number;
+  dayOfMonth: number;
+  pct: number;
+  totalMealsForPortion: number;
+  deliveredMeals: number;
+  remainingMeals: number;
+  daysUntil: number;
+};
+
+export type DeliveryAlert = DeliveryAlertEntry;
+
+export const getDeliveryAlerts = async (
+  supabase: SupabaseClient,
+  alertThresholdDays: number = 5,
+  filterBudgetId?: string
+): Promise<DeliveryAlert[]> => {
+  const today = new Date();
+  const todayOfMonth = today.getDate();
+
+  const currentMonthStart = new Date(today.getFullYear(), today.getMonth(), 1).toISOString().split('T')[0];
+  const currentMonthEnd = new Date(today.getFullYear(), today.getMonth() + 1, 0, 23, 59, 59).toISOString();
+
+  let query = supabase
+    .from('budgets')
+    .select(`
+      id,
+      reference_month,
+      budget_dogs(
+        id,
+        dog_id,
+        delivery_schedule:dog_delivery_schedules(
+          day_of_month,
+          pct
+        ),
+        dogs!inner(
+          name,
+          tutors(full_name)
+        )
+      ),
+      budget_dog_recipes(
+        id,
+        recipe_id,
+        assigned_days,
+        recipes(name),
+        budget_recipe_deliveries(
+          recipe_days,
+          delivered_at
+        )
+      )
+    `)
+    .in('status', ['accepted', 'closed']);
+
+  if (filterBudgetId) {
+    query = query.eq('id', filterBudgetId);
+  }
+
+  const { data: budgets, error } = await query;
+
+  if (error || !budgets) return [];
+
+  const alerts: DeliveryAlert[] = [];
+
+  for (const budget of budgets as any[]) {
+    for (const budgetDog of budget.budget_dogs ?? []) {
+      const schedule: Array<{ day_of_month: number; pct: number }> =
+        (budgetDog.delivery_schedule as any) ?? [];
+
+      if (schedule.length === 0) continue;
+
+      const tutorName =
+        (budgetDog.dogs?.tutors as any)?.full_name ?? 'Sin tutor';
+      const dogName = budgetDog.dogs?.name ?? 'Perro';
+
+      for (const recipe of budget.budget_dog_recipes ?? []) {
+        const assignedDays = Number(recipe.assigned_days ?? 0);
+
+        const deliveriesThisMonth = (recipe.budget_recipe_deliveries ?? []).filter((d: any) => {
+          const deliveredAt = d.delivered_at;
+          if (!deliveredAt) return false;
+          return deliveredAt >= currentMonthStart && deliveredAt <= currentMonthEnd;
+        });
+
+        const deliveredMeals = deliveriesThisMonth.reduce(
+          (sum: number, d: any) => sum + Number(d.recipe_days ?? 0),
+          0
+        );
+
+        for (const entry of schedule) {
+          const dayOfMonth = Number(entry.day_of_month);
+          const pct = Number(entry.pct);
+
+          if (!dayOfMonth || !pct) continue;
+
+          let daysUntil = dayOfMonth - todayOfMonth;
+          if (daysUntil < 0) daysUntil += 30;
+
+          if (daysUntil > alertThresholdDays) continue;
+
+          const totalMealsForPortion = Math.round(assignedDays * (pct / 100));
+          const remainingMeals = Math.max(totalMealsForPortion - deliveredMeals, 0);
+
+          if (remainingMeals <= 0) continue;
+
+          alerts.push({
+            budgetId: budget.id,
+            budgetReferenceMonth: budget.reference_month ?? '',
+            dogId: budgetDog.dog_id,
+            dogName,
+            tutorName,
+            recipeId: recipe.recipe_id,
+            recipeName: (recipe.recipes as any)?.name ?? 'Receta',
+            budgetDogRecipeId: recipe.id,
+            assignedDays,
+            dayOfMonth,
+            pct,
+            totalMealsForPortion,
+            deliveredMeals,
+            remainingMeals,
+            daysUntil
+          });
+        }
+      }
+    }
+  }
+
+  return alerts.sort((a, b) => a.daysUntil - b.daysUntil);
+};

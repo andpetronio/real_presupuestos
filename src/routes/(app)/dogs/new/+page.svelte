@@ -3,6 +3,12 @@
   import FormShell from '$lib/components/admin/FormShell.svelte';
 
   import { route } from '$lib/shared/navigation';
+
+  type ScheduleEntry = {
+    day_of_month: number;
+    pct: number;
+  };
+
   type PageData = {
     tutorOptions: ReadonlyArray<{ id: string; full_name: string }>;
     veterinaryOptions: ReadonlyArray<{ id: string; name: string }>;
@@ -33,6 +39,22 @@
   });
 
   let submitting = $state(false);
+
+  let scheduleEntries = $state<ScheduleEntry[]>([]);
+
+  let totalPct = $derived(scheduleEntries.reduce((sum, e) => sum + (e.pct || 0), 0));
+  let remainingPct = $derived(Math.max(100 - totalPct, 0));
+  let isValid = $derived(totalPct <= 100 && scheduleEntries.every(e => e.day_of_month >= 1 && e.day_of_month <= 31 && e.pct >= 1 && e.pct <= 100));
+
+  const scheduleJson = $derived(JSON.stringify(scheduleEntries));
+
+  function addEntry() {
+    scheduleEntries = [...scheduleEntries, { day_of_month: 1, pct: 0 }];
+  }
+
+  function removeEntry(index: number) {
+    scheduleEntries = scheduleEntries.filter((_, i) => i !== index);
+  }
 </script>
 
 <FormShell
@@ -46,6 +68,7 @@
   <div>
     <Label for="tutorId" class="mb-1">Tutor</Label>
     <Select id="tutorId" name="tutorId" required value={values.tutorId}>
+      <option value="">Seleccionar tutor</option>
       {#each data.tutorOptions as tutor (tutor.id)}
         <option value={tutor.id}>{tutor.full_name}</option>
       {/each}
@@ -88,10 +111,78 @@
     <Textarea id="notes" name="notes" rows={3} class="w-full" value={values.notes} />
   </div>
 
+  <div>
+    <div class="mb-3 flex items-center justify-between">
+      <Label class="mb-0">Calendario de entregas mensuales</Label>
+      <Button type="button" size="xs" color="light" onclick={addEntry}>
+        + Agregar fecha
+      </Button>
+    </div>
+
+    {#if scheduleEntries.length > 0}
+      <div class="mb-3 space-y-2">
+        {#each scheduleEntries as entry, i (i)}
+          <div class="flex items-center gap-2">
+            <div class="flex-1">
+              <Label for="day-{i}" class="sr-only">Día del mes</Label>
+              <Input
+                id="day-{i}"
+                type="number"
+                min="1"
+                max="31"
+                placeholder="Día (1-31)"
+                bind:value={entry.day_of_month}
+                class="!w-24"
+              />
+            </div>
+            <div class="flex items-center gap-1">
+              <Input
+                type="number"
+                min="1"
+                max="100"
+                placeholder="%"
+                bind:value={entry.pct}
+                class="!w-20"
+              />
+              <span class="text-sm text-gray-500">%</span>
+            </div>
+            <Button
+              type="button"
+              size="xs"
+              color="red"
+              outline
+              onclick={() => removeEntry(i)}
+              aria-label="Eliminar fecha"
+            >
+              ×
+            </Button>
+          </div>
+        {/each}
+      </div>
+
+      <div class="flex items-center justify-between text-sm">
+        <span class:text-red-600={totalPct > 100} class:text-green-700={totalPct <= 100}>
+          Total: {totalPct}%
+        </span>
+        {#if remainingPct > 0}
+          <span class="text-gray-500">Restante: {remainingPct}%</span>
+        {:else if totalPct === 100}
+          <span class="text-green-600 font-medium">Completo ✓</span>
+        {:else}
+          <span class="text-red-600">Excede 100%</span>
+        {/if}
+      </div>
+    {:else}
+      <p class="text-sm text-gray-400 italic">Sin fechas de entrega configuradas.</p>
+    {/if}
+
+    <input type="hidden" name="deliverySchedule" value={scheduleJson} />
+  </div>
+
   {#snippet actions()}
     <Button href={dogsPath} color="light">Cancelar</Button>
-    <Button type="submit" disabled={submitting}>
-      {submitting ? 'Guardando…' : 'Crear perro'}
+    <Button type="submit" disabled={submitting || totalPct > 100}>
+      {submitting ? 'Creando…' : 'Crear perro'}
     </Button>
   {/snippet}
 </FormShell>
