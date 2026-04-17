@@ -1,6 +1,7 @@
 import { fail, redirect } from '@sveltejs/kit';
 import type { Actions, PageServerLoad } from './$types';
 import { parseFormValue, parsePositiveInteger } from '$lib/server/forms/parsers';
+import { createTransaction } from '$lib/server/shared/multi-step-transaction';
 
 const DIET_TYPES = new Set(['mixta', 'cocida', 'barf']);
 
@@ -77,6 +78,8 @@ export const actions: Actions = {
       }
     }
 
+    const tx = createTransaction(locals.supabase);
+
     const { data: dogData, error: dogError } = await locals.supabase.from('dogs').insert({
       tutor_id: tutorId,
       veterinary_id: veterinaryIdRaw || null,
@@ -101,6 +104,10 @@ export const actions: Actions = {
       });
     }
 
+    tx.registerRollback(async () => {
+      await locals.supabase.from('dogs').delete().eq('id', dogData.id);
+    });
+
     if (parsedSchedule.length > 0) {
       const scheduleEntries = parsedSchedule.map((entry) => ({
         dog_id: dogData.id,
@@ -113,6 +120,7 @@ export const actions: Actions = {
         .insert(scheduleEntries);
 
       if (scheduleError) {
+        await tx.rollback();
         return fail(400, {
           operatorError: 'No pudimos guardar el calendario de entregas.',
           values: {

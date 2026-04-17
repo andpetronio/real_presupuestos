@@ -7,6 +7,7 @@ import {
   getRecipeError,
   getRecipeItemsError
 } from '$lib/server/forms/parsers';
+import { createTransaction } from '$lib/server/shared/multi-step-transaction';
 
 export const load: PageServerLoad = async ({ locals }) => {
   const [dogsResult, rawMaterialsResult] = await Promise.all([
@@ -80,6 +81,8 @@ export const actions: Actions = {
       });
     }
 
+    const tx = createTransaction(locals.supabase);
+
     const { data: newRecipe, error } = await locals.supabase
       .from('recipes')
       .insert({ dog_id: dogId, name, notes: notes || null, is_active: true })
@@ -93,6 +96,10 @@ export const actions: Actions = {
       });
     }
 
+    tx.registerRollback(async () => {
+      await locals.supabase.from('recipes').delete().eq('id', newRecipe.id);
+    });
+
     const recipeItemsPayload = itemsValidation.items.map((item) => ({
       recipe_id: newRecipe.id,
       raw_material_id: item.rawMaterialId,
@@ -102,7 +109,7 @@ export const actions: Actions = {
 
     const { error: recipeItemsError } = await locals.supabase.from('recipe_items').insert(recipeItemsPayload);
     if (recipeItemsError) {
-      await locals.supabase.from('recipes').delete().eq('id', newRecipe.id);
+      await tx.rollback();
       return fail(400, {
         operatorError: getRecipeItemsError(recipeItemsError.message),
         values: { dogId, name, notes, items: itemRows }
