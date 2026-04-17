@@ -1,26 +1,24 @@
 import { fail } from '@sveltejs/kit';
 import type { Actions, PageServerLoad } from './$types';
-import type { OperatorMessage } from '$lib/server/shared/ui-state';
-import { parsePositiveInteger } from '$lib/server/forms/parsers';
+import { parsePositiveInteger, parseFormValue } from '$lib/server/forms/parsers';
+import {
+  buildFallbackError,
+  getTableState,
+  getPagination,
+  applyListFilters
+} from '$lib/server/shared/list-helpers';
 
-const fallbackErrorMessage: OperatorMessage = {
-  kind: 'error',
-  title: 'No pudimos cargar perros',
-  detail: 'Reintentá en unos segundos o revisá la conexión con la base de datos.',
-  actionLabel: 'Reintentar'
+const EMPTY_LABELS = {
+  title: 'Todavía no hay perros cargados',
+  detail: 'Creá el primero desde "Nuevo perro".'
 };
 
-const parseFormValue = (value: FormDataEntryValue | null): string =>
-  typeof value === 'string' ? value.trim() : '';
-
 export const load: PageServerLoad = async ({ locals, url }) => {
-  // Pagination params
-  const page = parsePositiveInteger(url.searchParams.get('page') ?? '') ?? 1;
-  const pageSize = 10;
-  const offset = (page - 1) * pageSize;
-
-  const searchQuery = url.searchParams.get('q')?.trim() ?? '';
-  const statusParam = url.searchParams.get('status') ?? 'all';
+  const { page, pageSize, offset } = getPagination(url.searchParams.get('page'));
+  const filters = {
+    search: url.searchParams.get('q')?.trim() ?? '',
+    status: url.searchParams.get('status') ?? 'all'
+  };
 
   try {
     let query = locals.supabase
@@ -31,18 +29,7 @@ export const load: PageServerLoad = async ({ locals, url }) => {
       )
       .order('created_at', { ascending: false });
 
-    if (searchQuery) {
-      query = query.ilike('name', `%${searchQuery}%`);
-    }
-
-    // Status filter
-    if (statusParam !== 'all') {
-      if (statusParam === 'active') {
-        query = query.eq('is_active', true);
-      } else if (statusParam === 'inactive') {
-        query = query.eq('is_active', false);
-      }
-    }
+    query = applyListFilters(query, filters, { searchColumn: 'name', hasStatusFilter: true });
 
     const { data, count, error } = await query.range(offset, offset + pageSize - 1);
 
@@ -52,29 +39,22 @@ export const load: PageServerLoad = async ({ locals, url }) => {
     const total = count ?? 0;
     const totalPages = Math.ceil(total / pageSize);
 
+    const { tableState, tableMessage } = getTableState(total, filters, EMPTY_LABELS);
+
     return {
       dogs,
-      filters: { search: searchQuery, status: statusParam },
+      filters,
       pagination: { page, totalPages, total },
-      tableState: total > 0 ? 'success' : 'empty',
-      tableMessage:
-        total > 0
-          ? null
-          : ({
-              kind: 'empty',
-              title: searchQuery ? 'Sin resultados' : 'Todavía no hay perros cargados',
-              detail: searchQuery
-                ? 'No se encontraron perros para la búsqueda.'
-                : 'Creá el primero desde "Nuevo perro".'
-            } satisfies OperatorMessage)
+      tableState,
+      tableMessage
     };
   } catch {
     return {
       dogs: [],
-      filters: { search: searchQuery, status: statusParam },
+      filters,
       pagination: { page: 1, totalPages: 1, total: 0 },
       tableState: 'error',
-      tableMessage: fallbackErrorMessage
+      tableMessage: buildFallbackError('perros')
     };
   }
 };
