@@ -150,7 +150,7 @@ export const sendBudgetWhatsapp = async (params: {
     return { ok: false, message: "No encontramos el presupuesto a enviar." };
   }
 
-  const budgetTyped = budget as unknown as BudgetWhatsappRow;
+  const budgetTyped: BudgetWhatsappRow = budget;
 
   if (
     budgetTyped.status !== "draft" &&

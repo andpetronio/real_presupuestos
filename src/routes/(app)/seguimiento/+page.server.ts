@@ -16,6 +16,26 @@ const toPct = (current: number, total: number): number => {
   return Math.round((current / total) * 100);
 };
 
+const readBudgetId = (value: unknown): string | null => {
+  if (typeof value !== "object" || value === null) return null;
+  const record = value as Record<string, unknown>;
+  if (!Object.hasOwn(record, "budget_id")) return null;
+
+  const budgetId = record.budget_id;
+  return typeof budgetId === "string" && budgetId.length > 0 ? budgetId : null;
+};
+
+const readTutorFullName = (value: unknown): string => {
+  if (typeof value !== "object" || value === null) return "Sin tutor";
+  const record = value as Record<string, unknown>;
+  if (!Object.hasOwn(record, "full_name")) return "Sin tutor";
+
+  const fullName = record.full_name;
+  return typeof fullName === "string" && fullName.length > 0
+    ? fullName
+    : "Sin tutor";
+};
+
 export const load: PageServerLoad = async ({ locals, url }) => {
   const tutorId = url.searchParams.get("tutor") ?? "";
   const selectedShow = (url.searchParams.get("show") ?? "active") as
@@ -126,8 +146,7 @@ export const load: PageServerLoad = async ({ locals, url }) => {
     const recipeToAssigned: Map<string, number> = new Map();
     const assignedByBudget: Map<string, number> = new Map();
     for (const row of recipesResult.data ?? []) {
-      const bid = (row.budget_dog as unknown as { budget_id: string } | null)
-        ?.budget_id;
+      const bid = readBudgetId(row.budget_dog);
       if (!bid) continue;
       const assigned = Number(row.assigned_days ?? 0);
       recipeToBudget.set(row.id, bid);
@@ -183,9 +202,7 @@ export const load: PageServerLoad = async ({ locals, url }) => {
         id: budget.id,
         status: budget.status,
         tutorId: budget.tutor_id ?? "",
-        tutorName:
-          (budget.tutor as unknown as { full_name?: string | null } | null)
-            ?.full_name ?? "Sin tutor",
+        tutorName: readTutorFullName(budget.tutor),
         viewedAt: budget.viewed_at,
         total,
         paid,

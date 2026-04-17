@@ -8,6 +8,15 @@ import {
   getRecipeItemsError,
 } from "$lib/server/forms/parsers";
 
+const readTutorName = (value: unknown): string => {
+  const candidate = Array.isArray(value) ? value[0] : value;
+  if (typeof candidate !== "object" || candidate === null) return "";
+  if (!Object.hasOwn(candidate, "full_name")) return "";
+
+  const fullName = candidate.full_name;
+  return typeof fullName === "string" ? fullName : "";
+};
+
 export const load: PageServerLoad = async ({ locals, params }) => {
   const recipeId = params.recipe_id;
 
@@ -61,9 +70,7 @@ export const load: PageServerLoad = async ({ locals, params }) => {
     dogOptions: (dogsResult.data ?? []).map((dog) => ({
       id: dog.id,
       name: dog.name,
-      tutorName:
-        (dog.tutors as unknown as { full_name: string } | null)?.full_name ??
-        "",
+      tutorName: readTutorName(dog.tutors),
     })),
     rawMaterialOptions: (rawMaterialsResult.data ?? []).map((material) => ({
       id: material.id,
