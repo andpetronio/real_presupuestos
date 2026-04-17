@@ -448,3 +448,130 @@ describe('(app)/budgets/+page.server actions.create', () => {
     expect(budgetUpdate).not.toHaveBeenCalled();
   });
 });
+
+describe('(app)/budgets/+page.server actions.accept', () => {
+  it('falla si el presupuesto no existe', async () => {
+    const budgetSelect = vi.fn().mockResolvedValue({ data: null, error: null });
+    const budgetSelectEq = vi.fn().mockReturnValue({
+      single: budgetSelect,
+      maybeSingle: budgetSelect
+    });
+    const from = vi.fn((table: string) => {
+      if (table === 'budgets') {
+        return { select: () => ({ eq: budgetSelectEq }) };
+      }
+      return { select: vi.fn() };
+    });
+
+    const formData = new FormData();
+    formData.set('budgetId', 'b-inexistente');
+
+    const result = (await actions.accept({
+      request: { formData: async () => formData },
+      locals: { supabase: { from } }
+    } as unknown as Parameters<(typeof actions)['accept']>[0])) as {
+      status: number;
+      data: { operatorError: string };
+    };
+
+    expect(result.status).toBe(400);
+    expect(result.data.operatorError).toContain('No encontramos');
+  });
+
+  it('falla si el presupuesto no está en estado sent', async () => {
+    const budgetSelect = vi.fn().mockResolvedValue({
+      data: { id: 'b-1', status: 'draft' },
+      error: null
+    });
+    const budgetSelectEq = vi.fn().mockReturnValue({
+      single: budgetSelect,
+      maybeSingle: budgetSelect
+    });
+    const from = vi.fn((table: string) => {
+      if (table === 'budgets') {
+        return { select: () => ({ eq: budgetSelectEq }) };
+      }
+      return { select: vi.fn() };
+    });
+
+    const formData = new FormData();
+    formData.set('budgetId', 'b-1');
+
+    const result = (await actions.accept({
+      request: { formData: async () => formData },
+      locals: { supabase: { from } }
+    } as unknown as Parameters<(typeof actions)['accept']>[0])) as {
+      status: number;
+      data: { operatorError: string };
+    };
+
+    expect(result.status).toBe(400);
+    expect(result.data.operatorError).toContain('enviado');
+  });
+});
+
+describe('(app)/budgets/+page.server actions.reject', () => {
+  it('falla si el presupuesto no está en estado sent', async () => {
+    const budgetSelect = vi.fn().mockResolvedValue({
+      data: { id: 'b-1', status: 'accepted' },
+      error: null
+    });
+    const budgetSelectEq = vi.fn().mockReturnValue({
+      single: budgetSelect,
+      maybeSingle: budgetSelect
+    });
+    const from = vi.fn((table: string) => {
+      if (table === 'budgets') {
+        return { select: () => ({ eq: budgetSelectEq }) };
+      }
+      return { select: vi.fn() };
+    });
+
+    const formData = new FormData();
+    formData.set('budgetId', 'b-1');
+
+    const result = (await actions.reject({
+      request: { formData: async () => formData },
+      locals: { supabase: { from } }
+    } as unknown as Parameters<(typeof actions)['reject']>[0])) as {
+      status: number;
+      data: { operatorError: string };
+    };
+
+    expect(result.status).toBe(400);
+    expect(result.data.operatorError).toContain('enviado');
+  });
+});
+
+describe('(app)/budgets/+page.server actions.delete', () => {
+  it('falla si el presupuesto no está en estado draft', async () => {
+    const budgetSelect = vi.fn().mockResolvedValue({
+      data: { id: 'b-1', status: 'sent' },
+      error: null
+    });
+    const budgetSelectEq = vi.fn().mockReturnValue({
+      single: budgetSelect,
+      maybeSingle: budgetSelect
+    });
+    const from = vi.fn((table: string) => {
+      if (table === 'budgets') {
+        return { select: () => ({ eq: budgetSelectEq }) };
+      }
+      return { select: vi.fn() };
+    });
+
+    const formData = new FormData();
+    formData.set('budgetId', 'b-1');
+
+    const result = (await actions.delete({
+      request: { formData: async () => formData },
+      locals: { supabase: { from } }
+    } as unknown as Parameters<(typeof actions)['delete']>[0])) as {
+      status: number;
+      data: { operatorError: string };
+    };
+
+    expect(result.status).toBe(400);
+    expect(result.data.operatorError).toContain('borrador');
+  });
+});
