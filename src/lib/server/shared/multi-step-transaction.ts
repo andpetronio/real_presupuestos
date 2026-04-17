@@ -1,4 +1,4 @@
-import type { SupabaseClient } from '@supabase/supabase-js';
+import type { SupabaseClient } from "@supabase/supabase-js";
 
 export type RollbackAction = () => Promise<void>;
 
@@ -34,11 +34,13 @@ export class MultiStepTransaction {
       }
     }
     if (errors.length > 0) {
-      console.error('Rollback completed with errors:', errors);
+      console.error("Rollback completed with errors:", errors);
     }
   }
 }
 
-export const createTransaction = (supabase: SupabaseClient): MultiStepTransaction => {
+export const createTransaction = (
+  supabase: SupabaseClient,
+): MultiStepTransaction => {
   return new MultiStepTransaction(supabase);
 };

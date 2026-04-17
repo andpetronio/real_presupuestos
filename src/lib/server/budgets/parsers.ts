@@ -3,12 +3,22 @@
  * Los parsers genéricos ya están en $lib/server/forms/parsers.ts
  */
 
-import { randomUUID } from 'node:crypto';
-import type { SupabaseClient } from '@supabase/supabase-js';
-import { parseFormValue, parseNonNegativeNumber } from '$lib/server/forms/parsers';
-import { parsePositiveInteger } from '$lib/server/forms/parsers';
-import type { BudgetOperationalInputs, BudgetSettingsCosts } from './calculation';
-import type { ActionValues, CompositionRow, ParsedCompositionRow } from './types';
+import { randomUUID } from "node:crypto";
+import type { SupabaseClient } from "@supabase/supabase-js";
+import {
+  parseFormValue,
+  parseNonNegativeNumber,
+} from "$lib/server/forms/parsers";
+import { parsePositiveInteger } from "$lib/server/forms/parsers";
+import type {
+  BudgetOperationalInputs,
+  BudgetSettingsCosts,
+} from "./calculation";
+import type {
+  ActionValues,
+  CompositionRow,
+  ParsedCompositionRow,
+} from "./types";
 
 /**
  * Parser de mes input (AAAA-MM) a fecha ISO.
@@ -20,7 +30,8 @@ export const parseMonthInput = (value: string): string | null => {
 
   const [, year, month] = match;
   const monthNumber = Number(month);
-  if (!Number.isInteger(monthNumber) || monthNumber < 1 || monthNumber > 12) return null;
+  if (!Number.isInteger(monthNumber) || monthNumber < 1 || monthNumber > 12)
+    return null;
 
   return `${year}-${month}-01`;
 };
@@ -29,25 +40,36 @@ export const parseMonthInput = (value: string): string | null => {
  * Genera un token público para el presupuesto.
  * Versión simple: UUID sin guiones.
  */
-export const createBudgetPublicToken = (): string => randomUUID().replaceAll('-', '');
+export const createBudgetPublicToken = (): string =>
+  randomUUID().replaceAll("-", "");
 
 /**
  * Parsea las filas de composición desde el FormData.
  * Extrae valores de rowDogId, recipeId, assignedDays.
  */
 export const parseCompositionRows = (formData: FormData): CompositionRow[] => {
-  const dogIds = formData.getAll('rowDogId').map((value) => parseFormValue(value));
-  const recipeIds = formData.getAll('recipeId').map((value) => parseFormValue(value));
-  const assignedDays = formData.getAll('assignedDays').map((value) => parseFormValue(value));
+  const dogIds = formData
+    .getAll("rowDogId")
+    .map((value) => parseFormValue(value));
+  const recipeIds = formData
+    .getAll("recipeId")
+    .map((value) => parseFormValue(value));
+  const assignedDays = formData
+    .getAll("assignedDays")
+    .map((value) => parseFormValue(value));
 
-  const totalRows = Math.max(dogIds.length, recipeIds.length, assignedDays.length);
+  const totalRows = Math.max(
+    dogIds.length,
+    recipeIds.length,
+    assignedDays.length,
+  );
   const rows: CompositionRow[] = [];
 
   for (let index = 0; index < totalRows; index += 1) {
     const row = {
-      dogId: dogIds[index] ?? '',
-      recipeId: recipeIds[index] ?? '',
-      assignedDays: assignedDays[index] ?? ''
+      dogId: dogIds[index] ?? "",
+      recipeId: recipeIds[index] ?? "",
+      assignedDays: assignedDays[index] ?? "",
     };
 
     if (!row.dogId && !row.recipeId && !row.assignedDays) continue;
@@ -61,39 +83,46 @@ export const parseCompositionRows = (formData: FormData): CompositionRow[] => {
  * Parsea todos los valores del formulario de budget.
  */
 export const parseActionValues = (formData: FormData): ActionValues => ({
-  budgetId: parseFormValue(formData.get('budgetId')) || undefined,
-  tutorId: parseFormValue(formData.get('tutorId')),
-  budgetMonth: parseFormValue(formData.get('budgetMonth')),
-  budgetDays: parseFormValue(formData.get('budgetDays')),
-  notes: parseFormValue(formData.get('notes')),
-  vacuumBagSmallQty: parseFormValue(formData.get('vacuumBagSmallQty')),
-  vacuumBagLargeQty: parseFormValue(formData.get('vacuumBagLargeQty')),
-  labelsQty: parseFormValue(formData.get('labelsQty')),
-  nonWovenBagQty: parseFormValue(formData.get('nonWovenBagQty')),
-  laborHoursQty: parseFormValue(formData.get('laborHoursQty')),
-  cookingHoursQty: parseFormValue(formData.get('cookingHoursQty')),
-  calciumQty: parseFormValue(formData.get('calciumQty')),
-  kefirQty: parseFormValue(formData.get('kefirQty')),
-  rows: parseCompositionRows(formData)
+  budgetId: parseFormValue(formData.get("budgetId")) || undefined,
+  tutorId: parseFormValue(formData.get("tutorId")),
+  budgetMonth: parseFormValue(formData.get("budgetMonth")),
+  budgetDays: parseFormValue(formData.get("budgetDays")),
+  notes: parseFormValue(formData.get("notes")),
+  vacuumBagSmallQty: parseFormValue(formData.get("vacuumBagSmallQty")),
+  vacuumBagLargeQty: parseFormValue(formData.get("vacuumBagLargeQty")),
+  labelsQty: parseFormValue(formData.get("labelsQty")),
+  nonWovenBagQty: parseFormValue(formData.get("nonWovenBagQty")),
+  laborHoursQty: parseFormValue(formData.get("laborHoursQty")),
+  cookingHoursQty: parseFormValue(formData.get("cookingHoursQty")),
+  calciumQty: parseFormValue(formData.get("calciumQty")),
+  kefirQty: parseFormValue(formData.get("kefirQty")),
+  rows: parseCompositionRows(formData),
 });
 
 /**
  * Parsea los inputs operativos desde los valores del formulario.
  * Retorna null si hay valores inválidos.
  */
-export const parseOperationalInputs = (values: ActionValues): BudgetOperationalInputs | null => {
+export const parseOperationalInputs = (
+  values: ActionValues,
+): BudgetOperationalInputs | null => {
   const operationals: BudgetOperationalInputs = {
-    vacuumBagSmallQty: parseNonNegativeNumber(values.vacuumBagSmallQty) ?? Number.NaN,
-    vacuumBagLargeQty: parseNonNegativeNumber(values.vacuumBagLargeQty) ?? Number.NaN,
+    vacuumBagSmallQty:
+      parseNonNegativeNumber(values.vacuumBagSmallQty) ?? Number.NaN,
+    vacuumBagLargeQty:
+      parseNonNegativeNumber(values.vacuumBagLargeQty) ?? Number.NaN,
     labelsQty: parseNonNegativeNumber(values.labelsQty) ?? Number.NaN,
     nonWovenBagQty: parseNonNegativeNumber(values.nonWovenBagQty) ?? Number.NaN,
     laborHoursQty: parseNonNegativeNumber(values.laborHoursQty) ?? Number.NaN,
-    cookingHoursQty: parseNonNegativeNumber(values.cookingHoursQty) ?? Number.NaN,
+    cookingHoursQty:
+      parseNonNegativeNumber(values.cookingHoursQty) ?? Number.NaN,
     calciumQty: parseNonNegativeNumber(values.calciumQty) ?? Number.NaN,
-    kefirQty: parseNonNegativeNumber(values.kefirQty) ?? Number.NaN
+    kefirQty: parseNonNegativeNumber(values.kefirQty) ?? Number.NaN,
   };
 
-  const hasInvalid = Object.values(operationals).some((value) => Number.isNaN(value));
+  const hasInvalid = Object.values(operationals).some((value) =>
+    Number.isNaN(value),
+  );
   return hasInvalid ? null : operationals;
 };
 
@@ -102,7 +131,7 @@ export const parseOperationalInputs = (values: ActionValues): BudgetOperationalI
  * Requiere al menos una fila, y que no haya duplicados (misma receta por perro).
  */
 export const parseComposition = (
-  rows: ReadonlyArray<CompositionRow>
+  rows: ReadonlyArray<CompositionRow>,
 ): ParsedCompositionRow[] | null => {
   if (rows.length === 0) return null;
 
@@ -137,14 +166,14 @@ export const parseDefaultExpiration = (validityDays: number): string => {
  * Lee los settings de custos para el cálculo del presupuesto.
  */
 export const getSettingsForBudgetFormula = async (
-  supabase: SupabaseClient
+  supabase: SupabaseClient,
 ): Promise<BudgetSettingsCosts | null> => {
   const { data, error } = await supabase
-    .from('settings')
+    .from("settings")
     .select(
-      'meal_plan_margin, vacuum_bag_small_unit_cost, vacuum_bag_large_unit_cost, label_unit_cost, non_woven_bag_unit_cost, labor_hour_cost, cooking_hour_cost, calcium_unit_cost, kefir_unit_cost, budget_validity_days'
+      "meal_plan_margin, vacuum_bag_small_unit_cost, vacuum_bag_large_unit_cost, label_unit_cost, non_woven_bag_unit_cost, labor_hour_cost, cooking_hour_cost, calcium_unit_cost, kefir_unit_cost, budget_validity_days",
     )
-    .eq('id', 1)
+    .eq("id", 1)
     .single();
 
   if (error || !data) return null;
@@ -159,7 +188,7 @@ export const getSettingsForBudgetFormula = async (
     cookingHourCost: data.cooking_hour_cost,
     calciumUnitCost: data.calcium_unit_cost,
     kefirUnitCost: data.kefir_unit_cost,
-    budgetValidityDays: data.budget_validity_days
+    budgetValidityDays: data.budget_validity_days,
   };
 };
 
@@ -168,16 +197,16 @@ export const getSettingsForBudgetFormula = async (
  */
 export const readRecipeDailyCosts = async (
   supabase: SupabaseClient,
-  recipeIds: ReadonlyArray<string>
+  recipeIds: ReadonlyArray<string>,
 ): Promise<Array<{ recipeId: string; dailyCost: number }> | null> => {
   if (recipeIds.length === 0) return [];
 
   const { data, error } = await supabase
-    .from('recipe_items')
+    .from("recipe_items")
     .select(
-      'recipe_id, daily_quantity, raw_material:raw_materials(derived_unit_cost, cost_with_wastage, purchase_quantity)'
+      "recipe_id, daily_quantity, raw_material:raw_materials(derived_unit_cost, cost_with_wastage, purchase_quantity)",
     )
-    .in('recipe_id', recipeIds);
+    .in("recipe_id", recipeIds);
 
   if (error) return null;
 
@@ -198,7 +227,7 @@ export const readRecipeDailyCosts = async (
       | null;
 
     const rawMaterial = Array.isArray(rawMaterialRelation)
-      ? rawMaterialRelation[0] ?? null
+      ? (rawMaterialRelation[0] ?? null)
       : rawMaterialRelation;
 
     const typedRawMaterial = rawMaterial as {
@@ -219,5 +248,8 @@ export const readRecipeDailyCosts = async (
     map.set(row.recipe_id, existing + subtotal);
   }
 
-  return Array.from(map.entries()).map(([recipeId, dailyCost]) => ({ recipeId, dailyCost }));
+  return Array.from(map.entries()).map(([recipeId, dailyCost]) => ({
+    recipeId,
+    dailyCost,
+  }));
 };

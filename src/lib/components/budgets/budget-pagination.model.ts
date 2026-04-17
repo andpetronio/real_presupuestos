@@ -9,13 +9,14 @@
 export const buildPaginationHref = (
   baseUrl: string,
   newPage: number,
-  filters: { status: string; search: string; tutorId: string | null }
+  filters: { status: string; search: string; tutorId: string | null },
 ): string => {
   const params = new URLSearchParams();
-  if (filters.status && filters.status !== 'all') params.set('status', filters.status);
-  if (filters.search) params.set('q', filters.search);
-  if (filters.tutorId) params.set('tutor', filters.tutorId);
-  params.set('page', String(newPage));
+  if (filters.status && filters.status !== "all")
+    params.set("status", filters.status);
+  if (filters.search) params.set("q", filters.search);
+  if (filters.tutorId) params.set("tutor", filters.tutorId);
+  params.set("page", String(newPage));
   const queryString = params.toString();
   return `${baseUrl}?${queryString}`;
 };
@@ -24,19 +25,19 @@ export const buildPaginationHref = (
  * Parses URL search params into a filter state object.
  */
 export const parseBudgetFilters = (
-  searchParams: URLSearchParams
+  searchParams: URLSearchParams,
 ): {
   page: number;
   status: string;
   search: string;
   tutorId: string | null;
 } => {
-  const page = parseInt(searchParams.get('page') ?? '1', 10);
+  const page = parseInt(searchParams.get("page") ?? "1", 10);
   return {
     page: isNaN(page) || page < 1 ? 1 : page,
-    status: searchParams.get('status') ?? 'all',
-    search: searchParams.get('q') ?? '',
-    tutorId: searchParams.get('tutor') || null
+    status: searchParams.get("status") ?? "all",
+    search: searchParams.get("q") ?? "",
+    tutorId: searchParams.get("tutor") || null,
   };
 };
 
@@ -48,5 +49,9 @@ export const hasActiveFilters = (filters: {
   search: string;
   tutorId: string | null;
 }): boolean => {
-  return filters.status !== 'all' || filters.search !== '' || filters.tutorId !== null;
+  return (
+    filters.status !== "all" ||
+    filters.search !== "" ||
+    filters.tutorId !== null
+  );
 };

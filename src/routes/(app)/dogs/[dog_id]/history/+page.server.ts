@@ -1,28 +1,32 @@
-import { redirect } from '@sveltejs/kit';
-import type { PageServerLoad } from './$types';
+import { redirect } from "@sveltejs/kit";
+import type { PageServerLoad } from "./$types";
 
 export const load: PageServerLoad = async ({ locals, params }) => {
   const dogId = params.dog_id;
 
   const { data: dogData, error: dogError } = await locals.supabase
-    .from('dogs')
-    .select('id, name, tutor_id, diet_type, meals_per_day, is_active, tutors(full_name)')
-    .eq('id', dogId)
+    .from("dogs")
+    .select(
+      "id, name, tutor_id, diet_type, meals_per_day, is_active, tutors(full_name)",
+    )
+    .eq("id", dogId)
     .single();
 
   if (dogError || !dogData) {
-    throw redirect(303, '/dogs');
+    throw redirect(303, "/dogs");
   }
 
-  const tutorName = (dogData.tutors as { full_name?: string | null } | null)?.full_name ?? 'Sin tutor';
+  const tutorName =
+    (dogData.tutors as { full_name?: string | null } | null)?.full_name ??
+    "Sin tutor";
 
   const { data: budgetDogRows, error: budgetDogError } = await locals.supabase
-    .from('budget_dogs')
-    .select('id, budget_id')
-    .eq('dog_id', dogId);
+    .from("budget_dogs")
+    .select("id, budget_id")
+    .eq("dog_id", dogId);
 
   if (budgetDogError) {
-    throw redirect(303, '/dogs');
+    throw redirect(303, "/dogs");
   }
 
   const budgetIds = [...new Set((budgetDogRows ?? []).map((r) => r.budget_id))];
@@ -30,22 +34,25 @@ export const load: PageServerLoad = async ({ locals, params }) => {
   const [budgetsResult, recipesResult, paymentsResult] = await Promise.all([
     budgetIds.length
       ? locals.supabase
-          .from('budgets')
-          .select('id, status, reference_month, final_sale_price, accepted_at')
-          .in('id', budgetIds)
+          .from("budgets")
+          .select("id, status, reference_month, final_sale_price, accepted_at")
+          .in("id", budgetIds)
       : Promise.resolve({ data: [], error: null }),
     budgetIds.length
       ? locals.supabase
-          .from('budget_dog_recipes')
-          .select('id, assigned_days, budget_dog_id, recipe:recipes(name)')
-          .in('budget_dog_id', (budgetDogRows ?? []).map((r) => r.id))
+          .from("budget_dog_recipes")
+          .select("id, assigned_days, budget_dog_id, recipe:recipes(name)")
+          .in(
+            "budget_dog_id",
+            (budgetDogRows ?? []).map((r) => r.id),
+          )
       : Promise.resolve({ data: [], error: null }),
     budgetIds.length
       ? locals.supabase
-          .from('budget_payments')
-          .select('budget_id, amount, payment_method, paid_at')
-          .in('budget_id', budgetIds)
-      : Promise.resolve({ data: [], error: null })
+          .from("budget_payments")
+          .select("budget_id, amount, payment_method, paid_at")
+          .in("budget_id", budgetIds)
+      : Promise.resolve({ data: [], error: null }),
   ]);
 
   const recipes = recipesResult.data ?? [];
@@ -54,34 +61,49 @@ export const load: PageServerLoad = async ({ locals, params }) => {
   const [preparationsResult, deliveriesResult] = await Promise.all([
     recipeIds.length
       ? locals.supabase
-          .from('budget_recipe_preparations')
-          .select('budget_dog_recipe_id, recipe_days')
-          .in('budget_dog_recipe_id', recipeIds)
+          .from("budget_recipe_preparations")
+          .select("budget_dog_recipe_id, recipe_days")
+          .in("budget_dog_recipe_id", recipeIds)
       : Promise.resolve({ data: [], error: null }),
     recipeIds.length
       ? locals.supabase
-          .from('budget_recipe_deliveries')
-          .select('budget_dog_recipe_id, recipe_days')
-          .in('budget_dog_recipe_id', recipeIds)
-      : Promise.resolve({ data: [], error: null })
+          .from("budget_recipe_deliveries")
+          .select("budget_dog_recipe_id, recipe_days")
+          .in("budget_dog_recipe_id", recipeIds)
+      : Promise.resolve({ data: [], error: null }),
   ]);
 
-  const recipeToBudgetDog = new Map(recipes.map((r) => [r.id, r.budget_dog_id]));
-  const budgetDogToBudget = new Map((budgetDogRows ?? []).map((r) => [r.id, r.budget_id]));
+  const recipeToBudgetDog = new Map(
+    recipes.map((r) => [r.id, r.budget_dog_id]),
+  );
+  const budgetDogToBudget = new Map(
+    (budgetDogRows ?? []).map((r) => [r.id, r.budget_id]),
+  );
 
   const recipeToPrepared = new Map<string, number>();
   for (const p of preparationsResult.data ?? []) {
-    recipeToPrepared.set(p.budget_dog_recipe_id, (recipeToPrepared.get(p.budget_dog_recipe_id) ?? 0) + Number(p.recipe_days));
+    recipeToPrepared.set(
+      p.budget_dog_recipe_id,
+      (recipeToPrepared.get(p.budget_dog_recipe_id) ?? 0) +
+        Number(p.recipe_days),
+    );
   }
 
   const recipeToDelivered = new Map<string, number>();
   for (const d of deliveriesResult.data ?? []) {
-    recipeToDelivered.set(d.budget_dog_recipe_id, (recipeToDelivered.get(d.budget_dog_recipe_id) ?? 0) + Number(d.recipe_days));
+    recipeToDelivered.set(
+      d.budget_dog_recipe_id,
+      (recipeToDelivered.get(d.budget_dog_recipe_id) ?? 0) +
+        Number(d.recipe_days),
+    );
   }
 
   const paidByBudget = new Map<string, number>();
   for (const p of paymentsResult.data ?? []) {
-    paidByBudget.set(p.budget_id, (paidByBudget.get(p.budget_id) ?? 0) + Number(p.amount));
+    paidByBudget.set(
+      p.budget_id,
+      (paidByBudget.get(p.budget_id) ?? 0) + Number(p.amount),
+    );
   }
 
   const recipesByBudgetDog = new Map<string, typeof recipes>();
@@ -98,24 +120,48 @@ export const load: PageServerLoad = async ({ locals, params }) => {
       const budget = budgetsMap.get(bid);
       if (!budget) return null;
 
-      const budgetDogs = (budgetDogRows ?? []).filter((bd) => bd.budget_id === bid);
+      const budgetDogs = (budgetDogRows ?? []).filter(
+        (bd) => bd.budget_id === bid,
+      );
       const budgetDogIds = budgetDogs.map((bd) => bd.id);
 
-      const budgetRecipes = recipes.filter((r) => budgetDogIds.includes(r.budget_dog_id));
+      const budgetRecipes = recipes.filter((r) =>
+        budgetDogIds.includes(r.budget_dog_id),
+      );
 
       const recipesSummary = budgetRecipes.map((r) => {
         const assigned = Number(r.assigned_days ?? 0);
         return {
-          recipeName: (r.recipe as { name?: string | null } | null)?.name ?? 'Receta',
+          recipeName:
+            (r.recipe as { name?: string | null } | null)?.name ?? "Receta",
           assignedDays: assigned,
           preparedDays: Math.min(recipeToPrepared.get(r.id) ?? 0, assigned),
-          deliveredDays: Math.min(recipeToDelivered.get(r.id) ?? 0, assigned)
+          deliveredDays: Math.min(recipeToDelivered.get(r.id) ?? 0, assigned),
         };
       });
 
-      const totalAssigned = budgetRecipes.reduce((sum, r) => sum + Number(r.assigned_days ?? 0), 0);
-      const totalPrepared = budgetRecipes.reduce((sum, r) => sum + Math.min(recipeToPrepared.get(r.id) ?? 0, Number(r.assigned_days ?? 0)), 0);
-      const totalDelivered = budgetRecipes.reduce((sum, r) => sum + Math.min(recipeToDelivered.get(r.id) ?? 0, Number(r.assigned_days ?? 0)), 0);
+      const totalAssigned = budgetRecipes.reduce(
+        (sum, r) => sum + Number(r.assigned_days ?? 0),
+        0,
+      );
+      const totalPrepared = budgetRecipes.reduce(
+        (sum, r) =>
+          sum +
+          Math.min(
+            recipeToPrepared.get(r.id) ?? 0,
+            Number(r.assigned_days ?? 0),
+          ),
+        0,
+      );
+      const totalDelivered = budgetRecipes.reduce(
+        (sum, r) =>
+          sum +
+          Math.min(
+            recipeToDelivered.get(r.id) ?? 0,
+            Number(r.assigned_days ?? 0),
+          ),
+        0,
+      );
 
       return {
         budgetId: bid,
@@ -127,7 +173,7 @@ export const load: PageServerLoad = async ({ locals, params }) => {
         totalAssignedDays: totalAssigned,
         totalPreparedDays: totalPrepared,
         totalDeliveredDays: totalDelivered,
-        recipes: recipesSummary
+        recipes: recipesSummary,
       };
     })
     .filter(Boolean);
@@ -139,8 +185,8 @@ export const load: PageServerLoad = async ({ locals, params }) => {
       tutorName,
       dietType: dogData.diet_type,
       mealsPerDay: dogData.meals_per_day,
-      isActive: dogData.is_active
+      isActive: dogData.is_active,
     },
-    budgets: budgetSummaries
+    budgets: budgetSummaries,
   };
 };

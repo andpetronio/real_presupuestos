@@ -2,10 +2,10 @@
  * Formatea una etiqueta de bucket de fecha (YYYY-MM-DD → DD/MM).
  */
 export const formatBucketLabel = (bucket: string): string => {
-  const parts = bucket.split('-').map(Number);
+  const parts = bucket.split("-").map(Number);
   if (parts.length < 3 || parts.some(isNaN)) return bucket;
   const [year, month, day] = parts;
-  return `${String(day).padStart(2, '0')}/${String(month).padStart(2, '0')}`;
+  return `${String(day).padStart(2, "0")}/${String(month).padStart(2, "0")}`;
 };
 
 /**
@@ -14,7 +14,7 @@ export const formatBucketLabel = (bucket: string): string => {
  */
 export const computeMovingAverage = (
   values: number[],
-  window = 3
+  window = 3,
 ): { raw: number; average: number }[] => {
   return values.map((value, index) => {
     const start = Math.max(0, index - (window - 1));

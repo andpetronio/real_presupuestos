@@ -60,7 +60,7 @@ export type CamelCaseOperationalSettings = {
  */
 export const computeOperationalTotal = (
   inputs: OperationalInputs,
-  settings: CamelCaseOperationalSettings
+  settings: CamelCaseOperationalSettings,
 ): number => {
   const raw =
     inputs.vacuumBagSmallQty * settings.vacuumBagSmallUnitCost +
@@ -77,7 +77,9 @@ export const computeOperationalTotal = (
 
 // ─── Client convenience (snake → camel) ──────────────────────────────────────
 
-const snakeToCamelSettings = (snake: OperationalSettings): CamelCaseOperationalSettings => ({
+const snakeToCamelSettings = (
+  snake: OperationalSettings,
+): CamelCaseOperationalSettings => ({
   vacuumBagSmallUnitCost: snake.vacuum_bag_small_unit_cost,
   vacuumBagLargeUnitCost: snake.vacuum_bag_large_unit_cost,
   labelUnitCost: snake.label_unit_cost,
@@ -85,13 +87,16 @@ const snakeToCamelSettings = (snake: OperationalSettings): CamelCaseOperationalS
   laborHourCost: snake.labor_hour_cost,
   cookingHourCost: snake.cooking_hour_cost,
   calciumUnitCost: snake.calcium_unit_cost,
-  kefirUnitCost: snake.kefir_unit_cost
+  kefirUnitCost: snake.kefir_unit_cost,
 });
 
 /**
  * Sums the operational cost for client-side budget preview.
  * Converts snake_case settings (from DB) to camelCase before computing.
  */
-export const sumOperationalCost = (inputs: OperationalInputs, settings: OperationalSettings): number => {
+export const sumOperationalCost = (
+  inputs: OperationalInputs,
+  settings: OperationalSettings,
+): number => {
   return computeOperationalTotal(inputs, snakeToCamelSettings(settings));
 };

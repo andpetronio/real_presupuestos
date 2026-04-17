@@ -3,7 +3,7 @@
  * Tested in metric-card.model.test.ts.
  */
 
-export type TrendDirection = 'up' | 'down' | 'neutral';
+export type TrendDirection = "up" | "down" | "neutral";
 
 export type TrendInput = {
   delta: number | null;
@@ -17,12 +17,12 @@ export type TrendInput = {
  */
 export const resolveTrendDirection = (
   delta: number | null,
-  positiveIsGood = true
+  positiveIsGood = true,
 ): TrendDirection => {
-  if (delta === null) return 'neutral';
-  if (delta > 0) return positiveIsGood ? 'up' : 'down';
-  if (delta < 0) return positiveIsGood ? 'down' : 'up';
-  return 'neutral';
+  if (delta === null) return "neutral";
+  if (delta > 0) return positiveIsGood ? "up" : "down";
+  if (delta < 0) return positiveIsGood ? "down" : "up";
+  return "neutral";
 };
 
 /**
@@ -30,8 +30,8 @@ export const resolveTrendDirection = (
  * Returns empty string for null delta.
  */
 export const formatDeltaBadge = (delta: number | null): string => {
-  if (delta === null) return '';
-  const arrow = delta > 0 ? '↑' : delta < 0 ? '↓' : '';
+  if (delta === null) return "";
+  const arrow = delta > 0 ? "↑" : delta < 0 ? "↓" : "";
   return `${arrow} ${Math.abs(delta).toFixed(1)}%`;
 };
 
@@ -40,28 +40,28 @@ export const formatDeltaBadge = (delta: number | null): string => {
  */
 export const resolveDeltaColorClass = (
   delta: number | null,
-  direction: TrendDirection
+  direction: TrendDirection,
 ): string => {
-  if (delta === null) return 'text-gray-500';
-  if (direction === 'up') return 'text-green-600';
-  if (direction === 'down') return 'text-red-600';
-  return 'text-gray-500';
+  if (delta === null) return "text-gray-500";
+  if (direction === "up") return "text-green-600";
+  if (direction === "down") return "text-red-600";
+  return "text-gray-500";
 };
 
 /**
  * Resolves CSS color class for the metric value based on variant.
  */
 export const resolveValueColorClass = (
-  colorVariant: 'default' | 'primary' | 'accent' | 'secondary'
+  colorVariant: "default" | "primary" | "accent" | "secondary",
 ): string => {
   switch (colorVariant) {
-    case 'accent':
-      return 'text-accent-600';
-    case 'secondary':
-      return 'text-secondary-700';
-    case 'primary':
-      return 'text-primary-700';
+    case "accent":
+      return "text-accent-600";
+    case "secondary":
+      return "text-secondary-700";
+    case "primary":
+      return "text-primary-700";
     default:
-      return 'text-gray-900';
+      return "text-gray-900";
   }
 };

@@ -3,11 +3,11 @@
  * Siempre 2 decimales, con símbolo "$" y formato es-AR.
  */
 export const formatArs = (value: number): string => {
-  return new Intl.NumberFormat('es-AR', {
-    style: 'currency',
-    currency: 'ARS',
+  return new Intl.NumberFormat("es-AR", {
+    style: "currency",
+    currency: "ARS",
     minimumFractionDigits: 2,
-    maximumFractionDigits: 2
+    maximumFractionDigits: 2,
   }).format(value);
 };
 
@@ -23,8 +23,8 @@ export const formatQuantity = (value: number): string => {
   const rounded = Math.round(value * 100) / 100;
   const isWhole = Math.abs(rounded - Math.round(value)) < 1e-9;
 
-  return new Intl.NumberFormat('es-AR', {
+  return new Intl.NumberFormat("es-AR", {
     minimumFractionDigits: isWhole ? 0 : 2,
-    maximumFractionDigits: isWhole ? 0 : 2
+    maximumFractionDigits: isWhole ? 0 : 2,
   }).format(value);
 };

@@ -1,4 +1,4 @@
-export type UIState = 'loading' | 'empty' | 'error' | 'success';
+export type UIState = "loading" | "empty" | "error" | "success";
 
 export interface OperatorMessage {
   kind: UIState;

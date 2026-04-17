@@ -3,11 +3,14 @@
  * Maneja inserts, updates y deletes de budgets y relaciones.
  */
 
-import type { SupabaseClient } from '@supabase/supabase-js';
-import type { BudgetStatus } from '$lib/types/budget';
-import type { BudgetOperationalInputs, CalculatedDogTotals } from './calculation';
-import type { ParsedCompositionRow, OperationResult } from './types';
-import { createTransaction } from '$lib/server/shared/multi-step-transaction';
+import type { SupabaseClient } from "@supabase/supabase-js";
+import type { BudgetStatus } from "$lib/types/budget";
+import type {
+  BudgetOperationalInputs,
+  CalculatedDogTotals,
+} from "./calculation";
+import type { ParsedCompositionRow, OperationResult } from "./types";
+import { createTransaction } from "$lib/server/shared/multi-step-transaction";
 
 /**
  * Guarda la composición del presupuesto (budget_dogs + budget_dog_recipes).
@@ -31,7 +34,10 @@ export const saveBudgetComposition = async (params: {
   // Mapear días requeridos por perro
   const requestedDaysByDog = new Map<string, number>();
   for (const row of composition) {
-    requestedDaysByDog.set(row.dogId, (requestedDaysByDog.get(row.dogId) ?? 0) + row.assignedDays);
+    requestedDaysByDog.set(
+      row.dogId,
+      (requestedDaysByDog.get(row.dogId) ?? 0) + row.assignedDays,
+    );
   }
 
   // Preparar budget_dogs rows
@@ -42,46 +48,61 @@ export const saveBudgetComposition = async (params: {
     ingredient_total: dogTotal.ingredientTotal,
     operational_total: dogTotal.operationalTotal,
     total_cost: dogTotal.totalCost,
-    final_sale_price: dogTotal.finalSalePrice
+    final_sale_price: dogTotal.finalSalePrice,
   }));
 
   // Insertar budget_dogs
   const { data: createdBudgetDogs, error: budgetDogsError } = await supabase
-    .from('budget_dogs')
+    .from("budget_dogs")
     .insert(dogRows)
-    .select('id, dog_id');
+    .select("id, dog_id");
 
   if (budgetDogsError || !createdBudgetDogs) {
-    return { ok: false, message: 'No pudimos guardar los perros del presupuesto.' };
+    return {
+      ok: false,
+      message: "No pudimos guardar los perros del presupuesto.",
+    };
   }
 
   // Registrar rollback para budget_dogs si falla el siguiente paso
   const createdBudgetDogIds = createdBudgetDogs.map((b) => b.id);
   tx.registerRollback(async () => {
-    await supabase.from('budget_dogs').delete().in('id', createdBudgetDogIds);
+    await supabase.from("budget_dogs").delete().in("id", createdBudgetDogIds);
   });
 
   // Mapear budget_dog_id por dog_id
-  const budgetDogIdByDogId = new Map(createdBudgetDogs.map((row) => [row.dog_id, row.id]));
+  const budgetDogIdByDogId = new Map(
+    createdBudgetDogs.map((row) => [row.dog_id, row.id]),
+  );
 
   // Preparar budget_dog_recipes rows
   const recipeRows = composition.map((row) => ({
-    budget_dog_id: budgetDogIdByDogId.get(row.dogId) ?? '',
+    budget_dog_id: budgetDogIdByDogId.get(row.dogId) ?? "",
     recipe_id: row.recipeId,
-    assigned_days: row.assignedDays
+    assigned_days: row.assignedDays,
   }));
 
-  const hasInvalidBudgetDogReference = recipeRows.some((row) => !row.budget_dog_id);
+  const hasInvalidBudgetDogReference = recipeRows.some(
+    (row) => !row.budget_dog_id,
+  );
   if (hasInvalidBudgetDogReference) {
     await tx.rollback();
-    return { ok: false, message: 'No pudimos vincular recetas con perros del presupuesto.' };
+    return {
+      ok: false,
+      message: "No pudimos vincular recetas con perros del presupuesto.",
+    };
   }
 
   // Insertar budget_dog_recipes
-  const { error: recipeRowsError } = await supabase.from('budget_dog_recipes').insert(recipeRows);
+  const { error: recipeRowsError } = await supabase
+    .from("budget_dog_recipes")
+    .insert(recipeRows);
   if (recipeRowsError) {
     await tx.rollback();
-    return { ok: false, message: 'No pudimos guardar las recetas asignadas del presupuesto.' };
+    return {
+      ok: false,
+      message: "No pudimos guardar las recetas asignadas del presupuesto.",
+    };
   }
 
   return { ok: true };
@@ -103,7 +124,19 @@ export const buildBudgetPayload = (params: {
   finalSalePrice: number;
   operationals: BudgetOperationalInputs;
 }) => {
-  const { tutorId, referenceMonth, referenceDays, notes, expiresAt, appliedMargin, ingredientTotal, operationalTotal, totalCost, finalSalePrice, operationals } = params;
+  const {
+    tutorId,
+    referenceMonth,
+    referenceDays,
+    notes,
+    expiresAt,
+    appliedMargin,
+    ingredientTotal,
+    operationalTotal,
+    totalCost,
+    finalSalePrice,
+    operationals,
+  } = params;
 
   return {
     tutor_id: tutorId,
@@ -123,7 +156,7 @@ export const buildBudgetPayload = (params: {
     labor_hours_qty: operationals.laborHoursQty,
     cooking_hours_qty: operationals.cookingHoursQty,
     calcium_qty: operationals.calciumQty,
-    kefir_qty: operationals.kefirQty
+    kefir_qty: operationals.kefirQty,
   };
 };
 
@@ -143,13 +176,19 @@ export const saveBudgetSnapshot = async (params: {
 }): Promise<OperationResult> => {
   const { budgetId, supabase, snapshotData } = params;
 
-  const { error: snapshotError } = await supabase.from('budget_snapshots').insert({
-    budget_id: budgetId,
-    snapshot_payload_json: snapshotData
-  });
+  const { error: snapshotError } = await supabase
+    .from("budget_snapshots")
+    .insert({
+      budget_id: budgetId,
+      snapshot_payload_json: snapshotData,
+    });
 
   if (snapshotError) {
-    return { ok: false, message: 'No pudimos guardar el registro histórico del presupuesto. El presupuesto se guardó correctamente, solo no quedó registrado en el historial.' };
+    return {
+      ok: false,
+      message:
+        "No pudimos guardar el registro histórico del presupuesto. El presupuesto se guardó correctamente, solo no quedó registrado en el historial.",
+    };
   }
 
   return { ok: true };
@@ -167,12 +206,12 @@ export const updateBudgetStatus = async (params: {
   const { budgetId, supabase, status, extraFields } = params;
 
   const { error } = await supabase
-    .from('budgets')
+    .from("budgets")
     .update({ status, ...extraFields })
-    .eq('id', budgetId);
+    .eq("id", budgetId);
 
   if (error) {
-    return { ok: false, message: 'No pudimos actualizar el presupuesto.' };
+    return { ok: false, message: "No pudimos actualizar el presupuesto." };
   }
 
   return { ok: true };
@@ -187,13 +226,10 @@ export const deleteBudget = async (params: {
 }): Promise<OperationResult> => {
   const { budgetId, supabase } = params;
 
-  const { error } = await supabase
-    .from('budgets')
-    .delete()
-    .eq('id', budgetId);
+  const { error } = await supabase.from("budgets").delete().eq("id", budgetId);
 
   if (error) {
-    return { ok: false, message: 'No pudimos eliminar el presupuesto.' };
+    return { ok: false, message: "No pudimos eliminar el presupuesto." };
   }
 
   return { ok: true };
@@ -218,9 +254,11 @@ export const getBudgetById = async (params: {
   const { budgetId, supabase } = params;
 
   const { data, error } = await supabase
-    .from('budgets')
-    .select('id, status, tutor_id, final_sale_price, expires_at, public_token, reference_month, reference_days')
-    .eq('id', budgetId)
+    .from("budgets")
+    .select(
+      "id, status, tutor_id, final_sale_price, expires_at, public_token, reference_month, reference_days",
+    )
+    .eq("id", budgetId)
     .maybeSingle();
 
   if (error || !data) return null;
@@ -229,10 +267,17 @@ export const getBudgetById = async (params: {
 
 // ─── Importaciones para las funciones de save ─────────────────────────────────
 
-import { parseMonthInput } from './parsers';
-import { parseComposition, parseOperationalInputs, getSettingsForBudgetFormula, readRecipeDailyCosts, parseDefaultExpiration, createBudgetPublicToken } from './parsers';
-import { calculateBudgetTotals, type BudgetSettingsCosts } from './calculation';
-import type { ActionValues } from './types';
+import { parseMonthInput } from "./parsers";
+import {
+  parseComposition,
+  parseOperationalInputs,
+  getSettingsForBudgetFormula,
+  readRecipeDailyCosts,
+  parseDefaultExpiration,
+  createBudgetPublicToken,
+} from "./parsers";
+import { calculateBudgetTotals, type BudgetSettingsCosts } from "./calculation";
+import type { ActionValues } from "./types";
 
 /**
  * Resultado de validación de entrada de presupuesto.
@@ -264,39 +309,71 @@ export const validateBudgetInput = async (params: {
 
   // Validaciones requeridas
   if (!values.tutorId) {
-    return { valid: false, operatorError: 'Seleccioná un tutor para armar el presupuesto.', values };
+    return {
+      valid: false,
+      operatorError: "Seleccioná un tutor para armar el presupuesto.",
+      values,
+    };
   }
 
   const referenceMonth = parseMonthInput(values.budgetMonth);
   if (!referenceMonth) {
-    return { valid: false, operatorError: 'Indicá el mes del presupuesto con formato válido (AAAA-MM).', values };
+    return {
+      valid: false,
+      operatorError:
+        "Indicá el mes del presupuesto con formato válido (AAAA-MM).",
+      values,
+    };
   }
 
   const composition = parseComposition(values.rows);
   if (!composition) {
-    return { valid: false, operatorError: 'Cargá al menos una receta con perro y días asignados (sin duplicar receta por perro).', values };
+    return {
+      valid: false,
+      operatorError:
+        "Cargá al menos una receta con perro y días asignados (sin duplicar receta por perro).",
+      values,
+    };
   }
 
   // reference_days del presupuesto = máximo de días entre perros (no suma total)
   const requestedDaysByDog = new Map<string, number>();
   for (const row of composition) {
-    requestedDaysByDog.set(row.dogId, (requestedDaysByDog.get(row.dogId) ?? 0) + row.assignedDays);
+    requestedDaysByDog.set(
+      row.dogId,
+      (requestedDaysByDog.get(row.dogId) ?? 0) + row.assignedDays,
+    );
   }
 
   const referenceDays = Math.max(...Array.from(requestedDaysByDog.values()));
 
   const operationals = parseOperationalInputs(values);
   if (!operationals) {
-    return { valid: false, operatorError: 'Revisá los costos globales: deben ser números mayores o iguales a 0.', values };
+    return {
+      valid: false,
+      operatorError:
+        "Revisá los costos globales: deben ser números mayores o iguales a 0.",
+      values,
+    };
   }
 
   const settings = await getSettingsForBudgetFormula(supabase);
   if (!settings) {
-    return { valid: false, operatorError: 'No pudimos leer configuración de costos para calcular el presupuesto.', values };
+    return {
+      valid: false,
+      operatorError:
+        "No pudimos leer configuración de costos para calcular el presupuesto.",
+      values,
+    };
   }
 
   if (settings.mealPlanMargin >= 1) {
-    return { valid: false, operatorError: 'El margen comercial configurado no puede ser mayor o igual a 100%.', values };
+    return {
+      valid: false,
+      operatorError:
+        "El margen comercial configurado no puede ser mayor o igual a 100%.",
+      values,
+    };
   }
 
   // Validar perros y recetas existen y pertenecen al tutor
@@ -304,12 +381,17 @@ export const validateBudgetInput = async (params: {
   const recipeIds = Array.from(new Set(composition.map((row) => row.recipeId)));
 
   const [dogsResult, recipesResult] = await Promise.all([
-    supabase.from('dogs').select('id, tutor_id').in('id', dogIds),
-    supabase.from('recipes').select('id, dog_id').in('id', recipeIds)
+    supabase.from("dogs").select("id, tutor_id").in("id", dogIds),
+    supabase.from("recipes").select("id, dog_id").in("id", recipeIds),
   ]);
 
   if (dogsResult.error || recipesResult.error) {
-    return { valid: false, operatorError: 'No pudimos validar perros y recetas. Reintentá en unos segundos.', values };
+    return {
+      valid: false,
+      operatorError:
+        "No pudimos validar perros y recetas. Reintentá en unos segundos.",
+      values,
+    };
   }
 
   const dogs = dogsResult.data ?? [];
@@ -318,30 +400,55 @@ export const validateBudgetInput = async (params: {
   const recipeById = new Map(recipes.map((recipe) => [recipe.id, recipe]));
 
   if (dogById.size !== dogIds.length) {
-    return { valid: false, operatorError: 'Hay perros inválidos en la composición del presupuesto.', values };
+    return {
+      valid: false,
+      operatorError: "Hay perros inválidos en la composición del presupuesto.",
+      values,
+    };
   }
 
   if (recipeById.size !== recipeIds.length) {
-    return { valid: false, operatorError: 'Hay recetas inválidas en la composición del presupuesto.', values };
+    return {
+      valid: false,
+      operatorError: "Hay recetas inválidas en la composición del presupuesto.",
+      values,
+    };
   }
 
   for (const dog of dogs) {
     if (dog.tutor_id !== values.tutorId) {
-      return { valid: false, operatorError: 'Todos los perros del presupuesto deben pertenecer al tutor seleccionado.', values };
+      return {
+        valid: false,
+        operatorError:
+          "Todos los perros del presupuesto deben pertenecer al tutor seleccionado.",
+        values,
+      };
     }
   }
 
   for (const row of composition) {
     const recipe = recipeById.get(row.recipeId);
     if (!recipe || recipe.dog_id !== row.dogId) {
-      return { valid: false, operatorError: 'Cada receta debe corresponder al perro seleccionado.', values };
+      return {
+        valid: false,
+        operatorError: "Cada receta debe corresponder al perro seleccionado.",
+        values,
+      };
     }
   }
 
   // Leer costos de recetas
-  const recipeDailyCostsResult = await readRecipeDailyCosts(supabase, recipeIds);
+  const recipeDailyCostsResult = await readRecipeDailyCosts(
+    supabase,
+    recipeIds,
+  );
   if (!recipeDailyCostsResult) {
-    return { valid: false, operatorError: 'No pudimos calcular costos de recetas. Reintentá en unos segundos.', values };
+    return {
+      valid: false,
+      operatorError:
+        "No pudimos calcular costos de recetas. Reintentá en unos segundos.",
+      values,
+    };
   }
 
   return {
@@ -352,7 +459,7 @@ export const validateBudgetInput = async (params: {
     composition,
     operationals,
     settings,
-    recipeDailyCosts: recipeDailyCostsResult
+    recipeDailyCosts: recipeDailyCostsResult,
   };
 };
 
@@ -370,7 +477,7 @@ export type BudgetExpiryResult =
  * Llamado por: +page.server.ts saveBudget orchestrator
  */
 export const getBudgetExpiry = async (params: {
-  action: 'create' | 'update';
+  action: "create" | "update";
   budgetId?: string;
   settingsValidityDays: number;
   values: ActionValues;
@@ -381,12 +488,13 @@ export const getBudgetExpiry = async (params: {
   let expiresAt = parseDefaultExpiration(settingsValidityDays);
 
   // Para updates, mantener fecha de creación original
-  if (action === 'update' && budgetId) {
-    const { data: currentBudgetDate, error: currentBudgetDateError } = await supabase
-      .from('budgets')
-      .select('created_at')
-      .eq('id', budgetId)
-      .maybeSingle();
+  if (action === "update" && budgetId) {
+    const { data: currentBudgetDate, error: currentBudgetDateError } =
+      await supabase
+        .from("budgets")
+        .select("created_at")
+        .eq("id", budgetId)
+        .maybeSingle();
 
     if (!currentBudgetDateError && currentBudgetDate?.created_at) {
       const baseCreatedAt = new Date(currentBudgetDate.created_at);
@@ -414,7 +522,7 @@ export type PersistBudgetResult =
  * Llamado por: +page.server.ts saveBudget orchestrator
  */
 export const persistBudget = async (params: {
-  action: 'create' | 'update';
+  action: "create" | "update";
   budgetId: string;
   values: ActionValues;
   tutorId: string;
@@ -435,7 +543,21 @@ export const persistBudget = async (params: {
   composition: ReadonlyArray<ParsedCompositionRow>;
   supabase: SupabaseClient;
 }): Promise<PersistBudgetResult> => {
-  const { action, budgetId, values, tutorId, referenceMonth, referenceDays, notes, expiresAt, calculation, operationals, settings, composition, supabase } = params;
+  const {
+    action,
+    budgetId,
+    values,
+    tutorId,
+    referenceMonth,
+    referenceDays,
+    notes,
+    expiresAt,
+    calculation,
+    operationals,
+    settings,
+    composition,
+    supabase,
+  } = params;
 
   // Payload para el presupuesto
   const payload = {
@@ -456,54 +578,80 @@ export const persistBudget = async (params: {
     labor_hours_qty: operationals.laborHoursQty,
     cooking_hours_qty: operationals.cookingHoursQty,
     calcium_qty: operationals.calciumQty,
-    kefir_qty: operationals.kefirQty
+    kefir_qty: operationals.kefirQty,
   };
 
   let newBudgetId = budgetId;
 
-  if (action === 'create') {
+  if (action === "create") {
     const { data: createdBudget, error: createError } = await supabase
-      .from('budgets')
+      .from("budgets")
       .insert({
-        status: 'draft',
+        status: "draft",
         public_token: createBudgetPublicToken(),
-        ...payload
+        ...payload,
       })
-      .select('id')
+      .select("id")
       .single();
 
     if (createError || !createdBudget) {
-      return { ok: false, operatorError: 'No pudimos crear el presupuesto borrador. Reintentá en unos segundos.', values };
+      return {
+        ok: false,
+        operatorError:
+          "No pudimos crear el presupuesto borrador. Reintentá en unos segundos.",
+        values,
+      };
     }
 
     newBudgetId = createdBudget.id;
   } else {
     if (!budgetId) {
-      return { ok: false, operatorError: 'No encontramos el presupuesto a editar.', values };
+      return {
+        ok: false,
+        operatorError: "No encontramos el presupuesto a editar.",
+        values,
+      };
     }
 
     const { data: currentBudget, error: currentBudgetError } = await supabase
-      .from('budgets')
-      .select('status')
-      .eq('id', budgetId)
+      .from("budgets")
+      .select("status")
+      .eq("id", budgetId)
       .maybeSingle();
 
     if (currentBudgetError || !currentBudget) {
-      return { ok: false, operatorError: 'No encontramos el presupuesto a editar.', values };
+      return {
+        ok: false,
+        operatorError: "No encontramos el presupuesto a editar.",
+        values,
+      };
     }
 
-    if ((currentBudget.status as BudgetStatus) !== 'draft') {
-      return { ok: false, operatorError: 'Solo se pueden editar presupuestos en estado borrador.', values };
+    if ((currentBudget.status as BudgetStatus) !== "draft") {
+      return {
+        ok: false,
+        operatorError: "Solo se pueden editar presupuestos en estado borrador.",
+        values,
+      };
     }
 
-    const { error: updateError } = await supabase.from('budgets').update(payload).eq('id', budgetId);
+    const { error: updateError } = await supabase
+      .from("budgets")
+      .update(payload)
+      .eq("id", budgetId);
     if (updateError) {
-      return { ok: false, operatorError: 'No pudimos guardar el borrador. Reintentá en unos segundos.', values };
+      return {
+        ok: false,
+        operatorError:
+          "No pudimos guardar el borrador. Reintentá en unos segundos.",
+        values,
+      };
     }
   }
 
   // Guardar snapshot PRIMERO — es histórico, no afecta la operación del presupuesto.
   // Si falla, el presupuesto sigue funcional; solo perdemos el registro histórico.
+  // BEST-EFFORT: logs + métricas, pero no bloqueamos operación.
   const snapshotResult = await saveBudgetSnapshot({
     budgetId: newBudgetId,
     supabase,
@@ -512,22 +660,27 @@ export const persistBudget = async (params: {
       composition,
       operationals,
       settings,
-      totals: calculation
-    }
+      totals: calculation,
+    },
   });
 
   if (!snapshotResult.ok) {
-    // Snapshot es no-crítico: logueamos pero no bloqueamos la operación.
-    // El mensaje de error refleja que el presupuesto se guardó OK.
-    console.warn('[persistBudget] Snapshot falló (no crítico):', snapshotResult.message);
+    // Snapshot no-crítico: logueamos + metric tracked pero no bloqueamos operación.
+    // Operador ve éxito; soporte puede verificar snapshots pendientes por tracking.
+    console.warn(
+      "[persistBudget] Snapshot falló (no crítico, operación OK):",
+      snapshotResult.message,
+    );
+    // TODO: agregar métrica/telemetry aquí para alerting async (e.g., Sentry, custom DB table)
   }
 
   // Guardar composición SEGUNDO — es crítica, el presupuesto no funciona sin esto.
+  // Con rollback automático via MultiStepTransaction en saveBudgetComposition.
   const compositionSaveResult = await saveBudgetComposition({
     budgetId: newBudgetId,
     supabase,
     composition,
-    dogTotals: calculation.dogTotals
+    dogTotals: calculation.dogTotals,
   });
 
   if (!compositionSaveResult.ok) {

@@ -1,7 +1,7 @@
-import { redirect } from '@sveltejs/kit';
-import type { LayoutServerLoad } from './$types';
-import { navItems } from '$lib/constants/navigation';
-import { getUnviewedAcceptedBudgetCount } from '$lib/server/budgets/tracking';
+import { redirect } from "@sveltejs/kit";
+import type { LayoutServerLoad } from "./$types";
+import { navItems } from "$lib/constants/navigation";
+import { getUnviewedAcceptedBudgetCount } from "$lib/server/budgets/tracking";
 
 const sanitizeActorId = (value: string | undefined): string | null => {
   if (!value) return null;
@@ -9,7 +9,6 @@ const sanitizeActorId = (value: string | undefined): string | null => {
   const normalized = value.trim();
   return normalized.length > 0 ? normalized : null;
 };
-
 
 export const load: LayoutServerLoad = async ({ locals, url }) => {
   const actorId = sanitizeActorId(locals.user?.id);
@@ -19,13 +18,15 @@ export const load: LayoutServerLoad = async ({ locals, url }) => {
     throw redirect(303, `/?next=${next}`);
   }
 
-  const pendingAcceptedCount = await getUnviewedAcceptedBudgetCount(locals.supabase);
+  const pendingAcceptedCount = await getUnviewedAcceptedBudgetCount(
+    locals.supabase,
+  );
 
   return {
     actorId,
     pendingAcceptedCount,
     navContext: navItems
       .filter((item) => item.internalOnly)
-      .map(({ key, href, label }) => ({ key, href, label }))
+      .map(({ key, href, label }) => ({ key, href, label })),
   };
 };

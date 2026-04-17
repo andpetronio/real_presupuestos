@@ -3,11 +3,11 @@
  */
 
 export type BudgetStatus =
-  | 'draft'
-  | 'ready_to_send'
-  | 'sent'
-  | 'accepted'
-  | 'rejected'
-  | 'expired'
-  | 'discarded'
-  | 'closed';
+  | "draft"
+  | "ready_to_send"
+  | "sent"
+  | "accepted"
+  | "rejected"
+  | "expired"
+  | "discarded"
+  | "closed";

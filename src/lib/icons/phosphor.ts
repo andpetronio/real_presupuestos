@@ -19,8 +19,8 @@ import {
   ArrowCounterClockwise,
   List,
   Dog,
-  CalendarBlank
-} from 'phosphor-svelte';
+  CalendarBlank,
+} from "phosphor-svelte";
 
 export {
   Gauge,
@@ -43,5 +43,5 @@ export {
   ArrowCounterClockwise,
   List,
   Dog,
-  CalendarBlank
+  CalendarBlank,
 };
