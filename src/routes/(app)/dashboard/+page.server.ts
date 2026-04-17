@@ -241,9 +241,16 @@ export const load: PageServerLoad = async ({ parent, locals, url }) => {
     const previousPeriodStart = new Date(previousPeriodEnd.getTime() - durationMs);
     const granularity = getBucketGranularity(selectedPeriod);
 
-    const { data, error } = await locals.supabase
-      .from('budgets')
-      .select('status, sent_at, accepted_at, rejected_at, final_sale_price');
+    const [{ data, error }, paymentsResult] = await Promise.all([
+      locals.supabase
+        .from('budgets')
+        .select('status, sent_at, accepted_at, rejected_at, final_sale_price'),
+      locals.supabase
+        .from('budget_payments')
+        .select('amount, paid_at')
+        .gte('paid_at', periodStart.toISOString())
+        .lte('paid_at', now.toISOString())
+    ]);
 
     if (error) throw error;
 
@@ -252,6 +259,20 @@ export const load: PageServerLoad = async ({ parent, locals, url }) => {
     const current = aggregateMetrics(rows, periodStart, now);
     const previous = aggregateMetrics(rows, previousPeriodStart, previousPeriodEnd);
     const timeseries = buildTimeSeries(rows, periodStart, now, granularity);
+
+    const payments = (paymentsResult.data ?? []) as Array<{ amount: number; paid_at: string }>;
+    const paymentsCollected = payments.reduce((sum, p) => sum + Number(p.amount ?? 0), 0);
+    const paymentsCount = payments.length;
+    const paymentsAvgAmount = paymentsCount > 0 ? paymentsCollected / paymentsCount : 0;
+
+    const previousPeriodPaymentsResult = await locals.supabase
+      .from('budget_payments')
+      .select('amount')
+      .gte('paid_at', previousPeriodStart.toISOString())
+      .lte('paid_at', previousPeriodEnd.toISOString());
+    const prevPayments = (previousPeriodPaymentsResult.data ?? []) as Array<{ amount: number }>;
+    const prevCollected = prevPayments.reduce((sum, p) => sum + Number(p.amount ?? 0), 0);
+    const paymentsDelta = getDeltaPercentage(paymentsCollected, prevCollected);
 
     return {
       state: 'success' as const,
@@ -275,7 +296,13 @@ export const load: PageServerLoad = async ({ parent, locals, url }) => {
         respondedDeltaPct: getDeltaPercentage(current.responded, previous.responded),
         acceptanceRateDeltaPct: getDeltaPercentage(current.acceptanceRate, previous.acceptanceRate),
         acceptedTotalDeltaPct: getDeltaPercentage(current.acceptedTotal, previous.acceptedTotal),
-        avgAcceptedTicketDeltaPct: getDeltaPercentage(current.avgAcceptedTicket, previous.avgAcceptedTicket)
+        avgAcceptedTicketDeltaPct: getDeltaPercentage(current.avgAcceptedTicket, previous.avgAcceptedTicket),
+        paymentsDeltaPct: paymentsDelta
+      },
+      payments: {
+        collected: paymentsCollected,
+        count: paymentsCount,
+        avgAmount: paymentsAvgAmount
       },
       pendingAcceptedCount
     };
@@ -302,7 +329,13 @@ export const load: PageServerLoad = async ({ parent, locals, url }) => {
         respondedDeltaPct: 0,
         acceptanceRateDeltaPct: 0,
         acceptedTotalDeltaPct: 0,
-        avgAcceptedTicketDeltaPct: 0
+        avgAcceptedTicketDeltaPct: 0,
+        paymentsDeltaPct: 0
+      },
+      payments: {
+        collected: 0,
+        count: 0,
+        avgAmount: 0
       },
       pendingAcceptedCount: 0
     };

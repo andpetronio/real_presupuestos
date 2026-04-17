@@ -37,7 +37,7 @@
   };
 
   type ActionData = {
-    actionType?: 'sendWhatsapp' | 'delete' | 'undoSent';
+    actionType?: 'sendWhatsapp' | 'delete' | 'undoSent' | 'accept' | 'reject';
     operatorError?: string;
     operatorSuccess?: string;
   };

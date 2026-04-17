@@ -4,6 +4,7 @@
   import type { BudgetStatus } from '$lib/types/budget';
   import { formatArs } from '$lib/shared/currency';
   import { route } from '$lib/shared/navigation';
+  import BudgetActionsMenu from './BudgetActionsMenu.svelte';
 
   type BudgetRow = {
     id: string;
@@ -27,7 +28,6 @@
 <div class="space-y-3 md:hidden" aria-label="Lista de presupuestos">
   {#each budgets as budget (budget.id)}
     <Card class="p-4" role="listitem">
-      <!-- Tutor + Status -->
       <div class="mb-3 flex items-start justify-between gap-2">
         <div>
           <p class="font-semibold text-gray-900">
@@ -40,7 +40,6 @@
         <StatusBadge status={budget.status} />
       </div>
 
-      <!-- Financial summary -->
       <div class="mb-3 grid grid-cols-2 gap-2 text-sm">
         <div>
           <p class="text-xs text-gray-500">Ingredientes</p>
@@ -60,63 +59,14 @@
         </div>
       </div>
 
-      <!-- Vence -->
       {#if budget.expires_at}
         <p class="mb-3 text-xs text-gray-500">
           Vence: {formatDate(budget.expires_at)}
         </p>
       {/if}
 
-      <!-- Actions -->
-      <div class="flex flex-wrap gap-2">
-        <Button
-          href={route('/budgets/', budget.id, '/preview')}
-          size="xs"
-          color="light"
-          aria-label="Ver presupuesto"
-        >
-          Ver
-        </Button>
-        {#if budget.status === 'accepted'}
-          <Button href={route('/seguimiento/', budget.id)} size="xs" color="light">
-            Seguimiento
-          </Button>
-        {/if}
-        {#if budget.status === 'draft' || budget.status === 'ready_to_send'}
-          <Button
-            href={route('/budgets/', budget.id, '/update')}
-            size="xs"
-            color="light"
-            aria-label="Editar presupuesto"
-          >
-            Editar
-          </Button>
-          <form
-            method="POST"
-            action="?/delete"
-            onsubmit={(event) => {
-              if (!confirm('¿Eliminar este presupuesto?')) event.preventDefault();
-            }}
-          >
-            <input type="hidden" name="budgetId" value={budget.id} />
-            <Button type="submit" size="xs" color="red" aria-label="Eliminar presupuesto">
-              Eliminar
-            </Button>
-          </form>
-        {:else if budget.status === 'sent'}
-          <form
-            method="POST"
-            action="?/undoSent"
-            onsubmit={(event) => {
-              if (!confirm('¿Reabrir este presupuesto? Volverá a borrador.')) event.preventDefault();
-            }}
-          >
-            <input type="hidden" name="budgetId" value={budget.id} />
-            <Button type="submit" size="xs" color="light">
-              Reabrir
-            </Button>
-          </form>
-        {/if}
+      <div class="flex items-center justify-end">
+        <BudgetActionsMenu {budget} />
       </div>
     </Card>
   {/each}

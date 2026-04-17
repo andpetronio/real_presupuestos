@@ -9,4 +9,5 @@ export type BudgetStatus =
   | 'accepted'
   | 'rejected'
   | 'expired'
-  | 'discarded';
+  | 'discarded'
+  | 'closed';

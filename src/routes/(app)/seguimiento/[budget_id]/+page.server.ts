@@ -22,11 +22,13 @@ export const load: PageServerLoad = async ({ locals, params }) => {
     .eq('id', budgetId)
     .maybeSingle();
 
-  if (budgetError || !budget || budget.status !== 'accepted') {
+  if (budgetError || !budget || !['accepted', 'closed'].includes(budget.status)) {
     throw redirect(303, '/seguimiento');
   }
 
-  await markBudgetViewed({ supabase: locals.supabase, budgetId });
+  if (budget.status === 'accepted') {
+    await markBudgetViewed({ supabase: locals.supabase, budgetId });
+  }
 
   const { data: recipeRows, error: recipeError } = await locals.supabase
     .from('budget_dog_recipes')
@@ -102,23 +104,36 @@ export const load: PageServerLoad = async ({ locals, params }) => {
       notes: string | null;
     }>) ?? [];
 
-  return {
-    budget: {
-      id: budget.id,
-      tutorName: (budget.tutor as { full_name?: string | null } | null)?.full_name ?? 'Sin tutor',
-      acceptedAt: budget.accepted_at,
-      totalPrice: Number(budget.final_sale_price ?? 0)
-    },
-    dogs,
-    recipeOptions: recipeTracking.map((recipe) => ({
-      budgetDogRecipeId: recipe.budgetDogRecipeId,
-      label: `${recipe.dogName} · ${recipe.recipeName} (${recipe.assignedDays} días)`
-    })),
-    preparations: preparationsResult.data ?? [],
-    deliveries: deliveriesResult.data ?? [],
-    payments,
-    paymentSummary: getPaymentSummary(payments, Number(budget.final_sale_price ?? 0))
-  };
+    const recipeNameById = new Map(recipeTracking.map((r) => [r.budgetDogRecipeId, `${r.dogName} · ${r.recipeName}`]));
+
+    const enrichedPreparations = (preparationsResult.data ?? []).map((p) => ({
+      ...p,
+      recipeName: recipeNameById.get(p.budget_dog_recipe_id) ?? 'Receta'
+    }));
+
+    const enrichedDeliveries = (deliveriesResult.data ?? []).map((d) => ({
+      ...d,
+      recipeName: recipeNameById.get(d.budget_dog_recipe_id) ?? 'Receta'
+    }));
+
+    return {
+      budget: {
+        id: budget.id,
+        status: budget.status,
+        tutorName: (budget.tutor as { full_name?: string | null } | null)?.full_name ?? 'Sin tutor',
+        acceptedAt: budget.accepted_at,
+        totalPrice: Number(budget.final_sale_price ?? 0)
+      },
+      dogs,
+      recipeOptions: recipeTracking.map((recipe) => ({
+        budgetDogRecipeId: recipe.budgetDogRecipeId,
+        label: `${recipe.dogName} · ${recipe.recipeName} (${recipe.assignedDays} días)`
+      })),
+      preparations: enrichedPreparations,
+      deliveries: enrichedDeliveries,
+      payments,
+      paymentSummary: getPaymentSummary(payments, Number(budget.final_sale_price ?? 0))
+    };
 };
 
 export const actions: Actions = {
@@ -264,6 +279,20 @@ export const actions: Actions = {
     }
 
     return { operatorSuccess: 'Entrega registrada correctamente.' };
+  },
+
+  close: async ({ locals, params }) => {
+    const { error } = await locals.supabase
+      .from('budgets')
+      .update({ status: 'closed' as const })
+      .eq('id', params.budget_id)
+      .eq('status', 'accepted');
+
+    if (error) {
+      return fail(400, { operatorError: 'No pudimos cerrar el presupuesto.' });
+    }
+
+    throw redirect(303, '/seguimiento');
   },
 
   deleteDelivery: async ({ request, locals }) => {

@@ -382,5 +382,98 @@ export const actions: Actions = {
       actionType: 'delete',
       operatorSuccess: 'Presupuesto eliminado correctamente.'
     };
+  },
+
+  accept: async ({ request, locals }) => {
+    const formData = await request.formData();
+    const budgetId = parseFormValue(formData.get('budgetId'));
+
+    if (!budgetId) {
+      return fail(400, {
+        actionType: 'accept',
+        operatorError: 'No encontramos el presupuesto a aceptar.'
+      });
+    }
+
+    const budget = await getBudgetById({ budgetId, supabase: locals.supabase });
+    if (!budget) {
+      return fail(400, {
+        actionType: 'accept',
+        operatorError: 'No encontramos el presupuesto a aceptar.'
+      });
+    }
+
+    if (budget.status !== 'sent') {
+      return fail(400, {
+        actionType: 'accept',
+        operatorError: 'Solo se pueden aceptar presupuestos en estado enviado.'
+      });
+    }
+
+    const now = new Date().toISOString();
+    const result = await updateBudgetStatus({
+      budgetId,
+      supabase: locals.supabase,
+      status: 'accepted',
+      extraFields: { accepted_at: now, viewed_at: now }
+    });
+
+    if (!result.ok) {
+      return fail(400, {
+        actionType: 'accept',
+        operatorError: result.message
+      });
+    }
+
+    return {
+      actionType: 'accept',
+      operatorSuccess: 'Presupuesto aceptado correctamente.'
+    };
+  },
+
+  reject: async ({ request, locals }) => {
+    const formData = await request.formData();
+    const budgetId = parseFormValue(formData.get('budgetId'));
+
+    if (!budgetId) {
+      return fail(400, {
+        actionType: 'reject',
+        operatorError: 'No encontramos el presupuesto a rechazar.'
+      });
+    }
+
+    const budget = await getBudgetById({ budgetId, supabase: locals.supabase });
+    if (!budget) {
+      return fail(400, {
+        actionType: 'reject',
+        operatorError: 'No encontramos el presupuesto a rechazar.'
+      });
+    }
+
+    if (budget.status !== 'sent') {
+      return fail(400, {
+        actionType: 'reject',
+        operatorError: 'Solo se pueden rechazar presupuestos en estado enviado.'
+      });
+    }
+
+    const result = await updateBudgetStatus({
+      budgetId,
+      supabase: locals.supabase,
+      status: 'rejected',
+      extraFields: { rejected_at: new Date().toISOString() }
+    });
+
+    if (!result.ok) {
+      return fail(400, {
+        actionType: 'reject',
+        operatorError: result.message
+      });
+    }
+
+    return {
+      actionType: 'reject',
+      operatorSuccess: 'Presupuesto rechazado correctamente.'
+    };
   }
 };

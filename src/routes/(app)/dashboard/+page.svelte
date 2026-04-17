@@ -43,6 +43,12 @@
       acceptanceRateDeltaPct: number | null;
       acceptedTotalDeltaPct: number | null;
       avgAcceptedTicketDeltaPct: number | null;
+      paymentsDeltaPct: number | null;
+    };
+    payments: {
+      collected: number;
+      count: number;
+      avgAmount: number;
     };
     pendingAcceptedCount: number;
   };
@@ -165,6 +171,13 @@
         <CurrencyDollar size={20} aria-hidden="true" />
       {/snippet}
     </HighlightCard>
+  </Card>
+
+  <Card size="xl" class="h-full p-6 shadow-sm xl:col-span-4">
+    <p class="text-xs uppercase tracking-wide text-gray-500">Cobranzas del período</p>
+    <p class="mt-1 text-2xl font-bold text-gray-900">{formatArs(data.payments.collected)}</p>
+    <p class="text-xs text-gray-500">{data.comparison.paymentsDeltaPct !== null ? formatDelta(data.comparison.paymentsDeltaPct) : 'N/A'} vs período anterior</p>
+    <p class="mt-1 text-sm text-gray-600">{data.payments.count} pagos · avg {formatArs(data.payments.avgAmount)}</p>
   </Card>
 
   <Card size="xl" class="h-full p-6 shadow-sm xl:col-span-4">

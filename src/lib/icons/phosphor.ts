@@ -12,7 +12,13 @@ import {
   XCircle,
   Clock,
   ChartLine,
-  PaperPlaneTilt
+  PaperPlaneTilt,
+  Eye,
+  PencilSimple,
+  Trash,
+  ArrowCounterClockwise,
+  List,
+  Dog
 } from 'phosphor-svelte';
 
 export {
@@ -29,5 +35,11 @@ export {
   XCircle,
   Clock,
   ChartLine,
-  PaperPlaneTilt
+  PaperPlaneTilt,
+  Eye,
+  PencilSimple,
+  Trash,
+  ArrowCounterClockwise,
+  List,
+  Dog
 };

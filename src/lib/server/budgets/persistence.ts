@@ -154,7 +154,7 @@ export const saveBudgetSnapshot = async (params: {
 export const updateBudgetStatus = async (params: {
   budgetId: string;
   supabase: SupabaseClient;
-  status: 'draft' | 'sent' | 'ready_to_send' | 'expired' | 'discarded';
+  status: BudgetStatus;
   extraFields?: Record<string, unknown>;
 }): Promise<OperationResult> => {
   const { budgetId, supabase, status, extraFields } = params;

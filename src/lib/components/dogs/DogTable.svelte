@@ -44,6 +44,7 @@
         </TableBodyCell>
         <TableBodyCell>
           <div class="flex items-center gap-2">
+            <Button href={route('/dogs/', dog.id, '/history')} size="xs" color="light" aria-label="Ver {dog.name}">Ver</Button>
             <Button href={route('/dogs/', dog.id, '/update')} size="xs" color="light" aria-label="Editar {dog.name}">Editar</Button>
           </div>
         </TableBodyCell>

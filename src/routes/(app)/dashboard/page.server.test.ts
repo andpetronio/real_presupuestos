@@ -9,22 +9,35 @@ type BudgetMetricRow = {
   final_sale_price: number;
 };
 
-const createSupabaseFromMock = (rows: BudgetMetricRow[], error: unknown = null, unviewedCount = 0) =>
+const createSupabaseFromMock = (
+  rows: BudgetMetricRow[],
+  error: unknown = null,
+  unviewedCount = 0
+) =>
   vi.fn().mockImplementation((table: string) => {
-    if (table !== 'budgets') return { select: vi.fn() };
+    if (table === 'budgets') {
+      return {
+        select: vi.fn((_columns?: string, options?: { head?: boolean }) => {
+          if (options?.head) {
+            return {
+              eq: vi.fn(() => ({
+                is: async () => ({ count: unviewedCount, error: null })
+              }))
+            };
+          }
+
+          return Promise.resolve({ data: rows, error });
+        })
+      };
+    }
 
     return {
-      select: vi.fn((_columns?: string, options?: { head?: boolean }) => {
-        if (options?.head) {
-          return {
-            eq: () => ({
-              is: async () => ({ count: unviewedCount, error: null })
-            })
-          };
-        }
-
-        return Promise.resolve({ data: rows, error });
-      })
+      select: vi.fn(() => ({
+        gte: vi.fn(() => ({
+          lte: vi.fn(() => Promise.resolve({ data: [], error: null }))
+        })),
+        eq: vi.fn(() => Promise.resolve({ data: [], error: null }))
+      }))
     };
   });
 
@@ -110,6 +123,7 @@ describe('(app)/dashboard/+page.server load', () => {
         acceptanceRateDeltaPct: number | null;
         acceptedTotalDeltaPct: number | null;
         avgAcceptedTicketDeltaPct: number | null;
+        paymentsDeltaPct: number | null;
       };
     };
 
@@ -130,6 +144,7 @@ describe('(app)/dashboard/+page.server load', () => {
     expect(data.comparison).toHaveProperty('acceptanceRateDeltaPct');
     expect(data.comparison).toHaveProperty('acceptedTotalDeltaPct');
     expect(data.comparison).toHaveProperty('avgAcceptedTicketDeltaPct');
+    expect(data.comparison).toHaveProperty('paymentsDeltaPct');
   });
 
   it('usa 30d por defecto cuando period es invalido', async () => {
@@ -164,7 +179,9 @@ describe('(app)/dashboard/+page.server load', () => {
         acceptanceRateDeltaPct: number | null;
         acceptedTotalDeltaPct: number | null;
         avgAcceptedTicketDeltaPct: number | null;
+        paymentsDeltaPct: number | null;
       };
+      payments: { collected: number; count: number; avgAmount: number };
     };
 
     expect(data.state).toBe('error');
@@ -185,7 +202,8 @@ describe('(app)/dashboard/+page.server load', () => {
       respondedDeltaPct: 0,
       acceptanceRateDeltaPct: 0,
       acceptedTotalDeltaPct: 0,
-      avgAcceptedTicketDeltaPct: 0
+      avgAcceptedTicketDeltaPct: 0,
+      paymentsDeltaPct: 0
     });
     expect(data.message).toMatchObject({
       kind: 'error',
@@ -556,14 +574,15 @@ describe('(app)/dashboard/+page.server metrics calculation', () => {
         acceptanceRateDeltaPct: number | null;
         acceptedTotalDeltaPct: number | null;
         avgAcceptedTicketDeltaPct: number | null;
+        paymentsDeltaPct: number | null;
       };
     };
 
-    // Delta puede ser null o un numero — verificar que existe la propiedad
     expect(data.comparison).toHaveProperty('sentDeltaPct');
     expect(data.comparison).toHaveProperty('respondedDeltaPct');
     expect(data.comparison).toHaveProperty('acceptanceRateDeltaPct');
     expect(data.comparison).toHaveProperty('acceptedTotalDeltaPct');
     expect(data.comparison).toHaveProperty('avgAcceptedTicketDeltaPct');
+    expect(data.comparison).toHaveProperty('paymentsDeltaPct');
   });
 });

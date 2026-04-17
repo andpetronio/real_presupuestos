@@ -17,7 +17,8 @@
     accepted: 'Aceptado',
     rejected: 'Rechazado',
     expired: 'Expirado',
-    discarded: 'Descartado'
+    discarded: 'Descartado',
+    closed: 'Cerrado'
   };
 
   const STATUS_TONE: Record<BudgetStatus, BadgeTone> = {
@@ -27,7 +28,8 @@
     accepted: 'success',
     rejected: 'danger',
     expired: 'dark',
-    discarded: 'dark'
+    discarded: 'dark',
+    closed: 'dark'
   };
 
   let { status, label }: StatusBadgeProps = $props();
