@@ -28,7 +28,9 @@ describe("(app)/dogs/new actions.create", () => {
                 Promise.resolve({ data: { id: "d-1" }, error: null }),
             }),
           }),
-          delete: vi.fn(),
+          delete: () => ({
+            eq: () => Promise.resolve({ error: null }),
+          }),
         };
       }
       if (table === "dog_delivery_schedules") {

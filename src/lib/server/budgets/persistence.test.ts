@@ -15,6 +15,7 @@ const makeMockSupabase = (overrides: Record<string, unknown> = {}) => {
     if (table === "budget_dogs") {
       return {
         delete: vi.fn().mockReturnValue({
+          in: vi.fn().mockReturnValue({ error: null }),
           eq: vi.fn().mockReturnValue({ error: null }),
         }),
         insert: vi.fn().mockReturnValue({
@@ -163,6 +164,9 @@ describe("saveBudgetComposition", () => {
       (table: string) => {
         if (table === "budget_dogs") {
           return {
+            delete: vi.fn().mockReturnValue({
+              in: vi.fn().mockReturnValue({ error: null }),
+            }),
             insert: vi.fn().mockReturnValue({
               select: vi.fn().mockReturnValue({
                 data: [{ id: "bd-1", dog_id: "d-1" }],
@@ -204,7 +208,7 @@ describe("saveBudgetComposition", () => {
         if (table === "budget_dogs") {
           return {
             delete: vi.fn().mockReturnValue({
-              eq: vi.fn().mockReturnValue({ error: null }),
+              in: vi.fn().mockReturnValue({ error: null }),
             }),
             insert: vi.fn().mockReturnValue({
               select: vi.fn().mockReturnValue({
