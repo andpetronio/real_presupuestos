@@ -11,6 +11,7 @@
     filterName?: string;
     filterOptions?: ReadonlyArray<FilterOption>;
     currentFilter?: string;
+    showSubmitButton?: boolean;
   };
 
   let {
@@ -20,7 +21,8 @@
     filterLabel = 'Filtro',
     filterName = 'status',
     filterOptions = [],
-    currentFilter = 'all'
+    currentFilter = 'all',
+    showSubmitButton = false
   }: GenericFilterBarProps = $props();
 
   let searchValue = $state('');
@@ -59,12 +61,17 @@
     </div>
   {/if}
 
-  <!-- Clear filters (if active) -->
-  {#if hasActiveFilters}
-    <Button type="button" color="alternative" size="sm" href="?">
-      Limpiar
-    </Button>
-  {/if}
+  <!-- Actions -->
+  <div class="flex gap-2">
+    {#if showSubmitButton}
+      <Button type="submit" size="sm">Filtrar</Button>
+    {/if}
+    {#if hasActiveFilters}
+      <Button type="button" color="alternative" size="sm" href="?">
+        Limpiar
+      </Button>
+    {/if}
+  </div>
 
   <!-- Preserve page on filter submit -->
   <input type="hidden" name="page" value="1" />
