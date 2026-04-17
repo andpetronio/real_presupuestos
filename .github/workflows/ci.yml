@@ -40,8 +40,11 @@ jobs:
       - name: Type check
         run: pnpm run check
 
-      - name: Lint
-        run: pnpm run lint
+      - name: Lint format
+        run: pnpm run lint:format
+
+      - name: Lint code
+        run: pnpm run lint:code
 
       - name: Run tests
         run: pnpm vitest run
