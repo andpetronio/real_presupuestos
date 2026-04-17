@@ -2,7 +2,7 @@
   import { Badge, Button, Card, Input, Label, Select, Textarea } from 'flowbite-svelte';
   import FeedbackBanner from '$lib/components/FeedbackBanner.svelte';
   import { formatArs } from '$lib/shared/currency';
-  import { CalendarBlank } from '$lib/icons/phosphor';
+  import DeliveryAlertBanner from '$lib/components/delivery/DeliveryAlertBanner.svelte';
 
   type RecipeTracking = {
     budgetDogRecipeId: string;
@@ -19,9 +19,14 @@
 
   type DeliveryAlert = {
     budgetId: string;
+    budgetReferenceMonth: string;
+    dogId: string;
     dogName: string;
     tutorName: string;
+    recipeId: string;
     recipeName: string;
+    budgetDogRecipeId: string;
+    assignedDays: number;
     dayOfMonth: number;
     pct: number;
     totalMealsForPortion: number;
@@ -105,24 +110,7 @@
   <FeedbackBanner message={form.operatorSuccess} color="green" />
 {/if}
 
-{#if data.deliveryAlerts && data.deliveryAlerts.length > 0}
-  <div class="mb-4 rounded-lg border border-yellow-300 bg-yellow-50 p-4 xl:col-span-12">
-    <div class="flex items-start gap-3">
-      <CalendarBlank class="h-5 w-5 flex-shrink-0 text-yellow-600 mt-0.5" />
-      <div>
-        <p class="font-semibold text-yellow-800">Próximas entregas</p>
-        <ul class="mt-1 space-y-1 text-sm text-yellow-700">
-          {#each data.deliveryAlerts as alert}
-            <li>
-              <span class="font-medium">{alert.dogName}</span>
-              ({alert.tutorName}): {alert.pct}% el día {alert.dayOfMonth} — en {alert.daysUntil} día{alert.daysUntil !== 1 ? 's' : ''}
-            </li>
-          {/each}
-        </ul>
-      </div>
-    </div>
-  </div>
-{/if}
+<DeliveryAlertBanner alerts={data.deliveryAlerts} showLink={false} />
 
 <section class="grid grid-cols-1 gap-4 xl:grid-cols-12">
   <Card size="xl" class="p-6 shadow-sm xl:col-span-12">

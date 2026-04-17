@@ -139,7 +139,7 @@ export const getDeliveryAlerts = async (
   const currentMonthStart = new Date(today.getFullYear(), today.getMonth(), 1).toISOString().split('T')[0];
   const currentMonthEnd = new Date(today.getFullYear(), today.getMonth() + 1, 0, 23, 59, 59).toISOString();
 
-  let query = supabase
+  let budgetsQuery = supabase
     .from('budgets')
     .select(`
       id,
@@ -147,42 +147,63 @@ export const getDeliveryAlerts = async (
       budget_dogs(
         id,
         dog_id,
-        delivery_schedule:dog_delivery_schedules(
-          day_of_month,
-          pct
-        ),
         dogs!inner(
           name,
           tutors(full_name)
-        )
-      ),
-      budget_dog_recipes(
-        id,
-        recipe_id,
-        assigned_days,
-        recipes(name),
-        budget_recipe_deliveries(
-          recipe_days,
-          delivered_at
+        ),
+        budget_dog_recipes(
+          id,
+          recipe_id,
+          assigned_days,
+          recipes(name),
+          budget_recipe_deliveries(
+            recipe_days,
+            delivered_at
+          )
         )
       )
     `)
     .in('status', ['accepted', 'closed']);
 
   if (filterBudgetId) {
-    query = query.eq('id', filterBudgetId);
+    budgetsQuery = budgetsQuery.eq('id', filterBudgetId);
   }
 
-  const { data: budgets, error } = await query;
+  const { data: budgets, error } = await budgetsQuery;
 
-  if (error || !budgets) return [];
+  if (error || !budgets) {
+    return [];
+  }
+
+  const allDogIds = [...new Set(
+    (budgets as any[]).flatMap((b) =>
+      (b.budget_dogs ?? []).map((bd: any) => bd.dog_id)
+    )
+  )];
+
+  let scheduleRows: Array<{ dog_id: string; day_of_month: number; pct: number }> = [];
+  if (allDogIds.length > 0) {
+    const { data: schedules } = await supabase
+      .from('dog_delivery_schedules')
+      .select('dog_id, day_of_month, pct')
+      .in('dog_id', allDogIds);
+    scheduleRows = (schedules ?? []) as typeof scheduleRows;
+  }
+
+  const scheduleByDogId = new Map<string, Array<{ day_of_month: number; pct: number }>>();
+  for (const row of scheduleRows) {
+    if (!scheduleByDogId.has(row.dog_id)) {
+      scheduleByDogId.set(row.dog_id, []);
+    }
+    scheduleByDogId.get(row.dog_id)!.push({ day_of_month: row.day_of_month, pct: row.pct });
+  }
 
   const alerts: DeliveryAlert[] = [];
 
   for (const budget of budgets as any[]) {
     for (const budgetDog of budget.budget_dogs ?? []) {
-      const schedule: Array<{ day_of_month: number; pct: number }> =
-        (budgetDog.delivery_schedule as any) ?? [];
+      const dogId = budgetDog.dog_id;
+      const schedule = scheduleByDogId.get(dogId) ?? [];
 
       if (schedule.length === 0) continue;
 
@@ -190,7 +211,7 @@ export const getDeliveryAlerts = async (
         (budgetDog.dogs?.tutors as any)?.full_name ?? 'Sin tutor';
       const dogName = budgetDog.dogs?.name ?? 'Perro';
 
-      for (const recipe of budget.budget_dog_recipes ?? []) {
+      for (const recipe of budgetDog.budget_dog_recipes ?? []) {
         const assignedDays = Number(recipe.assigned_days ?? 0);
 
         const deliveriesThisMonth = (recipe.budget_recipe_deliveries ?? []).filter((d: any) => {
@@ -223,7 +244,7 @@ export const getDeliveryAlerts = async (
           alerts.push({
             budgetId: budget.id,
             budgetReferenceMonth: budget.reference_month ?? '',
-            dogId: budgetDog.dog_id,
+            dogId,
             dogName,
             tutorName,
             recipeId: recipe.recipe_id,

@@ -58,7 +58,7 @@
 </script>
 
 <div class="mb-4 flex justify-end">
-  <Button href={newBudgetPath} color="blue">Nuevo presupuesto</Button>
+  <Button href={newBudgetPath} color="secondary">Nuevo presupuesto</Button>
 </div>
 
 {#if feedbackMessage}

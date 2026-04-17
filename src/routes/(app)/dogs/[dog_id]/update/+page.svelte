@@ -144,29 +144,30 @@
     {#if scheduleEntries.length > 0}
       <div class="mb-3 space-y-2">
         {#each scheduleEntries as entry, i (i)}
-          <div class="flex items-center gap-2">
-            <div class="flex-1">
-              <Label for="day-{i}" class="sr-only">Día del mes</Label>
+          <div class="flex items-start gap-3">
+            <div class="flex flex-col gap-1">
+              <Label for="day-{i}" class="text-xs">Día del mes</Label>
               <Input
                 id="day-{i}"
                 type="number"
                 min="1"
                 max="31"
-                placeholder="Día (1-31)"
                 bind:value={entry.day_of_month}
-                class="!w-24"
-              />
-            </div>
-            <div class="flex items-center gap-1">
-              <Input
-                type="number"
-                min="1"
-                max="100"
-                placeholder="%"
-                bind:value={entry.pct}
                 class="!w-20"
               />
-              <span class="text-sm text-gray-500">%</span>
+            </div>
+            <div class="flex flex-col gap-1">
+              <Label class="text-xs">% a entregar</Label>
+              <div class="flex items-center gap-1">
+                <Input
+                  type="number"
+                  min="1"
+                  max="100"
+                  bind:value={entry.pct}
+                  class="!w-20"
+                />
+                <span class="text-sm text-gray-500">%</span>
+              </div>
             </div>
             <Button
               type="button"
@@ -175,6 +176,7 @@
               outline
               onclick={() => removeEntry(i)}
               aria-label="Eliminar fecha"
+              class="mt-6"
             >
               ×
             </Button>
@@ -182,7 +184,7 @@
         {/each}
       </div>
 
-      <div class="flex items-center justify-between text-sm">
+      <div class="flex items-center gap-4 text-sm">
         <span class:text-red-600={totalPct > 100} class:text-green-700={totalPct <= 100}>
           Total: {totalPct}%
         </span>
