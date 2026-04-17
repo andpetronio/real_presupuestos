@@ -1,8 +1,9 @@
 import { fail, redirect } from '@sveltejs/kit';
 import type { Actions, PageServerLoad } from './$types';
-import { parseFormValue, parsePositiveInteger } from '$lib/server/forms/parsers';
+import { parseFormValue } from '$lib/server/forms/parsers';
 import type { OperatorMessage } from '$lib/server/shared/ui-state';
 import type { BudgetStatus } from '$lib/types/budget';
+import { buildFallbackError, getPagination } from '$lib/server/shared/list-helpers';
 
 import type { ActionValues } from '$lib/server/budgets/types';
 import { parseActionValues } from '$lib/server/budgets/parsers';
@@ -10,23 +11,12 @@ import { calculateBudgetTotals } from '$lib/server/budgets/calculation';
 import { updateBudgetStatus, deleteBudget, getBudgetById, validateBudgetInput, getBudgetExpiry, persistBudget } from '$lib/server/budgets/persistence';
 import { sendBudgetWhatsapp } from '$lib/server/budgets/whatsapp';
 
-// ─── Error messages ──────────────────────────────────────────────────────────
-
-const fallbackErrorMessage: OperatorMessage = {
-  kind: 'error',
-  title: 'No pudimos cargar presupuestos',
-  detail: 'Reintentá en unos segundos o revisá la conexión con la base de datos.',
-  actionLabel: 'Reintentar'
-};
-
 const toOperatorError = (action: 'create' | 'update', values: ActionValues, message: string, status = 400) =>
   fail(status, {
     actionType: action,
     operatorError: message,
     values
   });
-
-// ─── Helpers ─────────────────────────────────────────────────────────────
 
 const getBlankValues = (): ActionValues => ({
   budgetId: '',
@@ -45,8 +35,6 @@ const getBlankValues = (): ActionValues => ({
   rows: [{ dogId: '', recipeId: '', assignedDays: '' }]
 });
 
-// ─── Core operations ───────────────────────────────────────────────────
-
 const saveBudget = async (params: {
   action: 'create' | 'update';
   values: ActionValues;
@@ -54,13 +42,11 @@ const saveBudget = async (params: {
 }) => {
   const { action, values, locals } = params;
 
-  // Phase 1: Validate input and read DB data
   const validation = await validateBudgetInput({ values, supabase: locals.supabase });
   if (!validation.valid) {
     return toOperatorError(action, values, validation.operatorError);
   }
 
-  // Phase 2: Calculate totals
   const calculation = calculateBudgetTotals({
     settings: validation.settings,
     operationals: validation.operationals,
@@ -68,7 +54,6 @@ const saveBudget = async (params: {
     recipeDailyCosts: validation.recipeDailyCosts
   });
 
-  // Phase 3: Compute expiry date
   const expiry = await getBudgetExpiry({
     action,
     budgetId: values.budgetId,
@@ -80,7 +65,6 @@ const saveBudget = async (params: {
     return toOperatorError(action, values, expiry.operatorError);
   }
 
-  // Phase 4: Persist
   const persistence = await persistBudget({
     action,
     budgetId: values.budgetId ?? '',
@@ -110,7 +94,10 @@ const saveBudget = async (params: {
   };
 };
 
-// ─── Load ─────────────────────────────────────────────────────────────────
+const EMPTY_LABELS = {
+  title: 'Todavía no hay presupuestos',
+  detail: 'Creá el primero con tutor, perros, recetas y costos operativos globales.'
+};
 
 export const load: PageServerLoad = async ({ locals, url }) => {
   try {
@@ -127,16 +114,18 @@ export const load: PageServerLoad = async ({ locals, url }) => {
 
     const editingBudgetId = url.searchParams.get('edit');
 
-    // ── Pagination & filter params ──────────────────────────────────────
-    const page = parsePositiveInteger(url.searchParams.get('page') ?? '') ?? 1;
-    const pageSize = 10;
-    const offset = (page - 1) * pageSize;
+    const { page, pageSize, offset } = getPagination(url.searchParams.get('page'));
 
     const statusParam = url.searchParams.get('status') as BudgetStatus | 'pending' | 'all' | null;
     const searchQuery = url.searchParams.get('q')?.trim() ?? '';
     const tutorIdParam = url.searchParams.get('tutor');
 
-    // ── Build budgets query with filters ────────────────────────────────
+    const filters = {
+      status: statusParam ?? 'all',
+      search: searchQuery,
+      tutorId: tutorIdParam ?? null
+    };
+
     let query = locals.supabase
       .from('budgets')
       .select(
@@ -159,12 +148,11 @@ export const load: PageServerLoad = async ({ locals, url }) => {
       query = query.eq('tutor_id', tutorIdParam);
     }
 
-    // Search by tutor name (client-side filter for tutor name — use ilike on join)
+    // Search by tutor name
     if (searchQuery) {
       query = query.ilike('tutor:full_name', `%${searchQuery}%`);
     }
 
-    // Apply pagination
     const { data: budgetsResult, count, error: budgetsError } = await query
       .range(offset, offset + pageSize - 1);
 
@@ -187,7 +175,6 @@ export const load: PageServerLoad = async ({ locals, url }) => {
         .single();
       editingBudget = editingBudgetData ?? null;
 
-      // Load editing rows
       if (editingBudgetId) {
         const { data: budgetDogRecipesData, error: budgetDogRecipesError } = await locals.supabase
           .from('budget_dog_recipes')
@@ -211,23 +198,15 @@ export const load: PageServerLoad = async ({ locals, url }) => {
       .select('id, full_name')
       .order('full_name', { ascending: true });
 
-    // Determine if result is "empty" vs "success"
-    let tableState: 'idle' | 'success' | 'error' | 'empty' = 'empty';
-    let tableMessage: { title: string; detail: string } | null = null;
-
-    if (total === 0) {
-      const hasFilters = statusParam !== null || searchQuery !== '' || tutorIdParam !== null;
-      tableState = 'empty';
-      tableMessage = {
-        title: hasFilters ? 'Sin resultados' : 'Todavía no hay presupuestos',
-        detail: hasFilters
-          ? 'No se encontraron presupuestos para los filtros aplicados. Probá modificar o limpiar los filtros.'
-          : 'Creá el primero con tutor, perros, recetas y costos operativos globales.'
-      };
-    } else {
-      tableState = 'success';
-      tableMessage = null;
-    }
+    const hasFilters = statusParam !== null || searchQuery !== '' || tutorIdParam !== null;
+    const tableState = total > 0 ? 'success' : 'empty';
+    const tableMessage = total > 0 ? null : {
+      kind: 'empty' as const,
+      title: hasFilters ? 'Sin resultados' : EMPTY_LABELS.title,
+      detail: hasFilters
+        ? 'No se encontraron presupuestos para los filtros aplicados. Probá modificar o limpiar los filtros.'
+        : EMPTY_LABELS.detail
+    };
 
     return {
       budgets,
@@ -236,11 +215,7 @@ export const load: PageServerLoad = async ({ locals, url }) => {
       tableState,
       tableMessage,
       pagination: { page, totalPages, total },
-      filters: {
-        status: statusParam ?? 'all',
-        search: searchQuery,
-        tutorId: tutorIdParam ?? null
-      },
+      filters,
       tutors: tutorsResult ?? []
     };
   } catch {
@@ -249,15 +224,13 @@ export const load: PageServerLoad = async ({ locals, url }) => {
       editingBudget: null,
       editingRows: [],
       tableState: 'error',
-      tableMessage: fallbackErrorMessage,
+      tableMessage: buildFallbackError('presupuestos'),
       pagination: { page: 1, totalPages: 1, total: 0 },
       filters: { status: 'all' as const, search: '', tutorId: null },
       tutors: []
     };
   }
 };
-
-// ─── Actions ───────────────────────────────────────────────────────────────────────
 
 export const actions: Actions = {
   create: async ({ request, locals }) => {
