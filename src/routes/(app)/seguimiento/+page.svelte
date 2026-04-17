@@ -26,6 +26,8 @@
     tutorOptions: ReadonlyArray<TutorOption>;
     selectedTutor: string;
     selectedShow: 'active' | 'closed';
+    activeCount: number;
+    closedCount: number;
   };
 
   let { data }: { data: PageData } = $props();
@@ -63,26 +65,34 @@
 
 {#if data.state === 'error'}
   <FeedbackBanner message={data.message?.detail ?? 'No pudimos cargar seguimiento.'} color="red" />
-{:else if data.state === 'empty'}
-  <FeedbackBanner message={data.message?.detail ?? 'No hay presupuestos.'} color="blue" />
 {:else}
   <Card size="xl" class="w-full shadow-sm p-0">
-    <div class="flex flex-wrap items-center gap-4 border-b border-gray-200 p-4">
-      <div class="flex gap-1">
-        <Button
-          size="xs"
-          color={data.selectedShow === 'active' ? 'primary' : 'light'}
+    <div class="flex flex-wrap items-end gap-4 border-b border-gray-200 p-4">
+      <div class="inline-flex items-center gap-1 rounded-xl border border-gray-200 bg-gray-50 p-1" role="tablist" aria-label="Filtro por estado">
+        <button
+          type="button"
+          role="tab"
+          aria-selected={data.selectedShow === 'active'}
+          class={`inline-flex items-center gap-2 rounded-lg px-3 py-2 text-sm font-medium transition ${data.selectedShow === 'active' ? 'bg-primary-700 text-white shadow-sm' : 'text-gray-700 hover:bg-gray-100'}`}
           onclick={() => handleShowChange('active')}
         >
-          Activos
-        </Button>
-        <Button
-          size="xs"
-          color={data.selectedShow === 'closed' ? 'primary' : 'light'}
+          <span>Activos</span>
+          <span class={`rounded-full px-2 py-0.5 text-xs ${data.selectedShow === 'active' ? 'bg-white/20 text-white' : 'bg-primary-100 text-primary-700'}`}>
+            {data.activeCount}
+          </span>
+        </button>
+        <button
+          type="button"
+          role="tab"
+          aria-selected={data.selectedShow === 'closed'}
+          class={`inline-flex items-center gap-2 rounded-lg px-3 py-2 text-sm font-medium transition ${data.selectedShow === 'closed' ? 'bg-primary-700 text-white shadow-sm' : 'text-gray-700 hover:bg-gray-100'}`}
           onclick={() => handleShowChange('closed')}
         >
-          Cerrados
-        </Button>
+          <span>Cerrados</span>
+          <span class={`rounded-full px-2 py-0.5 text-xs ${data.selectedShow === 'closed' ? 'bg-white/20 text-white' : 'bg-gray-200 text-gray-700'}`}>
+            {data.closedCount}
+          </span>
+        </button>
       </div>
       <div class="grid gap-1 md:max-w-xs">
         <label for="tutor-filter" class="text-sm font-medium text-gray-700">Tutor</label>
@@ -95,92 +105,98 @@
       </div>
     </div>
 
-    <div class="hidden overflow-x-auto md:block" aria-label="Tabla de seguimiento de presupuestos aceptados">
-      <Table hoverable striped>
-        <TableHead>
-          <TableHeadCell>Tutor</TableHeadCell>
-          <TableHeadCell class="text-center">Preparadas</TableHeadCell>
-          <TableHeadCell class="text-center">Entregadas</TableHeadCell>
-          <TableHeadCell class="text-center">Cobrado</TableHeadCell>
-          <TableHeadCell class="text-right">Total</TableHeadCell>
-          <TableHeadCell>Acciones</TableHeadCell>
-        </TableHead>
-        <TableBody>
-          {#each data.trackingRows as budget (budget.id)}
-            {@const prepBadge = pctBadge(budget.preparedPct)}
-            {@const delBadge = pctBadge(budget.deliveredPct)}
-            {@const colBadge = pctBadge(budget.collectedPct)}
-            <TableBodyRow>
-              <TableBodyCell>
-                <div class="flex items-center gap-2">
-                  {#if budget.status === 'closed'}
-                    <Badge color="gray">Cerrado</Badge>
-                  {:else if !budget.viewedAt}
-                    <span class="inline-block h-2 w-2 rounded-full bg-yellow-400" title="No visitado"></span>
-                  {/if}
-                  <span class="font-medium text-gray-900">{budget.tutorName}</span>
-                </div>
-              </TableBodyCell>
-              <TableBodyCell class="text-center">
+    {#if data.state === 'empty'}
+      <div class="p-4">
+        <FeedbackBanner message={data.message?.detail ?? 'No hay presupuestos para este filtro.'} color="blue" />
+      </div>
+    {:else}
+      <div class="hidden overflow-x-auto md:block" aria-label="Tabla de seguimiento de presupuestos aceptados">
+        <Table hoverable striped>
+          <TableHead>
+            <TableHeadCell>Tutor</TableHeadCell>
+            <TableHeadCell class="text-center">Preparadas</TableHeadCell>
+            <TableHeadCell class="text-center">Entregadas</TableHeadCell>
+            <TableHeadCell class="text-center">Cobrado</TableHeadCell>
+            <TableHeadCell class="text-right">Total</TableHeadCell>
+            <TableHeadCell>Acciones</TableHeadCell>
+          </TableHead>
+          <TableBody>
+            {#each data.trackingRows as budget (budget.id)}
+              {@const prepBadge = pctBadge(budget.preparedPct)}
+              {@const delBadge = pctBadge(budget.deliveredPct)}
+              {@const colBadge = pctBadge(budget.collectedPct)}
+              <TableBodyRow>
+                <TableBodyCell>
+                  <div class="flex items-center gap-2">
+                    {#if budget.status === 'closed'}
+                      <Badge color="gray">Cerrado</Badge>
+                    {:else if !budget.viewedAt}
+                      <span class="inline-block h-2 w-2 rounded-full bg-yellow-400" title="No visitado"></span>
+                    {/if}
+                    <span class="font-medium text-gray-900">{budget.tutorName}</span>
+                  </div>
+                </TableBodyCell>
+                <TableBodyCell class="text-center">
+                  <Badge color={prepBadge.color}>{prepBadge.label}</Badge>
+                </TableBodyCell>
+                <TableBodyCell class="text-center">
+                  <Badge color={delBadge.color}>{delBadge.label}</Badge>
+                </TableBodyCell>
+                <TableBodyCell class="text-center">
+                  <Badge color={colBadge.color}>{colBadge.label}</Badge>
+                </TableBodyCell>
+                <TableBodyCell class="text-right">{budget.total.toLocaleString('es-AR', { style: 'currency', currency: 'ARS' })}</TableBodyCell>
+                <TableBodyCell>
+                  <Button href={route('/seguimiento/', budget.id)} size="xs" color="light">Ver detalle</Button>
+                </TableBodyCell>
+              </TableBodyRow>
+            {/each}
+          </TableBody>
+        </Table>
+      </div>
+
+      <div class="grid gap-3 p-4 md:hidden">
+        {#each data.trackingRows as budget (budget.id)}
+          {@const prepBadge = pctBadge(budget.preparedPct)}
+          {@const delBadge = pctBadge(budget.deliveredPct)}
+          {@const colBadge = pctBadge(budget.collectedPct)}
+          <div class="rounded-lg border border-gray-200 bg-white p-4 shadow-sm">
+            <div class="flex items-start justify-between gap-3">
+              <div class="flex items-center gap-2">
+                {#if budget.status === 'closed'}
+                  <Badge color="gray">Cerrado</Badge>
+                {:else if !budget.viewedAt}
+                  <span class="inline-block h-2 w-2 rounded-full bg-yellow-400" title="No visitado"></span>
+                {/if}
+                <p class="font-semibold text-gray-900">{budget.tutorName}</p>
+              </div>
+            </div>
+
+            <div class="mt-3 grid grid-cols-3 gap-2 text-sm">
+              <div class="flex flex-col items-center rounded bg-gray-50 p-2">
+                <p class="text-xs text-gray-500">Prep.</p>
                 <Badge color={prepBadge.color}>{prepBadge.label}</Badge>
-              </TableBodyCell>
-              <TableBodyCell class="text-center">
+              </div>
+              <div class="flex flex-col items-center rounded bg-gray-50 p-2">
+                <p class="text-xs text-gray-500">Entr.</p>
                 <Badge color={delBadge.color}>{delBadge.label}</Badge>
-              </TableBodyCell>
-              <TableBodyCell class="text-center">
+              </div>
+              <div class="flex flex-col items-center rounded bg-gray-50 p-2">
+                <p class="text-xs text-gray-500">Cob.</p>
                 <Badge color={colBadge.color}>{colBadge.label}</Badge>
-              </TableBodyCell>
-              <TableBodyCell class="text-right">{budget.total.toLocaleString('es-AR', { style: 'currency', currency: 'ARS' })}</TableBodyCell>
-              <TableBodyCell>
-                <Button href={route('/seguimiento/', budget.id)} size="xs" color="light">Ver detalle</Button>
-              </TableBodyCell>
-            </TableBodyRow>
-          {/each}
-        </TableBody>
-      </Table>
-    </div>
+              </div>
+            </div>
 
-    <div class="grid gap-3 p-4 md:hidden">
-      {#each data.trackingRows as budget (budget.id)}
-        {@const prepBadge = pctBadge(budget.preparedPct)}
-        {@const delBadge = pctBadge(budget.deliveredPct)}
-        {@const colBadge = pctBadge(budget.collectedPct)}
-        <div class="rounded-lg border border-gray-200 bg-white p-4 shadow-sm">
-          <div class="flex items-start justify-between gap-3">
-            <div class="flex items-center gap-2">
-              {#if budget.status === 'closed'}
-                <Badge color="gray">Cerrado</Badge>
-              {:else if !budget.viewedAt}
-                <span class="inline-block h-2 w-2 rounded-full bg-yellow-400" title="No visitado"></span>
-              {/if}
-              <p class="font-semibold text-gray-900">{budget.tutorName}</p>
+            <div class="mt-3 grid grid-cols-1 gap-2 border-t border-gray-100 pt-3 text-sm">
+              <div class="text-right"><p class="text-gray-500">Total</p><p class="font-semibold">{budget.total.toLocaleString('es-AR', { style: 'currency', currency: 'ARS' })}</p></div>
+            </div>
+
+            <div class="mt-3">
+              <Button href={route('/seguimiento/', budget.id)} size="xs" color="light">Ver seguimiento</Button>
             </div>
           </div>
-
-          <div class="mt-3 grid grid-cols-3 gap-2 text-sm">
-            <div class="flex flex-col items-center rounded bg-gray-50 p-2">
-              <p class="text-xs text-gray-500">Prep.</p>
-              <Badge color={prepBadge.color}>{prepBadge.label}</Badge>
-            </div>
-            <div class="flex flex-col items-center rounded bg-gray-50 p-2">
-              <p class="text-xs text-gray-500">Entr.</p>
-              <Badge color={delBadge.color}>{delBadge.label}</Badge>
-            </div>
-            <div class="flex flex-col items-center rounded bg-gray-50 p-2">
-              <p class="text-xs text-gray-500">Cob.</p>
-              <Badge color={colBadge.color}>{colBadge.label}</Badge>
-            </div>
-          </div>
-
-          <div class="mt-3 grid grid-cols-1 gap-2 border-t border-gray-100 pt-3 text-sm">
-            <div class="text-right"><p class="text-gray-500">Total</p><p class="font-semibold">{budget.total.toLocaleString('es-AR', { style: 'currency', currency: 'ARS' })}</p></div>
-          </div>
-
-          <div class="mt-3">
-            <Button href={route('/seguimiento/', budget.id)} size="xs" color="light">Ver seguimiento</Button>
-          </div>
-        </div>
-      {/each}
-    </div>
+        {/each}
+      </div>
+    {/if}
   </Card>
 {/if}

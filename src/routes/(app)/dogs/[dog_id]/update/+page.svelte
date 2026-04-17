@@ -134,7 +134,7 @@
   </div>
 
   <div>
-    <div class="mb-3 flex items-center justify-between">
+    <div class="mb-3 flex flex-wrap items-center gap-3">
       <Label class="mb-0">Calendario de entregas mensuales</Label>
       <Button type="button" size="xs" color="light" onclick={addEntry}>
         + Agregar fecha

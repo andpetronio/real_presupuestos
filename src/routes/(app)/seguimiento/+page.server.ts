@@ -21,7 +21,12 @@ export const load: PageServerLoad = async ({ locals, url }) => {
   const statusFilter = selectedShow === 'closed' ? 'closed' : 'accepted';
 
   try {
-    const [{ data: tutorRows }, { data: budgetsData, error: budgetsError }] = await Promise.all([
+    const [
+      { data: tutorRows },
+      { data: budgetsData, error: budgetsError },
+      { count: activeCount, error: activeCountError },
+      { count: closedCount, error: closedCountError }
+    ] = await Promise.all([
       locals.supabase.from('tutors').select('id, full_name').order('full_name', { ascending: true }),
       tutorId
         ? locals.supabase
@@ -34,10 +39,32 @@ export const load: PageServerLoad = async ({ locals, url }) => {
             .from('budgets')
             .select('id, status, tutor_id, final_sale_price, accepted_at, viewed_at, tutor:tutors(full_name)')
             .eq('status', statusFilter)
-            .order('accepted_at', { ascending: false })
+            .order('accepted_at', { ascending: false }),
+      tutorId
+        ? locals.supabase
+            .from('budgets')
+            .select('id', { count: 'exact', head: true })
+            .eq('status', 'accepted')
+            .eq('tutor_id', tutorId)
+        : locals.supabase
+            .from('budgets')
+            .select('id', { count: 'exact', head: true })
+            .eq('status', 'accepted'),
+      tutorId
+        ? locals.supabase
+            .from('budgets')
+            .select('id', { count: 'exact', head: true })
+            .eq('status', 'closed')
+            .eq('tutor_id', tutorId)
+        : locals.supabase
+            .from('budgets')
+            .select('id', { count: 'exact', head: true })
+            .eq('status', 'closed')
     ]);
 
     if (budgetsError) throw budgetsError;
+    if (activeCountError) throw activeCountError;
+    if (closedCountError) throw closedCountError;
 
     const budgets = budgetsData ?? [];
     const budgetIds = budgets.map((b) => b.id);
@@ -174,7 +201,9 @@ export const load: PageServerLoad = async ({ locals, url }) => {
       trackingRows,
       tutorOptions,
       selectedTutor: tutorId,
-      selectedShow
+      selectedShow,
+      activeCount: activeCount ?? 0,
+      closedCount: closedCount ?? 0
     };
   } catch {
     return {
@@ -183,7 +212,9 @@ export const load: PageServerLoad = async ({ locals, url }) => {
       trackingRows: [],
       tutorOptions: [],
       selectedTutor: '',
-      selectedShow: 'active'
+      selectedShow: 'active',
+      activeCount: 0,
+      closedCount: 0
     };
   }
 };

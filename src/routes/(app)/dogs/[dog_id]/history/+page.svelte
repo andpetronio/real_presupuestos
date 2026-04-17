@@ -147,18 +147,18 @@
             </a>
           </div>
 
-          <div class="mt-4 grid grid-cols-1 gap-3 sm:grid-cols-3">
-            <div class="rounded-lg bg-gray-50 p-3">
+          <div class="mt-4 grid grid-cols-1 gap-3 lg:grid-cols-3">
+            <div class="rounded-lg bg-gray-50 py-3 px-2">
               <p class="text-xs uppercase tracking-wide text-gray-500">Total</p>
-              <p class="text-base font-semibold text-gray-900">{formatArs(budget.totalPrice)}</p>
+              <p class="font-semibold text-gray-900 whitespace-nowrap">{formatArs(budget.totalPrice)}</p>
             </div>
-            <div class="rounded-lg bg-accent-50 p-3">
+            <div class="rounded-lg bg-accent-50 py-3 px-2">
               <p class="text-xs uppercase tracking-wide text-gray-500">Cobrado</p>
-              <p class="text-base font-semibold text-accent-700">{formatArs(paid)}</p>
+              <p class="font-semibold text-gray-900 whitespace-nowrap">{formatArs(paid)}</p>
             </div>
-            <div class="rounded-lg bg-secondary-50 p-3">
+            <div class="rounded-lg bg-secondary-50 py-3 px-2">
               <p class="text-xs uppercase tracking-wide text-gray-500">Saldo</p>
-              <p class="text-base font-semibold text-secondary-700">{formatArs(pending)}</p>
+              <p class="font-semibold text-gray-900 whitespace-nowrap">{formatArs(pending)}</p>
             </div>
           </div>
 
