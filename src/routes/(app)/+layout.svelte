@@ -127,7 +127,7 @@
   };
 </script>
 
-<div class="flex flex-col h-screen bg-base]">
+<div class="flex h-screen flex-col bg-base-100">
   <!-- Navbar: logo + logout -->
   <Navbar class="h-16 min-h-16 border-b border-gray-200 bg-white px-4">
     <NavBrand href="/dashboard">

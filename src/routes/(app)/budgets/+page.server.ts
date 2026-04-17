@@ -2,11 +2,21 @@ import { fail, redirect } from "@sveltejs/kit";
 import type { Actions, PageServerLoad } from "./$types";
 import { parseFormValue } from "$lib/server/forms/parsers";
 import type { OperatorMessage } from "$lib/server/shared/ui-state";
-import type { BudgetStatus } from "$lib/types/budget";
 import {
   buildFallbackError,
   getPagination,
 } from "$lib/server/shared/list-helpers";
+import {
+  hasBudgetFilters,
+  parseBudgetFilters,
+  resolveBudgetTableMessage,
+} from "$lib/server/budgets/list";
+import {
+  autoExpireSentBudgets,
+  loadBudgetList,
+  loadEditingBudget,
+  loadTutorFilterOptions,
+} from "$lib/server/budgets/repository";
 
 import type { ActionValues } from "$lib/server/budgets/types";
 import { parseActionValues } from "$lib/server/budgets/parsers";
@@ -32,6 +42,59 @@ const toOperatorError = (
     operatorError: message,
     values,
   });
+
+type BudgetLifecycleAction = "undoSent" | "delete" | "accept" | "reject";
+
+const toLifecycleError = (
+  actionType: BudgetLifecycleAction,
+  operatorError: string,
+) =>
+  fail(400, {
+    actionType,
+    operatorError,
+  });
+
+const getBudgetIdFromForm = (params: {
+  formData: FormData;
+  actionType: BudgetLifecycleAction;
+  missingMessage: string;
+}):
+  | { ok: true; budgetId: string }
+  | { ok: false; response: ReturnType<typeof fail> } => {
+  const { formData, actionType, missingMessage } = params;
+  const budgetId = parseFormValue(formData.get("budgetId"));
+
+  if (!budgetId) {
+    return {
+      ok: false,
+      response: toLifecycleError(actionType, missingMessage),
+    };
+  }
+
+  return { ok: true, budgetId };
+};
+
+const getBudgetForLifecycleAction = async (params: {
+  budgetId: string;
+  actionType: BudgetLifecycleAction;
+  notFoundMessage: string;
+  locals: { supabase: import("@supabase/supabase-js").SupabaseClient };
+}) => {
+  const { budgetId, actionType, notFoundMessage, locals } = params;
+  const budget = await getBudgetById({ budgetId, supabase: locals.supabase });
+
+  if (!budget) {
+    return {
+      ok: false as const,
+      response: toLifecycleError(actionType, notFoundMessage),
+    };
+  }
+
+  return {
+    ok: true as const,
+    budget,
+  };
+};
 
 const getBlankValues = (): ActionValues => ({
   budgetId: "",
@@ -123,11 +186,7 @@ export const load: PageServerLoad = async ({ locals, url }) => {
   try {
     // Auto-expirar presupuestos vencidos (si falla, continuamos)
     try {
-      await locals.supabase
-        .from("budgets")
-        .update({ status: "expired" })
-        .eq("status", "sent")
-        .lte("expires_at", new Date().toISOString());
+      await autoExpireSentBudgets(locals.supabase);
     } catch {
       // Si falla la expiración automática no frenamos la carga del dashboard.
     }
@@ -138,115 +197,31 @@ export const load: PageServerLoad = async ({ locals, url }) => {
       url.searchParams.get("page"),
     );
 
-    const statusParam = url.searchParams.get("status") as
-      | BudgetStatus
-      | "pending"
-      | "all"
-      | null;
-    const searchQuery = url.searchParams.get("q")?.trim() ?? "";
-    const tutorIdParam = url.searchParams.get("tutor");
+    const filters = parseBudgetFilters(url);
 
-    const filters = {
-      status: statusParam ?? "all",
-      search: searchQuery,
-      tutorId: tutorIdParam ?? null,
-    };
+    const [{ budgets, total }, { editingBudget, editingRows }, tutors] =
+      await Promise.all([
+        loadBudgetList({
+          supabase: locals.supabase,
+          filters,
+          offset,
+          pageSize,
+        }),
+        loadEditingBudget({
+          supabase: locals.supabase,
+          editingBudgetId,
+        }),
+        loadTutorFilterOptions(locals.supabase),
+      ]);
 
-    let query = locals.supabase
-      .from("budgets")
-      .select(
-        "id, status, tutor_id, reference_month, reference_days, notes, final_sale_price, total_cost, ingredient_total_global, operational_total_global, created_at, expires_at, tutor:tutors(full_name)",
-        { count: "exact" },
-      )
-      .order("created_at", { ascending: false });
-
-    // Status filter — "pending" maps to draft + ready_to_send
-    if (statusParam && statusParam !== "all") {
-      if (statusParam === "pending") {
-        query = query.in("status", ["draft", "ready_to_send"]);
-      } else {
-        query = query.eq("status", statusParam);
-      }
-    }
-
-    // Tutor filter
-    if (tutorIdParam) {
-      query = query.eq("tutor_id", tutorIdParam);
-    }
-
-    // Search by tutor name
-    if (searchQuery) {
-      query = query.ilike("tutor:full_name", `%${searchQuery}%`);
-    }
-
-    const {
-      data: budgetsResult,
-      count,
-      error: budgetsError,
-    } = await query.range(offset, offset + pageSize - 1);
-
-    if (budgetsError) throw budgetsError;
-
-    const budgets = budgetsResult ?? [];
-    const total = count ?? 0;
     const totalPages = Math.ceil(total / pageSize);
 
-    // Editing budget (fetched separately so it always loads regardless of filters)
-    let editingBudget = null;
-    let editingRows: Array<{
-      dogId: string;
-      recipeId: string;
-      assignedDays: string;
-    }> = [];
-    if (editingBudgetId) {
-      const { data: editingBudgetData } = await locals.supabase
-        .from("budgets")
-        .select(
-          "id, status, tutor_id, reference_month, reference_days, notes, final_sale_price, total_cost, ingredient_total_global, operational_total_global, created_at, expires_at, tutor:tutors(full_name)",
-        )
-        .eq("id", editingBudgetId)
-        .single();
-      editingBudget = editingBudgetData ?? null;
-
-      if (editingBudgetId) {
-        const { data: budgetDogRecipesData, error: budgetDogRecipesError } =
-          await locals.supabase
-            .from("budget_dog_recipes")
-            .select(
-              "budget_dog_id, recipe_id, assigned_days, budget_dog:budget_dogs(dog_id)",
-            )
-            .eq("budget_dog.budget_id", editingBudgetId)
-            .order("created_at", { ascending: true });
-
-        if (budgetDogRecipesError) throw budgetDogRecipesError;
-
-        editingRows = (budgetDogRecipesData ?? []).map((row) => ({
-          dogId: (row.budget_dog as { dog_id?: string } | null)?.dog_id ?? "",
-          recipeId: row.recipe_id,
-          assignedDays: String(row.assigned_days),
-        }));
-      }
-    }
-
-    // Load tutors for filter dropdown
-    const { data: tutorsResult } = await locals.supabase
-      .from("tutors")
-      .select("id, full_name")
-      .order("full_name", { ascending: true });
-
-    const hasFilters =
-      statusParam !== null || searchQuery !== "" || tutorIdParam !== null;
-    const tableState = total > 0 ? "success" : "empty";
-    const tableMessage =
-      total > 0
-        ? null
-        : {
-            kind: "empty" as const,
-            title: hasFilters ? "Sin resultados" : EMPTY_LABELS.title,
-            detail: hasFilters
-              ? "No se encontraron presupuestos para los filtros aplicados. Probá modificar o limpiar los filtros."
-              : EMPTY_LABELS.detail,
-          };
+    const hasFilters = hasBudgetFilters(filters);
+    const { tableState, tableMessage } = resolveBudgetTableMessage({
+      total,
+      hasFilters,
+      emptyLabels: EMPTY_LABELS,
+    });
 
     return {
       budgets,
@@ -256,7 +231,7 @@ export const load: PageServerLoad = async ({ locals, url }) => {
       tableMessage,
       pagination: { page, totalPages, total },
       filters,
-      tutors: tutorsResult ?? [],
+      tutors,
     };
   } catch {
     return {
@@ -321,42 +296,37 @@ export const actions: Actions = {
 
   undoSent: async ({ request, locals }) => {
     const formData = await request.formData();
-    const budgetId = parseFormValue(formData.get("budgetId"));
+    const budgetIdResult = getBudgetIdFromForm({
+      formData,
+      actionType: "undoSent",
+      missingMessage: "No encontramos el presupuesto a reabrir.",
+    });
+    if (!budgetIdResult.ok) return budgetIdResult.response;
 
-    if (!budgetId) {
-      return fail(400, {
-        actionType: "undoSent",
-        operatorError: "No encontramos el presupuesto a reabrir.",
-      });
-    }
+    const budgetResult = await getBudgetForLifecycleAction({
+      budgetId: budgetIdResult.budgetId,
+      actionType: "undoSent",
+      notFoundMessage: "No encontramos el presupuesto a reabrir.",
+      locals,
+    });
+    if (!budgetResult.ok) return budgetResult.response;
 
-    const budget = await getBudgetById({ budgetId, supabase: locals.supabase });
-    if (!budget) {
-      return fail(400, {
-        actionType: "undoSent",
-        operatorError: "No encontramos el presupuesto a reabrir.",
-      });
-    }
-
-    if (budget.status !== "sent") {
-      return fail(400, {
-        actionType: "undoSent",
-        operatorError: "Solo podés reabrir presupuestos en estado enviado.",
-      });
+    if (budgetResult.budget.status !== "sent") {
+      return toLifecycleError(
+        "undoSent",
+        "Solo podés reabrir presupuestos en estado enviado.",
+      );
     }
 
     const result = await updateBudgetStatus({
-      budgetId,
+      budgetId: budgetIdResult.budgetId,
       supabase: locals.supabase,
       status: "draft",
       extraFields: { sent_at: null },
     });
 
     if (!result.ok) {
-      return fail(400, {
-        actionType: "undoSent",
-        operatorError: result.message,
-      });
+      return toLifecycleError("undoSent", result.message);
     }
 
     return {
@@ -367,37 +337,34 @@ export const actions: Actions = {
 
   delete: async ({ request, locals }) => {
     const formData = await request.formData();
-    const budgetId = parseFormValue(formData.get("budgetId"));
+    const budgetIdResult = getBudgetIdFromForm({
+      formData,
+      actionType: "delete",
+      missingMessage: "No encontramos el presupuesto a eliminar.",
+    });
+    if (!budgetIdResult.ok) return budgetIdResult.response;
 
-    if (!budgetId) {
-      return fail(400, {
-        actionType: "delete",
-        operatorError: "No encontramos el presupuesto a eliminar.",
-      });
+    const budgetResult = await getBudgetForLifecycleAction({
+      budgetId: budgetIdResult.budgetId,
+      actionType: "delete",
+      notFoundMessage: "No encontramos el presupuesto a eliminar.",
+      locals,
+    });
+    if (!budgetResult.ok) return budgetResult.response;
+
+    if (budgetResult.budget.status !== "draft") {
+      return toLifecycleError(
+        "delete",
+        "Solo se pueden eliminar presupuestos en estado borrador.",
+      );
     }
 
-    const budget = await getBudgetById({ budgetId, supabase: locals.supabase });
-    if (!budget) {
-      return fail(400, {
-        actionType: "delete",
-        operatorError: "No encontramos el presupuesto a eliminar.",
-      });
-    }
-
-    if (budget.status !== "draft") {
-      return fail(400, {
-        actionType: "delete",
-        operatorError:
-          "Solo se pueden eliminar presupuestos en estado borrador.",
-      });
-    }
-
-    const result = await deleteBudget({ budgetId, supabase: locals.supabase });
+    const result = await deleteBudget({
+      budgetId: budgetIdResult.budgetId,
+      supabase: locals.supabase,
+    });
     if (!result.ok) {
-      return fail(400, {
-        actionType: "delete",
-        operatorError: result.message,
-      });
+      return toLifecycleError("delete", result.message);
     }
 
     return {
@@ -408,43 +375,38 @@ export const actions: Actions = {
 
   accept: async ({ request, locals }) => {
     const formData = await request.formData();
-    const budgetId = parseFormValue(formData.get("budgetId"));
+    const budgetIdResult = getBudgetIdFromForm({
+      formData,
+      actionType: "accept",
+      missingMessage: "No encontramos el presupuesto a aceptar.",
+    });
+    if (!budgetIdResult.ok) return budgetIdResult.response;
 
-    if (!budgetId) {
-      return fail(400, {
-        actionType: "accept",
-        operatorError: "No encontramos el presupuesto a aceptar.",
-      });
-    }
+    const budgetResult = await getBudgetForLifecycleAction({
+      budgetId: budgetIdResult.budgetId,
+      actionType: "accept",
+      notFoundMessage: "No encontramos el presupuesto a aceptar.",
+      locals,
+    });
+    if (!budgetResult.ok) return budgetResult.response;
 
-    const budget = await getBudgetById({ budgetId, supabase: locals.supabase });
-    if (!budget) {
-      return fail(400, {
-        actionType: "accept",
-        operatorError: "No encontramos el presupuesto a aceptar.",
-      });
-    }
-
-    if (budget.status !== "sent") {
-      return fail(400, {
-        actionType: "accept",
-        operatorError: "Solo se pueden aceptar presupuestos en estado enviado.",
-      });
+    if (budgetResult.budget.status !== "sent") {
+      return toLifecycleError(
+        "accept",
+        "Solo se pueden aceptar presupuestos en estado enviado.",
+      );
     }
 
     const now = new Date().toISOString();
     const result = await updateBudgetStatus({
-      budgetId,
+      budgetId: budgetIdResult.budgetId,
       supabase: locals.supabase,
       status: "accepted",
       extraFields: { accepted_at: now, viewed_at: now },
     });
 
     if (!result.ok) {
-      return fail(400, {
-        actionType: "accept",
-        operatorError: result.message,
-      });
+      return toLifecycleError("accept", result.message);
     }
 
     return {
@@ -455,43 +417,37 @@ export const actions: Actions = {
 
   reject: async ({ request, locals }) => {
     const formData = await request.formData();
-    const budgetId = parseFormValue(formData.get("budgetId"));
+    const budgetIdResult = getBudgetIdFromForm({
+      formData,
+      actionType: "reject",
+      missingMessage: "No encontramos el presupuesto a rechazar.",
+    });
+    if (!budgetIdResult.ok) return budgetIdResult.response;
 
-    if (!budgetId) {
-      return fail(400, {
-        actionType: "reject",
-        operatorError: "No encontramos el presupuesto a rechazar.",
-      });
-    }
+    const budgetResult = await getBudgetForLifecycleAction({
+      budgetId: budgetIdResult.budgetId,
+      actionType: "reject",
+      notFoundMessage: "No encontramos el presupuesto a rechazar.",
+      locals,
+    });
+    if (!budgetResult.ok) return budgetResult.response;
 
-    const budget = await getBudgetById({ budgetId, supabase: locals.supabase });
-    if (!budget) {
-      return fail(400, {
-        actionType: "reject",
-        operatorError: "No encontramos el presupuesto a rechazar.",
-      });
-    }
-
-    if (budget.status !== "sent") {
-      return fail(400, {
-        actionType: "reject",
-        operatorError:
-          "Solo se pueden rechazar presupuestos en estado enviado.",
-      });
+    if (budgetResult.budget.status !== "sent") {
+      return toLifecycleError(
+        "reject",
+        "Solo se pueden rechazar presupuestos en estado enviado.",
+      );
     }
 
     const result = await updateBudgetStatus({
-      budgetId,
+      budgetId: budgetIdResult.budgetId,
       supabase: locals.supabase,
       status: "rejected",
       extraFields: { rejected_at: new Date().toISOString() },
     });
 
     if (!result.ok) {
-      return fail(400, {
-        actionType: "reject",
-        operatorError: result.message,
-      });
+      return toLifecycleError("reject", result.message);
     }
 
     return {
