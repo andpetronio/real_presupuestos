@@ -12,6 +12,8 @@ export const load: PageServerLoad = async ({ locals, params, url }) => {
 
   const [options, listData] = await Promise.all([
     loadBudgetOptions(locals.supabase),
+    // Cross-route load call (`/(app)/budgets/[budget_id]/update` -> `/(app)/budgets`)
+    // requires RouteId coercion in SvelteKit generated types.
     budgetsLoad({ locals, url: nextUrl } as unknown as Parameters<
       typeof budgetsLoad
     >[0]),
@@ -57,6 +59,8 @@ export const load: PageServerLoad = async ({ locals, params, url }) => {
 export const actions: Actions = {
   update: async (event) => {
     const result = await budgetsActions.update(
+      // Cross-route action reuse (`/(app)/budgets/[budget_id]/update` ->
+      // `/(app)/budgets`) needs RouteId coercion between RequestEvent types.
       event as unknown as Parameters<typeof budgetsActions.update>[0],
     );
 
