@@ -154,7 +154,7 @@ export const sendBudgetWhatsapp = async (params: {
   // 3. Leer settings
   const { data: settings, error: settingsError } = await supabase
     .from('settings')
-    .select('business_name, whatsapp_default_template, whatsapp_signature')
+    .select('business_name, whatsapp_default_template, whatsapp_signature, bank_cbu, bank_alias, bank_account_holder, bank_provider')
     .eq('id', 1)
     .single();
 
@@ -211,7 +211,14 @@ export const sendBudgetWhatsapp = async (params: {
     whatsappNumber: toNumber
   });
 
-  const rendered = renderWhatsappTemplate(normalizeTemplateText(template), context);
+  const bankContext = {
+    cbu_transferencia: settings.bank_cbu ?? '',
+    alias_transferencia: settings.bank_alias ?? '',
+    titular_transferencia: settings.bank_account_holder ?? '',
+    proveedor_transferencia: settings.bank_provider ?? ''
+  };
+
+  const rendered = renderWhatsappTemplate(normalizeTemplateText(template), { ...context, ...bankContext });
   if (containsBrokenUnicode(rendered)) {
     return {
       ok: false,

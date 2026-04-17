@@ -33,7 +33,7 @@
 
   let { data, form }: { data: PageData; form: ActionData | null } = $props();
   const values = $derived<SettingsFormValues>(form?.values ?? data.settingsForm);
-  type SettingsTab = 'operativos' | 'comercial' | 'whatsapp' | 'encuesta';
+  type SettingsTab = 'operativos' | 'comercial' | 'whatsapp' | 'encuesta' | 'cobros';
   let activeTab = $state<SettingsTab>('operativos');
 </script>
 
@@ -61,7 +61,7 @@
   <form method="POST" action="?/update" class="space-y-6">
     <input type="hidden" name="settingsSection" value={activeTab} />
 
-    <Tabs bind:selected={activeTab} tabStyle="underline" contentClass="pt-6">
+    <Tabs bind:selected={activeTab} tabStyle="underline" classes={{ content: 'pt-6' }}>
       <TabItem key="operativos" title="Costos operativos">
         <section class="space-y-4">
           <div class="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
@@ -109,7 +109,7 @@
           <Label for="whatsappDefaultTemplate">Mensaje base para envío</Label>
           <Textarea id="whatsappDefaultTemplate" name="whatsappDefaultTemplate" rows={10} class="w-full" placeholder="Hola, te compartimos la propuesta personalizada..." value={values.whatsappDefaultTemplate} />
           <p class="text-xs text-gray-500">
-            Placeholders: {'{{tutor_nombre}}'}, {'{{perros}}'}, {'{{total_final}}'}, {'{{fecha_limite}}'}, {'{{mes_referencia}}'}, {'{{dias_referencia}}'}, {'{{nombre_emprendimiento}}'}, {'{{link_presupuesto}}'}.
+            Placeholders: {'{{tutor_nombre}}'}, {'{{perros}}'}, {'{{total_final}}'}, {'{{fecha_limite}}'}, {'{{mes_referencia}}'}, {'{{dias_referencia}}'}, {'{{nombre_emprendimiento}}'}, {'{{link_presupuesto}}'}, {'{{cbu_transferencia}}'}, {'{{alias_transferencia}}'}, {'{{titular_transferencia}}'}, {'{{proveedor_transferencia}}'}.
           </p>
           </div>
 
@@ -127,6 +127,30 @@
           </div>
           <div class="grid gap-1"><Label for="satisfactionSurveyUrl">Enlace de encuesta</Label><Input id="satisfactionSurveyUrl" name="satisfactionSurveyUrl" type="url" placeholder="https://..." value={values.satisfactionSurveyUrl} /></div>
           <div class="grid gap-1"><Label for="satisfactionSurveyMessage">Texto breve de invitación</Label><Input id="satisfactionSurveyMessage" name="satisfactionSurveyMessage" type="text" placeholder="Tu opinión nos ayuda a mejorar" value={values.satisfactionSurveyMessage} /></div>
+          </div>
+        </section>
+      </TabItem>
+
+      <TabItem key="cobros" title="Cobros">
+        <section class="space-y-4">
+          <p class="text-sm text-gray-600">Datos bancarios para recibir transferencias. Estos datos pueden incluirse en el mensaje de WhatsApp usando los placeholders.</p>
+          <div class="grid gap-4 md:grid-cols-2">
+            <div class="grid gap-1">
+              <Label for="bankProvider">Proveedor / Banco</Label>
+              <Input id="bankProvider" name="bankProvider" type="text" placeholder="Naranja X" value={values.bankProvider} />
+            </div>
+            <div class="grid gap-1">
+              <Label for="bankCbu">CBU (22 dígitos)</Label>
+              <Input id="bankCbu" name="bankCbu" type="text" placeholder="4530000800018342656744" value={values.bankCbu} />
+            </div>
+            <div class="grid gap-1">
+              <Label for="bankAlias">Alias</Label>
+              <Input id="bankAlias" name="bankAlias" type="text" placeholder="REAL.ALIMENTO2" value={values.bankAlias} />
+            </div>
+            <div class="grid gap-1">
+              <Label for="bankAccountHolder">Titular de la cuenta</Label>
+              <Input id="bankAccountHolder" name="bankAccountHolder" type="text" placeholder="Maylin Martinez Muñoz" value={values.bankAccountHolder} />
+            </div>
           </div>
         </section>
       </TabItem>

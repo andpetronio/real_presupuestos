@@ -18,10 +18,10 @@ const fallbackErrorMessage: OperatorMessage = {
   actionLabel: 'Reintentar'
 };
 
-type SettingsSection = 'operativos' | 'comercial' | 'whatsapp' | 'encuesta';
+type SettingsSection = 'operativos' | 'comercial' | 'whatsapp' | 'encuesta' | 'cobros';
 
 const isSettingsSection = (value: string | null): value is SettingsSection =>
-  value === 'operativos' || value === 'comercial' || value === 'whatsapp' || value === 'encuesta';
+  value === 'operativos' || value === 'comercial' || value === 'whatsapp' || value === 'encuesta' || value === 'cobros';
 
 const sectionFields: Record<SettingsSection, Array<keyof SettingsFormValues>> = {
   operativos: [
@@ -53,7 +53,8 @@ const sectionFields: Record<SettingsSection, Array<keyof SettingsFormValues>> = 
     'whatsappDefaultTemplate',
     'enableWhatsappNotifications'
   ],
-  encuesta: ['satisfactionSurveyEnabled', 'satisfactionSurveyUrl', 'satisfactionSurveyMessage']
+  encuesta: ['satisfactionSurveyEnabled', 'satisfactionSurveyUrl', 'satisfactionSurveyMessage'],
+  cobros: ['bankCbu', 'bankAlias', 'bankAccountHolder', 'bankProvider']
 };
 
 const checkboxFields = new Set<keyof SettingsFormValues>([

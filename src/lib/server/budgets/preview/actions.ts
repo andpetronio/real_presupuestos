@@ -8,6 +8,7 @@ import {
   normalizeWhatsappNumber,
   renderWhatsappTemplate
 } from '$lib/server/whatsapp/template';
+import { buildDogsSummary } from '$lib/server/budgets/whatsapp';
 
 const getMonthLabel = (date: Date): string =>
   new Intl.DateTimeFormat('es-AR', { month: 'long' }).format(date);
@@ -57,13 +58,14 @@ export const sendWhatsappAction = async ({ params, locals, request }: SendWhatsa
 
     const settingsResult = await locals.supabase
       .from('settings')
-      .select('whatsapp_default_template')
+      .select('whatsapp_default_template, business_name, bank_cbu, bank_alias, bank_account_holder, bank_provider')
       .eq('id', 1)
       .single();
 
     if (settingsResult.error) throw settingsResult.error;
 
     let template = settingsResult.data?.whatsapp_default_template ?? '';
+    const businessName = settingsResult.data?.business_name ?? 'REAL';
     if (!template) {
       template = 'Hola {{tutor_nombre}}, te compartimos el presupuesto: {{total_final}}. Vence {{fecha_limite}}.';
     }
@@ -78,13 +80,22 @@ export const sendWhatsappAction = async ({ params, locals, request }: SendWhatsa
     // JOIN: budget_dogs + dogs en una sola query
     const { data: budgetDogs } = await locals.supabase
       .from('budget_dogs')
-      .select('dog:dogs(name)')
+      .select('requested_days, dog:dogs(name)')
       .eq('budget_id', budgetId);
 
     const dogNames = (budgetDogs ?? [])
-      .map((row) => (row.dog as { name?: string } | null)?.name ?? '')
-      .filter(Boolean)
-      .join(', ');
+      .map((row) => ((row.dog as { name?: string } | null)?.name ?? '').trim())
+      .filter(Boolean);
+
+    const dogsWithDays = (budgetDogs ?? [])
+      .map((row) => ({
+        name: ((row.dog as { name?: string } | null)?.name ?? '').trim(),
+        requestedDays: Number(row.requested_days ?? 0)
+      }))
+      .filter((dog) => Boolean(dog.name) && dog.requestedDays > 0);
+
+    const dogsSummary =
+      dogsWithDays.length > 0 ? buildDogsSummary(dogsWithDays) : dogNames.length > 0 ? dogNames.join(', ') : 'tu perro';
 
     const expirationDate = budget.expires_at
       ? new Date(budget.expires_at).toLocaleDateString('es-AR', { day: '2-digit', month: '2-digit', year: 'numeric' })
@@ -96,16 +107,27 @@ export const sendWhatsappAction = async ({ params, locals, request }: SendWhatsa
     const referenceDays = Number(budget.reference_days ?? 30);
 
     const rendered = renderWhatsappTemplate(template, {
+      tutor: tutor?.full_name ?? 'Cliente',
       tutor_nombre: tutor?.full_name ?? 'Cliente',
-      perros: dogNames,
+      perros: dogsSummary,
+      perro: dogsSummary,
+      total: budget.final_sale_price.toLocaleString('es-AR', { style: 'currency', currency: 'ARS' }),
       total_final: budget.final_sale_price.toLocaleString('es-AR', { style: 'currency', currency: 'ARS' }),
-      mes_referencia: referenceMonth,
       mes: referenceMonth,
-      dias_referencia: referenceDays,
+      mes_referencia: referenceMonth,
       dias: referenceDays,
+      dias_referencia: referenceDays,
+      fecha: expirationDate,
       fecha_limite: expirationDate,
+      nombre_emprendimiento: businessName,
+      emprendimiento: businessName,
+      link: responseLink,
       link_presupuesto: responseLink,
-      link: responseLink
+      whatsapp_tutor: '',
+      cbu_transferencia: settingsResult.data?.bank_cbu ?? '',
+      alias_transferencia: settingsResult.data?.bank_alias ?? '',
+      titular_transferencia: settingsResult.data?.bank_account_holder ?? '',
+      proveedor_transferencia: settingsResult.data?.bank_provider ?? ''
     });
 
     if (containsBrokenUnicode(rendered)) {

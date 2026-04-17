@@ -38,6 +38,10 @@ export type SettingsRow = {
   satisfaction_survey_enabled: boolean;
   satisfaction_survey_url: string | null;
   satisfaction_survey_message: string | null;
+  bank_cbu: string | null;
+  bank_alias: string | null;
+  bank_account_holder: string | null;
+  bank_provider: string;
 };
 
 export type SettingsFormValues = {
@@ -69,6 +73,10 @@ export type SettingsFormValues = {
   satisfactionSurveyEnabled: boolean;
   satisfactionSurveyUrl: string;
   satisfactionSurveyMessage: string;
+  bankCbu: string;
+  bankAlias: string;
+  bankAccountHolder: string;
+  bankProvider: string;
 };
 
 export type SettingsValidationFailure = {
@@ -117,6 +125,10 @@ export const defaultSettings: SettingsRow = {
   satisfaction_survey_enabled: false,
   satisfaction_survey_url: null,
   satisfaction_survey_message: null,
+  bank_cbu: null,
+  bank_alias: null,
+  bank_account_holder: null,
+  bank_provider: "Naranja X",
 };
 
 const parseText = (value: FormDataEntryValue | null): string =>
@@ -191,6 +203,10 @@ export const readSettingsFormValues = (
   satisfactionSurveyMessage: parseText(
     formData.get("satisfactionSurveyMessage"),
   ),
+  bankCbu: parseText(formData.get("bankCbu")),
+  bankAlias: parseText(formData.get("bankAlias")),
+  bankAccountHolder: parseText(formData.get("bankAccountHolder")),
+  bankProvider: parseText(formData.get("bankProvider")),
 });
 
 export const validateAndNormalizeSettings = (
@@ -348,6 +364,25 @@ export const validateAndNormalizeSettings = (
     );
   }
 
+  const normalizedBankCbu = values.bankCbu.replace(/\s/g, '');
+  if (normalizedBankCbu && !/^\d{22}$/.test(normalizedBankCbu)) {
+    fieldErrors.push("CBU: debe tener exactamente 22 dígitos numéricos.");
+  }
+
+  const bankAlias = values.bankAlias.trim();
+  if (bankAlias && (bankAlias.length < 3 || bankAlias.length > 60)) {
+    fieldErrors.push("Alias: debe tener entre 3 y 60 caracteres.");
+  }
+
+  const bankHolder = values.bankAccountHolder.trim();
+  if (bankHolder && bankHolder.length < 3) {
+    fieldErrors.push("Titular: nombre muy corto, verificá que sea correcto.");
+  }
+
+  if (!values.bankProvider.trim()) {
+    fieldErrors.push("Proveedor: completá el nombre del banco o billetera.");
+  }
+
   if (fieldErrors.length > 0) {
     return {
       ok: false,
@@ -407,6 +442,10 @@ export const validateAndNormalizeSettings = (
       satisfaction_survey_message: normalizeOptionalText(
         values.satisfactionSurveyMessage,
       ),
+      bank_cbu: normalizedBankCbu ? normalizedBankCbu : null,
+      bank_alias: bankAlias ? bankAlias : null,
+      bank_account_holder: bankHolder ? bankHolder : null,
+      bank_provider: values.bankProvider.trim(),
     },
   };
 };
@@ -442,6 +481,10 @@ export const toFormValuesFromSettings = (
   satisfactionSurveyEnabled: settings.satisfaction_survey_enabled,
   satisfactionSurveyUrl: settings.satisfaction_survey_url ?? "",
   satisfactionSurveyMessage: settings.satisfaction_survey_message ?? "",
+  bankCbu: settings.bank_cbu ?? "",
+  bankAlias: settings.bank_alias ?? "",
+  bankAccountHolder: settings.bank_account_holder ?? "",
+  bankProvider: settings.bank_provider,
 });
 
 export const getSettingsSaveError = (): string =>

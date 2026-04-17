@@ -67,7 +67,6 @@
     {/if}
 
     {#if budget.status === 'draft' || budget.status === 'ready_to_send'}
-      <DropdownDivider />
       <DropdownItem href={editPath}>
         <div class="flex items-center gap-2">
           <PencilSimpleIcon size={16} />
@@ -75,49 +74,57 @@
         </div>
       </DropdownItem>
       <DropdownItem
-        aClass="flex items-center gap-2 w-full cursor-pointer text-red-600 dark:text-red-500"
+        aClass="w-full cursor-pointer text-red-600 dark:text-red-500"
         type="submit"
         form="delete-form-{budget.id}"
         onclick={() => {
           if (!confirm('¿Eliminar este presupuesto?')) open = false;
         }}
       >
-        <TrashIcon size={16} />
-        Eliminar
+        <div class="flex items-center gap-2">
+          <TrashIcon size={16} />
+          Eliminar
+        </div>
       </DropdownItem>
     {/if}
 
     {#if budget.status === 'sent'}
       <DropdownDivider />
       <DropdownItem
-        aClass="flex items-center gap-2 w-full cursor-pointer text-green-600 dark:text-green-500"
+        aClass="w-full cursor-pointer text-green-600 dark:text-green-500"
         type="submit"
         form="accept-form-{budget.id}"
       >
-        <CheckCircleIcon size={16} />
-        Aceptar
+        <div class="flex items-center gap-2">
+          <CheckCircleIcon size={16} />
+          Aceptar
+        </div>
       </DropdownItem>
       <DropdownItem
-        aClass="flex items-center gap-2 w-full cursor-pointer text-red-600 dark:text-red-500"
+        aClass="w-full cursor-pointer text-red-600 dark:text-red-500"
         type="submit"
         form="reject-form-{budget.id}"
         onclick={() => {
           if (!confirm('¿Rechazar este presupuesto?')) open = false;
         }}
       >
-        <XCircleIcon size={16} />
-        Rechazar
+        <div class="flex items-center gap-2">
+          <XCircleIcon size={16} />
+          Rechazar
+        </div>
       </DropdownItem>
       <DropdownItem
-        aClass="flex items-center gap-2 w-full cursor-pointer"
+        aClass="w-full cursor-pointer"
         type="submit"
         form="undo-form-{budget.id}"
         onclick={() => {
           if (!confirm('¿Reabrir este presupuesto? Volverá a borrador.')) open = false;
         }}
       >
-        <ArrowCounterClockwiseIcon size={16} />
-        Reabrir
+        <div class="flex items-center gap-2">
+          <ArrowCounterClockwiseIcon size={16} />
+          Reabrir
+        </div>
       </DropdownItem>
     {/if}
   </Dropdown>
