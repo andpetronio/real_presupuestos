@@ -194,6 +194,29 @@ export const saveBudgetSnapshot = async (params: {
   return { ok: true };
 };
 
+export const trackBudgetPersistenceIssue = async (params: {
+  budgetId: string;
+  supabase: SupabaseClient;
+  stage: "snapshot";
+  detail: string;
+}): Promise<void> => {
+  const { budgetId, supabase, stage, detail } = params;
+
+  const { error } = await supabase.from("budget_persistence_events").insert({
+    budget_id: budgetId,
+    stage,
+    detail,
+    occurred_at: new Date().toISOString(),
+  });
+
+  if (error) {
+    console.warn(
+      "[persistBudget] No pudimos registrar telemetry de persistencia:",
+      error.message,
+    );
+  }
+};
+
 /**
  * Cambia el estado de un presupuesto.
  */
@@ -671,7 +694,13 @@ export const persistBudget = async (params: {
       "[persistBudget] Snapshot falló (no crítico, operación OK):",
       snapshotResult.message,
     );
-    // TODO: agregar métrica/telemetry aquí para alerting async (e.g., Sentry, custom DB table)
+
+    await trackBudgetPersistenceIssue({
+      budgetId: newBudgetId,
+      supabase,
+      stage: "snapshot",
+      detail: snapshotResult.message,
+    });
   }
 
   // Guardar composición SEGUNDO — es crítica, el presupuesto no funciona sin esto.

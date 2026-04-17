@@ -4,6 +4,7 @@ import {
   saveBudgetComposition,
   buildBudgetPayload,
   saveBudgetSnapshot,
+  trackBudgetPersistenceIssue,
   updateBudgetStatus,
   deleteBudget,
   getBudgetById,
@@ -32,6 +33,11 @@ const makeMockSupabase = (overrides: Record<string, unknown> = {}) => {
       };
     }
     if (table === "budget_snapshots") {
+      return {
+        insert: vi.fn().mockReturnValue({ error: null }),
+      };
+    }
+    if (table === "budget_persistence_events") {
       return {
         insert: vi.fn().mockReturnValue({ error: null }),
       };
@@ -398,6 +404,67 @@ describe("saveBudgetSnapshot", () => {
 
     expect(result.ok).toBe(false);
     if (!result.ok) expect(result.message).toContain("registro histórico");
+  });
+});
+
+describe("trackBudgetPersistenceIssue", () => {
+  it("persists issue record without throwing when insert succeeds", async () => {
+    const insert = vi.fn().mockReturnValue({ error: null });
+    const mockSupabase = makeMockSupabase();
+    (mockSupabase.from as ReturnType<typeof vi.fn>).mockImplementation(
+      (table: string) => {
+        if (table === "budget_persistence_events") return { insert };
+        return {};
+      },
+    );
+
+    await expect(
+      trackBudgetPersistenceIssue({
+        budgetId: "b-1",
+        supabase: mockSupabase,
+        stage: "snapshot",
+        detail: "snapshot insert failed",
+      }),
+    ).resolves.toBeUndefined();
+
+    expect(insert).toHaveBeenCalledWith(
+      expect.objectContaining({
+        budget_id: "b-1",
+        stage: "snapshot",
+        detail: "snapshot insert failed",
+      }),
+    );
+  });
+
+  it("logs warning and does not throw when telemetry insert fails", async () => {
+    const insert = vi.fn().mockReturnValue({
+      error: { message: "telemetry unavailable" },
+    });
+    const warnSpy = vi.spyOn(console, "warn").mockImplementation(() => {});
+
+    const mockSupabase = makeMockSupabase();
+    (mockSupabase.from as ReturnType<typeof vi.fn>).mockImplementation(
+      (table: string) => {
+        if (table === "budget_persistence_events") return { insert };
+        return {};
+      },
+    );
+
+    await expect(
+      trackBudgetPersistenceIssue({
+        budgetId: "b-1",
+        supabase: mockSupabase,
+        stage: "snapshot",
+        detail: "snapshot insert failed",
+      }),
+    ).resolves.toBeUndefined();
+
+    expect(warnSpy).toHaveBeenCalledWith(
+      "[persistBudget] No pudimos registrar telemetry de persistencia:",
+      "telemetry unavailable",
+    );
+
+    warnSpy.mockRestore();
   });
 });
 
