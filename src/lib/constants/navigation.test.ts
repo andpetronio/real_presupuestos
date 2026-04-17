@@ -27,7 +27,7 @@ describe("navigation", () => {
   });
 
   it("usa iconografía Phosphor-only en el archivo de navegación", () => {
-    expect(navigationSource).toContain("from '$lib/icons/phosphor'");
+    expect(navigationSource).toMatch(/from ["']\$lib\/icons\/phosphor["']/);
     expect(navigationSource).not.toMatch(
       /lucide|heroicons|fontawesome|tabler/i,
     );
