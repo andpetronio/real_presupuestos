@@ -335,6 +335,128 @@ describe('settings validation', () => {
     });
     expect(result.ok).toBe(true);
   });
+
+  // ─── Bank transfer fields ───────────────────────────────────────────────────
+  it('valida CBU válido de 22 dígitos → válido', () => {
+    const result = validateAndNormalizeSettings({
+      ...toFormValuesFromSettings(defaultSettings),
+      bankCbu: '4530000800018342656744',
+      bankProvider: 'Naranja X'
+    });
+    expect(result.ok).toBe(true);
+  });
+
+  it('rechaza CBU con menos de 22 dígitos → inválido', () => {
+    const result = validateAndNormalizeSettings({
+      ...toFormValuesFromSettings(defaultSettings),
+      bankCbu: '453000080001834265674',
+      bankProvider: 'Naranja X'
+    });
+    expect(result.ok).toBe(false);
+    if (result.ok) return;
+    expect(result.fieldErrors.join(' ')).toContain('22 dígitos');
+  });
+
+  it('rechaza CBU con letras → inválido', () => {
+    const result = validateAndNormalizeSettings({
+      ...toFormValuesFromSettings(defaultSettings),
+      bankCbu: '45300008000183426567AA',
+      bankProvider: 'Naranja X'
+    });
+    expect(result.ok).toBe(false);
+    if (result.ok) return;
+    expect(result.fieldErrors.join(' ')).toContain('22 dígitos');
+  });
+
+  it('valida alias de 3 caracteres → válido', () => {
+    const result = validateAndNormalizeSettings({
+      ...toFormValuesFromSettings(defaultSettings),
+      bankAlias: 'abc',
+      bankProvider: 'Naranja X'
+    });
+    expect(result.ok).toBe(true);
+  });
+
+  it('valida alias de 60 caracteres → válido', () => {
+    const result = validateAndNormalizeSettings({
+      ...toFormValuesFromSettings(defaultSettings),
+      bankAlias: 'a'.repeat(60),
+      bankProvider: 'Naranja X'
+    });
+    expect(result.ok).toBe(true);
+  });
+
+  it('rechaza alias de menos de 3 caracteres → inválido', () => {
+    const result = validateAndNormalizeSettings({
+      ...toFormValuesFromSettings(defaultSettings),
+      bankAlias: 'ab',
+      bankProvider: 'Naranja X'
+    });
+    expect(result.ok).toBe(false);
+    if (result.ok) return;
+    expect(result.fieldErrors.join(' ')).toContain('3 y 60');
+  });
+
+  it('rechaza alias de más de 60 caracteres → inválido', () => {
+    const result = validateAndNormalizeSettings({
+      ...toFormValuesFromSettings(defaultSettings),
+      bankAlias: 'a'.repeat(61),
+      bankProvider: 'Naranja X'
+    });
+    expect(result.ok).toBe(false);
+    if (result.ok) return;
+    expect(result.fieldErrors.join(' ')).toContain('3 y 60');
+  });
+
+  it('valida titular de 5 caracteres → válido', () => {
+    const result = validateAndNormalizeSettings({
+      ...toFormValuesFromSettings(defaultSettings),
+      bankAccountHolder: 'Juan',
+      bankProvider: 'Naranja X'
+    });
+    expect(result.ok).toBe(true);
+  });
+
+  it('rechaza titular de menos de 3 caracteres → inválido', () => {
+    const result = validateAndNormalizeSettings({
+      ...toFormValuesFromSettings(defaultSettings),
+      bankAccountHolder: 'Ju',
+      bankProvider: 'Naranja X'
+    });
+    expect(result.ok).toBe(false);
+    if (result.ok) return;
+    expect(result.fieldErrors.join(' ')).toContain('muy corto');
+  });
+
+  it('valida titular de 3 o más caracteres → válido', () => {
+    const result = validateAndNormalizeSettings({
+      ...toFormValuesFromSettings(defaultSettings),
+      bankAccountHolder: 'Juan',
+      bankProvider: 'Naranja X'
+    });
+    expect(result.ok).toBe(true);
+  });
+
+  it('rechaza proveedor vacío → inválido', () => {
+    const result = validateAndNormalizeSettings({
+      ...toFormValuesFromSettings(defaultSettings),
+      bankProvider: ''
+    });
+    expect(result.ok).toBe(false);
+    if (result.ok) return;
+    expect(result.fieldErrors.join(' ')).toContain('Proveedor');
+  });
+
+  it('permite CBU vacío cuando hay otros campos vacíos → válido', () => {
+    const result = validateAndNormalizeSettings({
+      ...toFormValuesFromSettings(defaultSettings),
+      bankCbu: '',
+      bankAlias: '',
+      bankAccountHolder: '',
+      bankProvider: 'Naranja X'
+    });
+    expect(result.ok).toBe(true);
+  });
 });
 
 describe('readSettingsFormValues', () => {
@@ -431,7 +553,11 @@ describe('toFormValuesFromSettings', () => {
       business_name: 'Mi Negocio',
       satisfaction_survey_enabled: true,
       satisfaction_survey_url: 'https://example.com/survey',
-      satisfaction_survey_message: '¿Cómo fue tu experiencia?'
+      satisfaction_survey_message: '¿Cómo fue tu experiencia?',
+      bank_cbu: '4530000800018342656744',
+      bank_alias: 'REAL.ALIMENTO2',
+      bank_account_holder: 'Maylin Martinez Muñoz',
+      bank_provider: 'Naranja X'
     };
 
     // Load → form values
