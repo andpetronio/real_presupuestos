@@ -1,0 +1,16 @@
+# Prettier ignore - only format app code and configs
+# Exclude documentation, skills, specs, and generated files
+
+# Exclude documentation and skills
+.agents/
+.atl/
+specs/
+
+# Exclude generated/lock files
+pnpm-lock.yaml
+package-lock.json
+yarn.lock
+
+# Exclude temp/backup files
+*.bak
+*.tmp

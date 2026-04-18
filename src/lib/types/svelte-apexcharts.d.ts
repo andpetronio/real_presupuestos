@@ -1,5 +1,5 @@
-declare module 'svelte-apexcharts' {
-  import type { Component } from 'svelte';
+declare module "svelte-apexcharts" {
+  import type { Component } from "svelte";
   const VueApexCharts: Component<{
     type?: string;
     height?: string | number;

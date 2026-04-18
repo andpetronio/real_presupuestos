@@ -1,5 +1,6 @@
-import { describe, expect, it, vi } from 'vitest';
-import { actions, load } from './+page.server';
+import { describe, expect, it, vi } from "vitest";
+import { actions, load } from "./+page.server";
+import { asLoadEvent, asActionEvent } from "$lib/test-helpers/sveltekit-events";
 
 type TestEventInput = {
   userId?: string | null;
@@ -15,102 +16,116 @@ type LoginActionInput = {
 };
 
 const createEvent = ({ userId = null, next }: TestEventInput) =>
-  ({
+  asLoadEvent<Parameters<typeof load>[0]>({
     locals: {
-      user: userId ? ({ id: userId } as { id: string }) : null
+      user: userId ? ({ id: userId } as { id: string }) : null,
     },
-    url: new URL(`https://example.test/${next ? `?next=${encodeURIComponent(next)}` : ''}`)
-  }) as Parameters<typeof load>[0];
+    url: new URL(
+      `https://example.test/${next ? `?next=${encodeURIComponent(next)}` : ""}`,
+    ),
+  });
 
 const createLoginEvent = ({
   email,
   password,
   formNext,
   queryNext,
-  errorMessage
+  errorMessage,
 }: LoginActionInput = {}) => {
   const signInWithPassword = vi
     .fn()
-    .mockResolvedValue(errorMessage ? { error: { message: errorMessage } } : { error: null });
+    .mockResolvedValue(
+      errorMessage ? { error: { message: errorMessage } } : { error: null },
+    );
   const formData = new FormData();
 
-  if (email !== undefined) formData.set('email', email);
-  if (password !== undefined) formData.set('password', password);
-  if (formNext !== undefined) formData.set('next', formNext);
+  if (email !== undefined) formData.set("email", email);
+  if (password !== undefined) formData.set("password", password);
+  if (formNext !== undefined) formData.set("next", formNext);
 
   return {
-    event: {
+    event: asActionEvent<Parameters<(typeof actions)["login"]>[0]>({
       request: {
-        formData: async () => formData
+        formData: async () => formData,
       },
       locals: {
         supabase: {
           auth: {
-            signInWithPassword
-          }
-        }
+            signInWithPassword,
+          },
+        },
       },
-      url: new URL(`https://example.test/${queryNext ? `?next=${encodeURIComponent(queryNext)}` : ''}`)
-    } as unknown as Parameters<(typeof actions)['login']>[0],
-    signInWithPassword
+      url: new URL(
+        `https://example.test/${queryNext ? `?next=${encodeURIComponent(queryNext)}` : ""}`,
+      ),
+    }),
+    signInWithPassword,
   };
 };
 
-describe('/+page.server load', () => {
-  it('redirige a /dashboard cuando hay sesión y no hay next', async () => {
-    await expect(load(createEvent({ userId: 'user-1' }))).rejects.toMatchObject({
+describe("/+page.server load", () => {
+  it("redirige a /dashboard cuando hay sesión y no hay next", async () => {
+    await expect(load(createEvent({ userId: "user-1" }))).rejects.toMatchObject(
+      {
+        status: 303,
+        location: "/dashboard",
+      },
+    );
+  });
+
+  it("redirige a next interno cuando hay sesión", async () => {
+    await expect(
+      load(createEvent({ userId: "user-1", next: "/budgets?status=draft" })),
+    ).rejects.toMatchObject({
       status: 303,
-      location: '/dashboard'
+      location: "/budgets?status=draft",
     });
   });
 
-  it('redirige a next interno cuando hay sesión', async () => {
-    await expect(load(createEvent({ userId: 'user-1', next: '/budgets?status=draft' }))).rejects.toMatchObject({
-      status: 303,
-      location: '/budgets?status=draft'
-    });
-  });
-
-  it('normaliza next externo/inválido a /dashboard', async () => {
-    const data = (await load(createEvent({ next: '//malicioso.com' }))) as { nextPath: string };
-    expect(data.nextPath).toBe('/dashboard');
+  it("normaliza next externo/inválido a /dashboard", async () => {
+    const data = (await load(createEvent({ next: "//malicioso.com" }))) as {
+      nextPath: string;
+    };
+    expect(data.nextPath).toBe("/dashboard");
   });
 });
 
-describe('/+page.server actions.login', () => {
-  it('hace signInWithPassword y redirige a next seguro cuando autentica', async () => {
+describe("/+page.server actions.login", () => {
+  it("hace signInWithPassword y redirige a next seguro cuando autentica", async () => {
     const { event, signInWithPassword } = createLoginEvent({
-      email: 'ops@example.com',
-      password: 'super-secret',
-      formNext: '/budgets?status=draft'
+      email: "ops@example.com",
+      password: "super-secret",
+      formNext: "/budgets?status=draft",
     });
 
     await expect(actions.login(event)).rejects.toMatchObject({
       status: 303,
-      location: '/budgets?status=draft'
+      location: "/budgets?status=draft",
     });
 
     expect(signInWithPassword).toHaveBeenCalledWith({
-      email: 'ops@example.com',
-      password: 'super-secret'
+      email: "ops@example.com",
+      password: "super-secret",
     });
   });
 
-  it('normaliza next inseguro a /dashboard en login exitoso', async () => {
+  it("normaliza next inseguro a /dashboard en login exitoso", async () => {
     const { event } = createLoginEvent({
-      email: 'ops@example.com',
-      password: 'super-secret',
-      formNext: 'https://malicioso.com/hijack'
+      email: "ops@example.com",
+      password: "super-secret",
+      formNext: "https://malicioso.com/hijack",
     });
 
     await expect(actions.login(event)).rejects.toMatchObject({
       status: 303,
-      location: '/dashboard'
+      location: "/dashboard",
     });
   });
 
-  it('devuelve error operator-friendly si faltan credenciales', async () => {
-    const { event, signInWithPassword } = createLoginEvent({ formNext: '/dashboard' });
+  it("devuelve error operator-friendly si faltan credenciales", async () => {
+    const { event, signInWithPassword } = createLoginEvent({
+      formNext: "/dashboard",
+    });
 
     const result = (await actions.login(event)) as {
       status: number;
@@ -120,16 +135,17 @@ describe('/+page.server actions.login', () => {
     expect(signInWithPassword).not.toHaveBeenCalled();
     expect(result.status).toBe(400);
     expect(result.data).toMatchObject({
-      operatorError: 'No pudimos iniciar sesión. Verificá email y contraseña e intentá de nuevo.',
-      nextPath: '/dashboard'
+      operatorError:
+        "No pudimos iniciar sesión. Verificá email y contraseña e intentá de nuevo.",
+      nextPath: "/dashboard",
     });
   });
 
-  it('traduce invalid credentials a mensaje de operador claro', async () => {
+  it("traduce invalid credentials a mensaje de operador claro", async () => {
     const { event } = createLoginEvent({
-      email: 'ops@example.com',
-      password: 'incorrecta',
-      errorMessage: 'Invalid login credentials'
+      email: "ops@example.com",
+      password: "incorrecta",
+      errorMessage: "Invalid login credentials",
     });
 
     const result = (await actions.login(event)) as {
@@ -139,26 +155,26 @@ describe('/+page.server actions.login', () => {
 
     expect(result.status).toBe(400);
     expect(result.data).toMatchObject({
-      operatorError: 'Credenciales inválidas. Revisá email y contraseña.',
-      nextPath: '/dashboard',
-      email: 'ops@example.com'
+      operatorError: "Credenciales inválidas. Revisá email y contraseña.",
+      nextPath: "/dashboard",
+      email: "ops@example.com",
     });
   });
 
-  it('normaliza email con espacios y mayúsculas para login móvil', async () => {
+  it("normaliza email con espacios y mayúsculas para login móvil", async () => {
     const { event, signInWithPassword } = createLoginEvent({
-      email: '  Ops@Example.COM  ',
-      password: 'super-secret'
+      email: "  Ops@Example.COM  ",
+      password: "super-secret",
     });
 
     await expect(actions.login(event)).rejects.toMatchObject({
       status: 303,
-      location: '/dashboard'
+      location: "/dashboard",
     });
 
     expect(signInWithPassword).toHaveBeenCalledWith({
-      email: 'ops@example.com',
-      password: 'super-secret'
+      email: "ops@example.com",
+      password: "super-secret",
     });
   });
 });

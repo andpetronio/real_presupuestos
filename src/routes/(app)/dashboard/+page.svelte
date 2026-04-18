@@ -53,6 +53,7 @@
     };
     pendingAcceptedCount: number;
     deliveryAlerts: Array<{
+      kind: 'due_soon' | 'overdue';
       budgetId: string;
       budgetReferenceMonth: string;
       dogId: string;
@@ -66,7 +67,9 @@
       pct: number;
       totalMealsForPortion: number;
       deliveredMeals: number;
+      missingMeals: number;
       remainingMeals: number;
+      daysOffset: number;
       daysUntil: number;
     }>;
   };

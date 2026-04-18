@@ -5,33 +5,10 @@
   import DogTable from '$lib/components/dogs/DogTable.svelte';
   import DogPagination from '$lib/components/dogs/DogPagination.svelte';
   import DogMobileCards from '$lib/components/dogs/DogMobileCards.svelte';
-
-  type DogRow = {
-    id: string;
-    name: string;
-    diet_type: 'mixta' | 'cocida' | 'barf';
-    meals_per_day: number;
-    is_active: boolean;
-    tutor: { full_name: string } | null;
-    veterinary: { name: string } | null;
-  };
-
-  type PageData = {
-    dogs: ReadonlyArray<DogRow>;
-    tableState: 'idle' | 'success' | 'error' | 'empty';
-    tableMessage: { title: string; detail: string } | null;
-    pagination: { page: number; totalPages: number; total: number };
-    filters: {
-      search: string;
-      status: string;
-    };
-  };
-
-  type ActionData = {
-    actionType?: 'delete';
-    operatorError?: string;
-    operatorSuccess?: string;
-  };
+  import type {
+    DogsActionDataViewModel as ActionData,
+    DogsPageDataViewModel as PageData
+  } from '$lib/types/view-models/dogs';
 
   let { data, form }: { data: PageData; form: ActionData | null } = $props();
 

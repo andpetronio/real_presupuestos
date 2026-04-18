@@ -66,7 +66,7 @@
   description="Asociá una receta a un perro y definí sus materias primas."
   action="?/create"
   method="POST"
-  form={form as any}
+  form={form}
   primaryLabel="Crear receta"
 >
   <div class="grid gap-1">

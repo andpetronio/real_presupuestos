@@ -1,55 +1,82 @@
-export type FormShellState = 'idle' | 'saving' | 'validation' | 'error' | 'success';
+export type FormShellState =
+  | "idle"
+  | "saving"
+  | "validation"
+  | "error"
+  | "success";
 
 /**
  * SvelteKit form action state compatible with PageData['form']
  */
 export type EnhancedFormState =
   | {
-      state: 'idle';
+      state: "idle";
     }
   | {
-      state: 'success';
+      state: "success";
       message?: string;
     }
   | {
-      state: 'error';
+      state: "error";
       message?: string;
       errors?: Record<string, string[]>;
     };
 
+export type LegacyActionFormState = {
+  operatorError?: string;
+  operatorSuccess?: string;
+  state?: "idle" | "error" | "success";
+  errors?: Record<string, string[]>;
+  message?: string;
+};
+
+export type FormShellFormState =
+  | EnhancedFormState
+  | LegacyActionFormState
+  | null
+  | undefined;
+
 /**
  * Check if a SvelteKit EnhancedFormState represents an error state
  */
-export const isFormError = (form: EnhancedFormState | undefined | null): boolean => {
-  return form?.state === 'error';
+export const isFormError = (form: FormShellFormState): boolean => {
+  return form?.state === "error";
 };
 
 /**
  * Check if a SvelteKit EnhancedFormState represents a success state
  */
-export const isFormSuccess = (form: EnhancedFormState | undefined | null): boolean => {
-  return form?.state === 'success';
+export const isFormSuccess = (form: FormShellFormState): boolean => {
+  return form?.state === "success";
 };
 
-export const resolveFormShellMessage = (state: FormShellState, message?: string): string => {
+export const resolveFormShellMessage = (
+  state: FormShellState,
+  message?: string,
+): string => {
   if (message) return message;
 
-  if (state === 'saving') return 'Guardando…';
-  if (state === 'validation') return 'Revisá los campos obligatorios antes de continuar.';
-  if (state === 'error') return 'No se pudo guardar. Reintentá y verificá los datos.';
-  if (state === 'success') return 'Cambios guardados correctamente.';
+  if (state === "saving") return "Guardando…";
+  if (state === "validation")
+    return "Revisá los campos obligatorios antes de continuar.";
+  if (state === "error")
+    return "No se pudo guardar. Reintentá y verificá los datos.";
+  if (state === "success") return "Cambios guardados correctamente.";
 
-  return '';
+  return "";
 };
 
 export const resolvePrimaryActionDisabled = (
   state: FormShellState,
-  disablePrimary: boolean
+  disablePrimary: boolean,
 ): boolean => {
-  return disablePrimary || state === 'saving';
+  return disablePrimary || state === "saving";
 };
 
-export const resolvePrimaryLabel = (state: FormShellState, primaryLabel: string): string => {
-  if (state === 'saving') return 'Guardando…';
+export const resolvePrimaryLabel = (
+  state: FormShellState,
+  primaryLabel: string,
+): string => {
+  if (state === "saving") return "Guardando…";
   return primaryLabel;
 };

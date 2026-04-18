@@ -1,57 +1,60 @@
-import { describe, expect, it, vi } from 'vitest';
-import { actions, load } from './+page.server';
+import { describe, expect, it, vi } from "vitest";
+import { actions, load } from "./+page.server";
+import { asActionEvent, asLoadEvent } from "$lib/test-helpers/sveltekit-events";
 
-describe('(app)/budgets/+page.server load', () => {
-  it('retorna success cuando hay datos base para formular presupuesto', async () => {
+describe("(app)/budgets/+page.server load", () => {
+  it("retorna success cuando hay datos base para formular presupuesto", async () => {
     const from = vi.fn((table: string) => {
-      if (table === 'budgets') {
+      if (table === "budgets") {
         return {
           select: vi.fn().mockReturnValue({
             order: vi.fn().mockReturnValue({
               range: vi.fn().mockResolvedValue({
                 data: [
                   {
-                    id: 'b-1',
-                    status: 'draft',
-                    tutor_id: 't-1',
+                    id: "b-1",
+                    status: "draft",
+                    tutor_id: "t-1",
                     notes: null,
                     final_sale_price: 1000,
                     total_cost: 900,
                     ingredient_total_global: 600,
                     operational_total_global: 300,
-                    created_at: '2026-01-01',
+                    created_at: "2026-01-01",
                     expires_at: null,
-                    tutor: { full_name: 'Ana' }
-                  }
+                    tutor: { full_name: "Ana" },
+                  },
                 ],
                 count: 1,
-                error: null
-              })
-            })
-          })
+                error: null,
+              }),
+            }),
+          }),
         };
       }
 
-      if (table === 'tutors') {
+      if (table === "tutors") {
         return {
           select: vi.fn().mockReturnValue({
             order: vi.fn().mockReturnValue({
               maybeCompressedDataAccess: vi.fn().mockResolvedValue({
                 data: [],
-                error: null
-              })
-            })
-          })
+                error: null,
+              }),
+            }),
+          }),
         };
       }
 
       return { select: vi.fn() };
     });
 
-    const data = (await load({
-      locals: { supabase: { from } },
-      url: new URL('https://test.local/budgets')
-    } as unknown as Parameters<typeof load>[0])) as {
+    const data = (await load(
+      asLoadEvent<Parameters<typeof load>[0]>({
+        locals: { supabase: { from } },
+        url: new URL("https://test.local/budgets"),
+      }),
+    )) as {
       tableState: string;
       budgets: ReadonlyArray<unknown>;
       pagination: { page: number; totalPages: number; total: number };
@@ -60,47 +63,60 @@ describe('(app)/budgets/+page.server load', () => {
       // Options are lazy-loaded only on new/update pages, not the table page.
     };
 
-    expect(data.tableState).toBe('success');
+    expect(data.tableState).toBe("success");
     expect(data.budgets).toHaveLength(1);
     expect(data.pagination.total).toBe(1);
     expect(data.tutors).toEqual([]);
   });
 });
 
-describe('(app)/budgets/+page.server actions.create', () => {
-  it('falla validación si no hay composición', async () => {
+describe("(app)/budgets/+page.server actions.create", () => {
+  it("falla validación si no hay composición", async () => {
     const formData = new FormData();
-    formData.set('tutorId', 't-1');
-    formData.set('budgetMonth', '2026-04');
-    formData.set('budgetDays', '30');
+    formData.set("tutorId", "t-1");
+    formData.set("budgetMonth", "2026-04");
+    formData.set("budgetDays", "30");
 
-    const result = (await actions.create({
-      request: { formData: async () => formData },
-      locals: { supabase: { from: vi.fn() } }
-    } as unknown as Parameters<(typeof actions)['create']>[0])) as {
+    const result = (await actions.create(
+      asActionEvent<Parameters<(typeof actions)["create"]>[0]>({
+        request: { formData: async () => formData },
+        locals: { supabase: { from: vi.fn() } },
+      }),
+    )) as {
       status: number;
       data: { operatorError: string };
     };
 
     expect(result.status).toBe(400);
-    expect(result.data.operatorError).toContain('al menos una receta');
+    expect(result.data.operatorError).toContain("al menos una receta");
   });
 
-  it('crea presupuesto con fórmula de costo + margen', async () => {
-    const budgetInsertSingle = vi.fn().mockResolvedValue({ data: { id: 'b-1' }, error: null });
-    const budgetInsertSelect = vi.fn().mockReturnValue({ single: budgetInsertSingle });
-    const budgetsInsert = vi.fn().mockReturnValue({ select: budgetInsertSelect });
+  it("crea presupuesto con fórmula de costo + margen", async () => {
+    const budgetInsertSingle = vi
+      .fn()
+      .mockResolvedValue({ data: { id: "b-1" }, error: null });
+    const budgetInsertSelect = vi
+      .fn()
+      .mockReturnValue({ single: budgetInsertSingle });
+    const budgetsInsert = vi
+      .fn()
+      .mockReturnValue({ select: budgetInsertSelect });
 
     const budgetDogsEq = vi.fn().mockResolvedValue({ error: null });
     const budgetDogsDelete = vi.fn().mockReturnValue({ eq: budgetDogsEq });
-    const budgetDogsSelect = vi.fn().mockResolvedValue({ data: [{ id: 'bd-1', dog_id: 'd-1' }], error: null });
-    const budgetDogsInsert = vi.fn().mockReturnValue({ select: budgetDogsSelect });
+    const budgetDogsSelect = vi.fn().mockResolvedValue({
+      data: [{ id: "bd-1", dog_id: "d-1" }],
+      error: null,
+    });
+    const budgetDogsInsert = vi
+      .fn()
+      .mockReturnValue({ select: budgetDogsSelect });
 
     const recipeItemsInsert = vi.fn().mockResolvedValue({ error: null });
     const snapshotInsert = vi.fn().mockResolvedValue({ error: null });
 
     const from = vi.fn((table: string) => {
-      if (table === 'settings') {
+      if (table === "settings") {
         return {
           select: vi.fn().mockReturnValue({
             eq: vi.fn().mockReturnValue({
@@ -117,163 +133,190 @@ describe('(app)/budgets/+page.server actions.create', () => {
                     cooking_hour_cost: 120,
                     calcium_unit_cost: 5000,
                     kefir_unit_cost: 5000,
-                    budget_validity_days: 7
+                    budget_validity_days: 7,
                   },
-                  error: null
+                  error: null,
                 })
-                .mockResolvedValueOnce({ data: { budget_validity_days: 7 }, error: null })
-            })
-          })
-        };
-      }
-
-      if (table === 'dogs') {
-        return {
-          select: vi.fn().mockReturnValue({
-            in: vi.fn().mockResolvedValue({ data: [{ id: 'd-1', tutor_id: 't-1' }], error: null })
-          })
-        };
-      }
-
-      if (table === 'recipes') {
-        return {
-          select: vi.fn().mockReturnValue({
-            in: vi.fn().mockResolvedValue({ data: [{ id: 'r-1', dog_id: 'd-1' }], error: null })
+                .mockResolvedValueOnce({
+                  data: { budget_validity_days: 7 },
+                  error: null,
+                }),
+            }),
           }),
-          insert: budgetsInsert
         };
       }
 
-      if (table === 'recipe_items') {
+      if (table === "dogs") {
+        return {
+          select: vi.fn().mockReturnValue({
+            in: vi.fn().mockResolvedValue({
+              data: [{ id: "d-1", tutor_id: "t-1" }],
+              error: null,
+            }),
+          }),
+        };
+      }
+
+      if (table === "recipes") {
+        return {
+          select: vi.fn().mockReturnValue({
+            in: vi.fn().mockResolvedValue({
+              data: [{ id: "r-1", dog_id: "d-1" }],
+              error: null,
+            }),
+          }),
+          insert: budgetsInsert,
+        };
+      }
+
+      if (table === "recipe_items") {
         return {
           select: vi.fn().mockReturnValue({
             in: vi.fn().mockResolvedValue({
               data: [
                 {
-                  recipe_id: 'r-1',
+                  recipe_id: "r-1",
                   daily_quantity: 100,
-                  raw_material: { derived_unit_cost: 2, cost_with_wastage: 2000, purchase_quantity: 1000 }
-                }
+                  raw_material: {
+                    derived_unit_cost: 2,
+                    cost_with_wastage: 2000,
+                    purchase_quantity: 1000,
+                  },
+                },
               ],
-              error: null
-            })
-          })
+              error: null,
+            }),
+          }),
         };
       }
 
-      if (table === 'budgets') {
+      if (table === "budgets") {
         return {
-          insert: budgetsInsert
+          insert: budgetsInsert,
         };
       }
 
-      if (table === 'budget_dogs') {
+      if (table === "budget_dogs") {
         return {
           delete: budgetDogsDelete,
-          insert: budgetDogsInsert
+          insert: budgetDogsInsert,
         };
       }
 
-      if (table === 'budget_dog_recipes') {
+      if (table === "budget_dog_recipes") {
         return {
-          insert: recipeItemsInsert
+          insert: recipeItemsInsert,
         };
       }
 
-      if (table === 'budget_snapshots') {
+      if (table === "budget_snapshots") {
         return {
-          insert: snapshotInsert
+          insert: snapshotInsert,
         };
       }
 
       return {
-        select: vi.fn()
+        select: vi.fn(),
       };
     });
 
     const formData = new FormData();
-    formData.set('tutorId', 't-1');
-    formData.set('budgetMonth', '2026-04');
-    formData.set('budgetDays', '30');
-    formData.append('rowDogId', 'd-1');
-    formData.append('recipeId', 'r-1');
-    formData.append('assignedDays', '3');
-    formData.set('calciumQty', '1');
-    formData.set('kefirQty', '1');
+    formData.set("tutorId", "t-1");
+    formData.set("budgetMonth", "2026-04");
+    formData.set("budgetDays", "30");
+    formData.append("rowDogId", "d-1");
+    formData.append("recipeId", "r-1");
+    formData.append("assignedDays", "3");
+    formData.set("calciumQty", "1");
+    formData.set("kefirQty", "1");
 
-    const result = (await actions.create({
-      request: { formData: async () => formData },
-      locals: { supabase: { from } }
-    } as unknown as Parameters<(typeof actions)['create']>[0])) as { operatorSuccess: string };
+    const result = (await actions.create(
+      asActionEvent<Parameters<(typeof actions)["create"]>[0]>({
+        request: { formData: async () => formData },
+        locals: { supabase: { from } },
+      }),
+    )) as {
+      operatorSuccess: string;
+    };
 
     expect(budgetsInsert).toHaveBeenCalled();
-    const payload = budgetsInsert.mock.calls[0][0] as Record<string, number | string | null>;
+    const payload = budgetsInsert.mock.calls[0][0] as Record<
+      string,
+      number | string | null
+    >;
     expect(payload.total_cost).toBe(10600);
     expect(payload.final_sale_price).toBe(13250);
     expect(recipeItemsInsert).toHaveBeenCalled();
     expect(snapshotInsert).toHaveBeenCalled();
-    expect(result.operatorSuccess).toContain('creado');
+    expect(result.operatorSuccess).toContain("creado");
   });
 
-  it('abre wa.me con mensaje dinámico al enviar por WhatsApp', async () => {
+  it("abre wa.me con mensaje dinámico al enviar por WhatsApp", async () => {
     const budgetMaybeSingle = vi.fn().mockResolvedValue({
       data: {
-        id: 'b-1',
-        status: 'draft',
-        tutor_id: 't-1',
+        id: "b-1",
+        status: "draft",
+        tutor_id: "t-1",
         final_sale_price: 12000,
-        expires_at: '2026-05-20T00:00:00.000Z',
-        public_token: 'token1234567890'
+        expires_at: "2026-05-20T00:00:00.000Z",
+        public_token: "token1234567890",
       },
-      error: null
+      error: null,
     });
     const tutorMaybeSingle = vi.fn().mockResolvedValue({
-      data: { full_name: 'Ana Tutor', whatsapp_number: '+5491112345678' },
-      error: null
+      data: { full_name: "Ana Tutor", whatsapp_number: "+5491112345678" },
+      error: null,
     });
     const settingsSingle = vi.fn().mockResolvedValue({
       data: {
-        business_name: 'REAL',
-        whatsapp_default_template: 'Hola {{tutor_nombre}}, total {{total_final}} para {{perros}}. Link: {{link_presupuesto}}',
-        whatsapp_signature: 'Equipo REAL',
-        whatsapp_sender_number: '+5491199999999'
+        business_name: "REAL",
+        whatsapp_default_template:
+          "Hola {{tutor_nombre}}, total {{total_final}} para {{perros}}. Link: {{link_presupuesto}}",
+        whatsapp_signature: "Equipo REAL",
+        whatsapp_sender_number: "+5491199999999",
       },
-      error: null
+      error: null,
     });
     const budgetDogsEq = vi.fn().mockResolvedValue({
       data: [
-        { requested_days: 30, dog: { name: 'Nanuk' } },
-        { requested_days: 20, dog: { name: 'Logan' } }
+        { requested_days: 30, dog: { name: "Nanuk" } },
+        { requested_days: 20, dog: { name: "Logan" } },
       ],
-      error: null
+      error: null,
     });
 
     const budgetUpdateEq = vi.fn().mockResolvedValue({ error: null });
     const budgetUpdate = vi.fn().mockReturnValue({ eq: budgetUpdateEq });
 
     const from = vi.fn((table: string) => {
-      if (table === 'budgets') {
+      if (table === "budgets") {
         return {
-          select: vi.fn().mockReturnValue({ eq: vi.fn().mockReturnValue({ maybeSingle: budgetMaybeSingle }) }),
-          update: budgetUpdate
+          select: vi.fn().mockReturnValue({
+            eq: vi.fn().mockReturnValue({ maybeSingle: budgetMaybeSingle }),
+          }),
+          update: budgetUpdate,
         };
       }
 
-      if (table === 'tutors') {
+      if (table === "tutors") {
         return {
-          select: vi.fn().mockReturnValue({ eq: vi.fn().mockReturnValue({ maybeSingle: tutorMaybeSingle }) })
+          select: vi.fn().mockReturnValue({
+            eq: vi.fn().mockReturnValue({ maybeSingle: tutorMaybeSingle }),
+          }),
         };
       }
 
-      if (table === 'settings') {
+      if (table === "settings") {
         return {
-          select: vi.fn().mockReturnValue({ eq: vi.fn().mockReturnValue({ single: settingsSingle }) })
+          select: vi.fn().mockReturnValue({
+            eq: vi.fn().mockReturnValue({ single: settingsSingle }),
+          }),
         };
       }
 
-      if (table === 'budget_dogs') {
+      if (table === "budget_dogs") {
         return {
-          select: vi.fn().mockReturnValue({ eq: budgetDogsEq })
+          select: vi.fn().mockReturnValue({ eq: budgetDogsEq }),
         };
       }
 
@@ -281,77 +324,97 @@ describe('(app)/budgets/+page.server actions.create', () => {
     });
 
     const formData = new FormData();
-    formData.set('budgetId', 'b-1');
+    formData.set("budgetId", "b-1");
 
     await expect(
-      actions.sendWhatsapp({
-        request: { formData: async () => formData },
-        url: new URL('https://test.local/budgets'),
-        locals: { supabase: { from } }
-      } as unknown as Parameters<(typeof actions)['sendWhatsapp']>[0])
+      actions.sendWhatsapp(
+        asActionEvent<Parameters<(typeof actions)["sendWhatsapp"]>[0]>({
+          request: { formData: async () => formData },
+          url: new URL("https://test.local/budgets"),
+          locals: { supabase: { from } },
+        }),
+      ),
     ).rejects.toMatchObject({
       status: 303,
-      location: expect.stringContaining('https://web.whatsapp.com/send?phone=5491112345678&text=')
+      location: expect.stringContaining(
+        "https://web.whatsapp.com/send?phone=5491112345678&text=",
+      ),
     });
 
     expect(budgetUpdate).toHaveBeenCalled();
-    const updatePayload = budgetUpdate.mock.calls[0][0] as Record<string, string | null>;
-    expect(updatePayload.whatsapp_message_draft).toContain('Ana Tutor');
-    expect(updatePayload.whatsapp_message_draft).toContain('30 días para Nanuk y 20 días para Logan');
-    expect(updatePayload.whatsapp_message_draft).toContain('https://test.local/budget-response/token1234567890');
+    const updatePayload = budgetUpdate.mock.calls[0][0] as Record<
+      string,
+      string | null
+    >;
+    expect(updatePayload.whatsapp_message_draft).toContain("Ana Tutor");
+    expect(updatePayload.whatsapp_message_draft).toContain(
+      "30 días para Nanuk y 20 días para Logan",
+    );
+    expect(updatePayload.whatsapp_message_draft).toContain(
+      "https://test.local/budget-response/token1234567890",
+    );
     expect(updatePayload.whatsapp_message_sent).toBeNull();
   });
 
-  it('falla envío cuando la firma tiene unicode roto', async () => {
+  it("falla envío cuando la firma tiene unicode roto", async () => {
     const budgetMaybeSingle = vi.fn().mockResolvedValue({
       data: {
-        id: 'b-1',
-        status: 'draft',
-        tutor_id: 't-1',
+        id: "b-1",
+        status: "draft",
+        tutor_id: "t-1",
         final_sale_price: 12000,
-        expires_at: '2026-05-20T00:00:00.000Z',
-        public_token: 'token1234567890'
+        expires_at: "2026-05-20T00:00:00.000Z",
+        public_token: "token1234567890",
       },
-      error: null
+      error: null,
     });
     const tutorMaybeSingle = vi.fn().mockResolvedValue({
-      data: { full_name: 'Ana Tutor', whatsapp_number: '+5491112345678' },
-      error: null
+      data: { full_name: "Ana Tutor", whatsapp_number: "+5491112345678" },
+      error: null,
     });
     const settingsSingle = vi.fn().mockResolvedValue({
       data: {
-        business_name: 'REAL',
-        whatsapp_default_template: 'Hola {{tutor_nombre}}',
-        whatsapp_signature: 'Equipo �'
+        business_name: "REAL",
+        whatsapp_default_template: "Hola {{tutor_nombre}}",
+        whatsapp_signature: "Equipo �",
       },
-      error: null
+      error: null,
     });
-    const budgetDogsEq = vi.fn().mockResolvedValue({ data: [{ requested_days: 30, dog: { name: 'Nanuk' } }], error: null });
+    const budgetDogsEq = vi.fn().mockResolvedValue({
+      data: [{ requested_days: 30, dog: { name: "Nanuk" } }],
+      error: null,
+    });
     const budgetUpdate = vi.fn();
 
     const from = vi.fn((table: string) => {
-      if (table === 'budgets') {
+      if (table === "budgets") {
         return {
-          select: vi.fn().mockReturnValue({ eq: vi.fn().mockReturnValue({ maybeSingle: budgetMaybeSingle }) }),
-          update: budgetUpdate
+          select: vi.fn().mockReturnValue({
+            eq: vi.fn().mockReturnValue({ maybeSingle: budgetMaybeSingle }),
+          }),
+          update: budgetUpdate,
         };
       }
 
-      if (table === 'tutors') {
+      if (table === "tutors") {
         return {
-          select: vi.fn().mockReturnValue({ eq: vi.fn().mockReturnValue({ maybeSingle: tutorMaybeSingle }) })
+          select: vi.fn().mockReturnValue({
+            eq: vi.fn().mockReturnValue({ maybeSingle: tutorMaybeSingle }),
+          }),
         };
       }
 
-      if (table === 'settings') {
+      if (table === "settings") {
         return {
-          select: vi.fn().mockReturnValue({ eq: vi.fn().mockReturnValue({ single: settingsSingle }) })
+          select: vi.fn().mockReturnValue({
+            eq: vi.fn().mockReturnValue({ single: settingsSingle }),
+          }),
         };
       }
 
-      if (table === 'budget_dogs') {
+      if (table === "budget_dogs") {
         return {
-          select: vi.fn().mockReturnValue({ eq: budgetDogsEq })
+          select: vi.fn().mockReturnValue({ eq: budgetDogsEq }),
         };
       }
 
@@ -359,72 +422,85 @@ describe('(app)/budgets/+page.server actions.create', () => {
     });
 
     const formData = new FormData();
-    formData.set('budgetId', 'b-1');
+    formData.set("budgetId", "b-1");
 
-    const result = (await actions.sendWhatsapp({
-      request: { formData: async () => formData },
-      url: new URL('https://test.local/budgets'),
-      locals: { supabase: { from } }
-    } as unknown as Parameters<(typeof actions)['sendWhatsapp']>[0])) as {
+    const result = (await actions.sendWhatsapp(
+      asActionEvent<Parameters<(typeof actions)["sendWhatsapp"]>[0]>({
+        request: { formData: async () => formData },
+        url: new URL("https://test.local/budgets"),
+        locals: { supabase: { from } },
+      }),
+    )) as {
       status: number;
       data: { operatorError: string };
     };
 
     expect(result.status).toBe(400);
-    expect(result.data.operatorError).toContain('La firma de WhatsApp tiene caracteres inválidos');
+    expect(result.data.operatorError).toContain(
+      "La firma de WhatsApp tiene caracteres inválidos",
+    );
     expect(budgetUpdate).not.toHaveBeenCalled();
   });
 
-  it('falla envío cuando el mensaje renderizado trae unicode roto', async () => {
+  it("falla envío cuando el mensaje renderizado trae unicode roto", async () => {
     const budgetMaybeSingle = vi.fn().mockResolvedValue({
       data: {
-        id: 'b-1',
-        status: 'draft',
-        tutor_id: 't-1',
+        id: "b-1",
+        status: "draft",
+        tutor_id: "t-1",
         final_sale_price: 12000,
-        expires_at: '2026-05-20T00:00:00.000Z',
-        public_token: 'token1234567890'
+        expires_at: "2026-05-20T00:00:00.000Z",
+        public_token: "token1234567890",
       },
-      error: null
+      error: null,
     });
     const tutorMaybeSingle = vi.fn().mockResolvedValue({
-      data: { full_name: 'Ana �', whatsapp_number: '+5491112345678' },
-      error: null
+      data: { full_name: "Ana �", whatsapp_number: "+5491112345678" },
+      error: null,
     });
     const settingsSingle = vi.fn().mockResolvedValue({
       data: {
-        business_name: 'REAL',
-        whatsapp_default_template: 'Hola {{tutor_nombre}}',
-        whatsapp_signature: 'Equipo REAL'
+        business_name: "REAL",
+        whatsapp_default_template: "Hola {{tutor_nombre}}",
+        whatsapp_signature: "Equipo REAL",
       },
-      error: null
+      error: null,
     });
-    const budgetDogsEq = vi.fn().mockResolvedValue({ data: [{ requested_days: 30, dog: { name: 'Nanuk' } }], error: null });
+    const budgetDogsEq = vi.fn().mockResolvedValue({
+      data: [{ requested_days: 30, dog: { name: "Nanuk" } }],
+      error: null,
+    });
     const budgetUpdate = vi.fn();
 
     const from = vi.fn((table: string) => {
-      if (table === 'budgets') {
+      if (table === "budgets") {
         return {
-          select: vi.fn().mockReturnValue({ eq: vi.fn().mockReturnValue({ maybeSingle: budgetMaybeSingle }) }),
-          update: budgetUpdate
+          select: vi.fn().mockReturnValue({
+            eq: vi.fn().mockReturnValue({ maybeSingle: budgetMaybeSingle }),
+          }),
+          update: budgetUpdate,
         };
       }
 
-      if (table === 'tutors') {
+      if (table === "tutors") {
         return {
-          select: vi.fn().mockReturnValue({ eq: vi.fn().mockReturnValue({ maybeSingle: tutorMaybeSingle }) })
+          select: vi.fn().mockReturnValue({
+            eq: vi.fn().mockReturnValue({ maybeSingle: tutorMaybeSingle }),
+          }),
         };
       }
 
-      if (table === 'settings') {
+      if (table === "settings") {
         return {
-          select: vi.fn().mockReturnValue({ eq: vi.fn().mockReturnValue({ single: settingsSingle }) })
+          select: vi.fn().mockReturnValue({
+            eq: vi.fn().mockReturnValue({ single: settingsSingle }),
+          }),
         };
       }
 
-      if (table === 'budget_dogs') {
+      if (table === "budget_dogs") {
         return {
-          select: vi.fn().mockReturnValue({ eq: budgetDogsEq })
+          select: vi.fn().mockReturnValue({ eq: budgetDogsEq }),
         };
       }
 
@@ -432,19 +508,158 @@ describe('(app)/budgets/+page.server actions.create', () => {
     });
 
     const formData = new FormData();
-    formData.set('budgetId', 'b-1');
+    formData.set("budgetId", "b-1");
 
-    const result = (await actions.sendWhatsapp({
-      request: { formData: async () => formData },
-      url: new URL('https://test.local/budgets'),
-      locals: { supabase: { from } }
-    } as unknown as Parameters<(typeof actions)['sendWhatsapp']>[0])) as {
+    const result = (await actions.sendWhatsapp(
+      asActionEvent<Parameters<(typeof actions)["sendWhatsapp"]>[0]>({
+        request: { formData: async () => formData },
+        url: new URL("https://test.local/budgets"),
+        locals: { supabase: { from } },
+      }),
+    )) as {
       status: number;
       data: { operatorError: string };
     };
 
     expect(result.status).toBe(400);
-    expect(result.data.operatorError).toContain('mensaje generado para WhatsApp contiene caracteres inválidos');
+    expect(result.data.operatorError).toContain(
+      "mensaje generado para WhatsApp contiene caracteres inválidos",
+    );
     expect(budgetUpdate).not.toHaveBeenCalled();
+  });
+});
+
+describe("(app)/budgets/+page.server actions.accept", () => {
+  it("falla si el presupuesto no existe", async () => {
+    const budgetSelect = vi.fn().mockResolvedValue({ data: null, error: null });
+    const budgetSelectEq = vi.fn().mockReturnValue({
+      single: budgetSelect,
+      maybeSingle: budgetSelect,
+    });
+    const from = vi.fn((table: string) => {
+      if (table === "budgets") {
+        return { select: () => ({ eq: budgetSelectEq }) };
+      }
+      return { select: vi.fn() };
+    });
+
+    const formData = new FormData();
+    formData.set("budgetId", "b-inexistente");
+
+    const result = (await actions.accept(
+      asActionEvent<Parameters<(typeof actions)["accept"]>[0]>({
+        request: { formData: async () => formData },
+        locals: { supabase: { from } },
+      }),
+    )) as {
+      status: number;
+      data: { operatorError: string };
+    };
+
+    expect(result.status).toBe(400);
+    expect(result.data.operatorError).toContain("No encontramos");
+  });
+
+  it("falla si el presupuesto no está en estado sent", async () => {
+    const budgetSelect = vi.fn().mockResolvedValue({
+      data: { id: "b-1", status: "draft" },
+      error: null,
+    });
+    const budgetSelectEq = vi.fn().mockReturnValue({
+      single: budgetSelect,
+      maybeSingle: budgetSelect,
+    });
+    const from = vi.fn((table: string) => {
+      if (table === "budgets") {
+        return { select: () => ({ eq: budgetSelectEq }) };
+      }
+      return { select: vi.fn() };
+    });
+
+    const formData = new FormData();
+    formData.set("budgetId", "b-1");
+
+    const result = (await actions.accept(
+      asActionEvent<Parameters<(typeof actions)["accept"]>[0]>({
+        request: { formData: async () => formData },
+        locals: { supabase: { from } },
+      }),
+    )) as {
+      status: number;
+      data: { operatorError: string };
+    };
+
+    expect(result.status).toBe(400);
+    expect(result.data.operatorError).toContain("enviado");
+  });
+});
+
+describe("(app)/budgets/+page.server actions.reject", () => {
+  it("falla si el presupuesto no está en estado sent", async () => {
+    const budgetSelect = vi.fn().mockResolvedValue({
+      data: { id: "b-1", status: "accepted" },
+      error: null,
+    });
+    const budgetSelectEq = vi.fn().mockReturnValue({
+      single: budgetSelect,
+      maybeSingle: budgetSelect,
+    });
+    const from = vi.fn((table: string) => {
+      if (table === "budgets") {
+        return { select: () => ({ eq: budgetSelectEq }) };
+      }
+      return { select: vi.fn() };
+    });
+
+    const formData = new FormData();
+    formData.set("budgetId", "b-1");
+
+    const result = (await actions.reject(
+      asActionEvent<Parameters<(typeof actions)["reject"]>[0]>({
+        request: { formData: async () => formData },
+        locals: { supabase: { from } },
+      }),
+    )) as {
+      status: number;
+      data: { operatorError: string };
+    };
+
+    expect(result.status).toBe(400);
+    expect(result.data.operatorError).toContain("enviado");
+  });
+});
+
+describe("(app)/budgets/+page.server actions.delete", () => {
+  it("falla si el presupuesto no está en estado draft", async () => {
+    const budgetSelect = vi.fn().mockResolvedValue({
+      data: { id: "b-1", status: "sent" },
+      error: null,
+    });
+    const budgetSelectEq = vi.fn().mockReturnValue({
+      single: budgetSelect,
+      maybeSingle: budgetSelect,
+    });
+    const from = vi.fn((table: string) => {
+      if (table === "budgets") {
+        return { select: () => ({ eq: budgetSelectEq }) };
+      }
+      return { select: vi.fn() };
+    });
+
+    const formData = new FormData();
+    formData.set("budgetId", "b-1");
+
+    const result = (await actions.delete(
+      asActionEvent<Parameters<(typeof actions)["delete"]>[0]>({
+        request: { formData: async () => formData },
+        locals: { supabase: { from } },
+      }),
+    )) as {
+      status: number;
+      data: { operatorError: string };
+    };
+
+    expect(result.status).toBe(400);
+    expect(result.data.operatorError).toContain("borrador");
   });
 });

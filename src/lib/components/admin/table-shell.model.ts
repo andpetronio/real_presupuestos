@@ -1,10 +1,10 @@
-export type TableShellState = 'loading' | 'empty' | 'error' | 'success';
+export type TableShellState = "loading" | "empty" | "error" | "success";
 
 export type TableShellViewModel =
-  | { kind: 'loading'; message: string }
-  | { kind: 'empty'; title: string; detail?: string; actionLabel?: string }
-  | { kind: 'error'; title: string; detail: string }
-  | { kind: 'success' };
+  | { kind: "loading"; message: string }
+  | { kind: "empty"; title: string; detail?: string; actionLabel?: string }
+  | { kind: "error"; title: string; detail: string }
+  | { kind: "success" };
 
 type Input = {
   state: TableShellState;
@@ -17,26 +17,26 @@ type Input = {
 };
 
 export const resolveTableShellView = (input: Input): TableShellViewModel => {
-  if (input.state === 'loading') {
-    return { kind: 'loading', message: input.loadingLabel };
+  if (input.state === "loading") {
+    return { kind: "loading", message: input.loadingLabel };
   }
 
-  if (input.state === 'empty') {
+  if (input.state === "empty") {
     return {
-      kind: 'empty',
+      kind: "empty",
       title: input.emptyTitle,
       detail: input.emptyDetail,
-      actionLabel: input.emptyActionLabel
+      actionLabel: input.emptyActionLabel,
     };
   }
 
-  if (input.state === 'error') {
+  if (input.state === "error") {
     return {
-      kind: 'error',
+      kind: "error",
       title: input.errorTitle,
-      detail: input.errorDetail
+      detail: input.errorDetail,
     };
   }
 
-  return { kind: 'success' };
+  return { kind: "success" };
 };

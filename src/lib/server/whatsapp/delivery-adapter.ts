@@ -6,14 +6,16 @@ type SendWhatsAppParams = {
 
 type SendWhatsAppResult = {
   ok: true;
-  transport: 'simulated';
+  transport: "simulated";
   providerMessageId: string;
 };
 
-export const sendWhatsAppMessage = async (_params: SendWhatsAppParams): Promise<SendWhatsAppResult> => {
+export const sendWhatsAppMessage = async (
+  _params: SendWhatsAppParams,
+): Promise<SendWhatsAppResult> => {
   return {
     ok: true,
-    transport: 'simulated',
-    providerMessageId: `sim-${Date.now()}`
+    transport: "simulated",
+    providerMessageId: `sim-${Date.now()}`,
   };
 };

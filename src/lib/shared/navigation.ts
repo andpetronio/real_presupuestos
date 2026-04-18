@@ -16,5 +16,10 @@
  * Construye un path concatenando segmentos. Cada segmento se convierte a string
  * y se unen con '/'. Elimina slashes duplicados.
  */
-export const route = (...segments: (string | number | undefined | null)[]): string =>
-  segments.filter((s): s is string | number => s != null).join('/').replace(/\/+/g, '/');
+export const route = (
+  ...segments: (string | number | undefined | null)[]
+): string =>
+  segments
+    .filter((s): s is string | number => s != null)
+    .join("/")
+    .replace(/\/+/g, "/");

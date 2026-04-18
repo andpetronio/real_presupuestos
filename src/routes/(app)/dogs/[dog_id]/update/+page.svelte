@@ -85,7 +85,7 @@
   description="Actualizá los datos del perro seleccionado."
   action="?/update"
   method="POST"
-  form={form as any}
+  form={form}
   primaryLabel="Guardar cambios"
 >
   <div>

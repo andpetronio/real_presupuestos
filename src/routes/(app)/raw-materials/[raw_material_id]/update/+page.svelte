@@ -46,7 +46,7 @@
   description="Actualizá costo, merma y datos operativos de la materia prima."
   action="?/update"
   method="POST"
-  form={form as any}
+  form={form}
   primaryLabel="Guardar cambios"
 >
   <div class="grid gap-1">

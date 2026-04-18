@@ -86,7 +86,7 @@
   description="Actualizá perro, datos de receta y materias primas asociadas."
   action="?/update"
   method="POST"
-  form={form as any}
+  form={form}
   primaryLabel="Guardar cambios"
 >
   <div class="grid gap-1">

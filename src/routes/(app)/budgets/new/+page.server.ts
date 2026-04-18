@@ -1,36 +1,33 @@
-import { redirect } from '@sveltejs/kit';
-import type { Actions, PageServerLoad } from './$types';
-import { loadBudgetOptions } from '$lib/server/budgets/queries';
-import { actions as budgetsActions, load as budgetsLoad } from '../+page.server';
+import type { PageServerLoad } from "./$types";
+import { loadBudgetFormData } from "$lib/server/budgets/form-data";
+import { parseActionValues } from "$lib/server/budgets/parsers";
+import { saveBudget } from "$lib/server/budgets/save";
 
-export const load: PageServerLoad = async ({ locals, url }) => {
-  const [options] = await Promise.all([loadBudgetOptions(locals.supabase)]);
-
-  const data = (await budgetsLoad({ locals, url } as unknown as Parameters<typeof budgetsLoad>[0])) as {
-    editingBudget: unknown;
-    editingRows: unknown;
-  };
+export const load: PageServerLoad = async ({ locals }) => {
+  const formData = await loadBudgetFormData({
+    supabase: locals.supabase,
+    editingBudgetId: null,
+  });
 
   return {
-    tutorOptions: options.tutorOptions,
-    dogOptions: options.dogOptions,
-    recipeOptions: options.recipeOptions,
-    settings: options.settings,
-    editingBudget: data.editingBudget,
-    editingRows: data.editingRows
+    tutorOptions: formData.tutorOptions,
+    dogOptions: formData.dogOptions,
+    recipeOptions: formData.recipeOptions,
+    settings: formData.settings,
+    editingBudget: formData.editingBudget,
+    editingRows: formData.editingRows,
   };
 };
 
-export const actions: Actions = {
-  create: async (event) => {
-    const result = await budgetsActions.create(
-      event as unknown as Parameters<(typeof budgetsActions)['create']>[0]
-    );
+export const actions = {
+  create: async ({ request, locals }) => {
+    const formData = await request.formData();
+    const values = parseActionValues(formData);
 
-    if (result && typeof result === 'object' && 'status' in result) {
-      return result;
-    }
-
-    throw redirect(303, '/budgets');
-  }
+    return saveBudget({
+      action: "create",
+      values,
+      locals,
+    });
+  },
 };

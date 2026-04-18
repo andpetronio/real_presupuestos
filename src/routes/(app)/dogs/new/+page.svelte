@@ -62,7 +62,7 @@
   description="Completá los datos para dar de alta un perro."
   action="?/create"
   method="POST"
-  form={form as any}
+  form={form}
   primaryLabel="Crear perro"
 >
   <div>

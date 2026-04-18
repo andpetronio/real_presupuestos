@@ -364,7 +364,7 @@ export const validateAndNormalizeSettings = (
     );
   }
 
-  const normalizedBankCbu = values.bankCbu.replace(/\s/g, '');
+  const normalizedBankCbu = values.bankCbu.replace(/\s/g, "");
   if (normalizedBankCbu && !/^\d{22}$/.test(normalizedBankCbu)) {
     fieldErrors.push("CBU: debe tener exactamente 22 dígitos numéricos.");
   }

@@ -42,8 +42,17 @@ export type ActionValues = {
 
 /** Resultado de operación de guardado de budget. */
 export type BudgetSaveResult =
-  | { actionType: 'create' | 'update'; operatorSuccess: string; values: ActionValues }
-  | { actionType: 'create' | 'update'; operatorError: string; values: ActionValues; status: number };
+  | {
+      actionType: "create" | "update";
+      operatorSuccess: string;
+      values: ActionValues;
+    }
+  | {
+      actionType: "create" | "update";
+      operatorError: string;
+      values: ActionValues;
+      status: number;
+    };
 
 /** Resultado de enviar WhatsApp. */
 export type SendWhatsappResult =

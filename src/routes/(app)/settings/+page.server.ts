@@ -1,68 +1,84 @@
-import { fail } from '@sveltejs/kit';
-import type { Actions, PageServerLoad } from './$types';
-import type { OperatorMessage } from '$lib/server/shared/ui-state';
-import { loadSettings, saveSettings } from '$lib/server/settings/repository';
+import { fail } from "@sveltejs/kit";
+import type { Actions, PageServerLoad } from "./$types";
+import type { OperatorMessage } from "$lib/server/shared/ui-state";
+import { loadSettings, saveSettings } from "$lib/server/settings/repository";
 import {
   defaultSettings,
   getSettingsSaveError,
   readSettingsFormValues,
   type SettingsFormValues,
   toFormValuesFromSettings,
-  validateAndNormalizeSettings
-} from '$lib/server/settings/validation';
+  validateAndNormalizeSettings,
+} from "$lib/server/settings/validation";
 
 const fallbackErrorMessage: OperatorMessage = {
-  kind: 'error',
-  title: 'No pudimos cargar configuración',
-  detail: 'Reintentá en unos segundos o verificá la conexión.',
-  actionLabel: 'Reintentar'
+  kind: "error",
+  title: "No pudimos cargar configuración",
+  detail: "Reintentá en unos segundos o verificá la conexión.",
+  actionLabel: "Reintentar",
 };
 
-type SettingsSection = 'operativos' | 'comercial' | 'whatsapp' | 'encuesta' | 'cobros';
+type SettingsSection =
+  | "operativos"
+  | "comercial"
+  | "whatsapp"
+  | "encuesta"
+  | "cobros";
 
 const isSettingsSection = (value: string | null): value is SettingsSection =>
-  value === 'operativos' || value === 'comercial' || value === 'whatsapp' || value === 'encuesta' || value === 'cobros';
+  value === "operativos" ||
+  value === "comercial" ||
+  value === "whatsapp" ||
+  value === "encuesta" ||
+  value === "cobros";
 
-const sectionFields: Record<SettingsSection, Array<keyof SettingsFormValues>> = {
+const sectionFields: Record<
+  SettingsSection,
+  Array<keyof SettingsFormValues>
+> = {
   operativos: [
-    'vacuumBagSmallUnitCost',
-    'vacuumBagLargeUnitCost',
-    'labelUnitCost',
-    'nonWovenBagUnitCost',
-    'laborHourCost',
-    'cookingHourCost',
-    'calciumUnitCost',
-    'kefirUnitCost',
-    'deliveryLogisticsCost'
+    "vacuumBagSmallUnitCost",
+    "vacuumBagLargeUnitCost",
+    "labelUnitCost",
+    "nonWovenBagUnitCost",
+    "laborHourCost",
+    "cookingHourCost",
+    "calciumUnitCost",
+    "kefirUnitCost",
+    "deliveryLogisticsCost",
   ],
   comercial: [
-    'mealPlanMarginPercent',
-    'budgetValidityDays',
-    'defaultRequestedDays',
-    'minimumAdvanceDays',
-    'maxDogsPerBudget',
-    'autoExpireBudgets',
-    'showUnitCostsInPreview',
-    'requireInternalNotes'
+    "mealPlanMarginPercent",
+    "budgetValidityDays",
+    "defaultRequestedDays",
+    "minimumAdvanceDays",
+    "maxDogsPerBudget",
+    "autoExpireBudgets",
+    "showUnitCostsInPreview",
+    "requireInternalNotes",
   ],
   whatsapp: [
-    'businessName',
-    'businessPhone',
-    'businessEmail',
-    'timezoneLabel',
-    'whatsappDefaultTemplate',
-    'enableWhatsappNotifications'
+    "businessName",
+    "businessPhone",
+    "businessEmail",
+    "timezoneLabel",
+    "whatsappDefaultTemplate",
+    "enableWhatsappNotifications",
   ],
-  encuesta: ['satisfactionSurveyEnabled', 'satisfactionSurveyUrl', 'satisfactionSurveyMessage'],
-  cobros: ['bankCbu', 'bankAlias', 'bankAccountHolder', 'bankProvider']
+  encuesta: [
+    "satisfactionSurveyEnabled",
+    "satisfactionSurveyUrl",
+    "satisfactionSurveyMessage",
+  ],
+  cobros: ["bankCbu", "bankAlias", "bankAccountHolder", "bankProvider"],
 };
 
 const checkboxFields = new Set<keyof SettingsFormValues>([
-  'enableWhatsappNotifications',
-  'autoExpireBudgets',
-  'showUnitCostsInPreview',
-  'requireInternalNotes',
-  'satisfactionSurveyEnabled'
+  "enableWhatsappNotifications",
+  "autoExpireBudgets",
+  "showUnitCostsInPreview",
+  "requireInternalNotes",
+  "satisfactionSurveyEnabled",
 ]);
 
 const mergeSectionValues = (params: {
@@ -73,8 +89,14 @@ const mergeSectionValues = (params: {
 }): SettingsFormValues => {
   const { base, submitted, section, formData } = params;
   const merged: SettingsFormValues = { ...base };
-  const mutableMerged = merged as Record<keyof SettingsFormValues, string | boolean>;
-  const submittedRecord = submitted as Record<keyof SettingsFormValues, string | boolean>;
+  const mutableMerged = merged as Record<
+    keyof SettingsFormValues,
+    string | boolean
+  >;
+  const submittedRecord = submitted as Record<
+    keyof SettingsFormValues,
+    string | boolean
+  >;
 
   for (const field of sectionFields[section]) {
     if (checkboxFields.has(field)) {
@@ -93,23 +115,24 @@ export const load: PageServerLoad = async ({ locals }) => {
     const settings = await loadSettings(locals.supabase);
 
     return {
-      formState: 'success',
+      formState: "success",
       formMessage: {
-        kind: 'success',
-        title: 'Configuración cargada',
-        detail: 'Podés ajustar costos, WhatsApp y reglas de presupuesto desde esta pantalla.'
+        kind: "success",
+        title: "Configuración cargada",
+        detail:
+          "Podés ajustar costos, WhatsApp y reglas de presupuesto desde esta pantalla.",
       } satisfies OperatorMessage,
       settings,
-      settingsForm: toFormValuesFromSettings(settings)
+      settingsForm: toFormValuesFromSettings(settings),
     };
   } catch {
     const settingsForm = toFormValuesFromSettings(defaultSettings);
 
     return {
-      formState: 'error',
+      formState: "error",
       formMessage: fallbackErrorMessage,
       settings: defaultSettings,
-      settingsForm
+      settingsForm,
     };
   }
 };
@@ -117,11 +140,12 @@ export const load: PageServerLoad = async ({ locals }) => {
 export const actions: Actions = {
   update: async ({ request, locals }) => {
     const formData = await request.formData();
-    const sectionValue = formData.get('settingsSection');
-    const parsedSection = typeof sectionValue === 'string' ? sectionValue : null;
+    const sectionValue = formData.get("settingsSection");
+    const parsedSection =
+      typeof sectionValue === "string" ? sectionValue : null;
     const section: SettingsSection = isSettingsSection(parsedSection)
       ? parsedSection
-      : 'operativos';
+      : "operativos";
 
     let currentSettings = defaultSettings;
     try {
@@ -136,16 +160,16 @@ export const actions: Actions = {
       base: baseValues,
       submitted: submittedValues,
       section,
-      formData
+      formData,
     });
     const validation = validateAndNormalizeSettings(values);
 
     if (!validation.ok) {
       return fail(400, {
-        actionType: 'update',
+        actionType: "update",
         operatorError: validation.operatorError,
         fieldErrors: validation.fieldErrors,
-        values: validation.values
+        values: validation.values,
       });
     }
 
@@ -153,17 +177,17 @@ export const actions: Actions = {
       await saveSettings(locals.supabase, validation.payload);
     } catch {
       return fail(400, {
-        actionType: 'update',
+        actionType: "update",
         operatorError: getSettingsSaveError(),
         fieldErrors: [],
-        values
+        values,
       });
     }
 
     return {
-      actionType: 'update',
-      operatorSuccess: 'Configuración guardada correctamente.',
-      fieldErrors: []
+      actionType: "update",
+      operatorSuccess: "Configuración guardada correctamente.",
+      fieldErrors: [],
     };
-  }
+  },
 };

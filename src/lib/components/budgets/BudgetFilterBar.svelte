@@ -29,12 +29,13 @@
   const statusOptions: StatusOption[] = [
     { value: 'all', label: 'Todos' },
     { value: 'pending', label: 'Pendientes' },
-    { value: 'draft', label: 'Borrador' },
-    { value: 'ready_to_send', label: 'Listo para enviar' },
-    { value: 'sent', label: 'Enviado' },
-    { value: 'accepted', label: 'Aceptado' },
-    { value: 'rejected', label: 'Rechazado' },
-    { value: 'expired', label: 'Expirado' }
+    { value: 'draft', label: 'Borradores' },
+    { value: 'ready_to_send', label: 'Listos para enviar' },
+    { value: 'sent', label: 'Enviados' },
+    { value: 'accepted', label: 'Aceptados' },
+    { value: 'rejected', label: 'Rechazados' },
+    { value: 'expired', label: 'Expirados' },
+    { value: 'discarded', label: 'Descartados' }
   ];
 
   let searchValue = $state('');

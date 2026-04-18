@@ -26,7 +26,7 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: '20'
+          node-version: "20"
 
       - name: Enable pnpm via corepack
         run: corepack enable && corepack prepare pnpm@10.32.1 --activate
@@ -39,6 +39,12 @@ jobs:
 
       - name: Type check
         run: pnpm run check
+
+      - name: Lint format
+        run: pnpm run lint:format
+
+      - name: Lint code
+        run: pnpm run lint:code
 
       - name: Run tests
         run: pnpm vitest run

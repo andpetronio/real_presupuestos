@@ -120,7 +120,7 @@
   description="Ajustá composición y costos globales del borrador seleccionado."
   action="?/update"
   method="POST"
-  form={form as any}
+  form={form}
   primaryLabel="Guardar borrador"
 >
   <input type="hidden" name="budgetId" value={values.budgetId} />

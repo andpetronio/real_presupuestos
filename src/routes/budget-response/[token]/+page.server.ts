@@ -1,6 +1,6 @@
-import { fail } from '@sveltejs/kit';
-import type { Actions, PageServerLoad } from './$types';
-import type { BudgetStatus } from '$lib/types/budget';
+import { fail } from "@sveltejs/kit";
+import type { Actions, PageServerLoad } from "./$types";
+import type { BudgetStatus } from "$lib/types/budget";
 
 type PublicBudgetRow = {
   id: string;
@@ -12,70 +12,74 @@ type PublicBudgetRow = {
   accepted_at: string | null;
   rejected_at: string | null;
   sent_at: string | null;
-  tutor: { full_name: string } | Array<{ full_name: string }> | null;
+  tutorName: string;
+  canRespond: boolean;
+};
+
+type PublicBudgetRpcRow = {
+  id: string;
+  status: BudgetStatus;
+  final_sale_price: number;
+  expires_at: string | null;
+  notes: string | null;
+  rejection_reason: string | null;
+  accepted_at: string | null;
+  rejected_at: string | null;
+  sent_at: string | null;
+  tutor_name: string | null;
+  can_respond: boolean;
+};
+
+type PublicBudgetMutationRpcRow = {
+  ok: boolean;
+  code: string;
+  rejection_reason?: string;
 };
 
 const fallbackError = {
-  kind: 'error' as const,
-  title: 'No pudimos cargar este presupuesto',
-  detail: 'Reintentá en unos segundos o pedile al equipo que te reenvíe el enlace.'
+  kind: "error" as const,
+  title: "No pudimos cargar este presupuesto",
+  detail:
+    "Reintentá en unos segundos o pedile al equipo que te reenvíe el enlace.",
 };
-
-const activeResponseStatuses = new Set<BudgetStatus>(['draft', 'ready_to_send', 'sent']);
 
 const parseText = (value: FormDataEntryValue | null): string =>
-  typeof value === 'string' ? value.trim() : '';
+  typeof value === "string" ? value.trim() : "";
 
-const isPastDue = (expiresAt: string | null): boolean => {
-  if (!expiresAt) return false;
-  const expiresDate = new Date(expiresAt);
-  if (Number.isNaN(expiresDate.getTime())) return false;
-  return expiresDate.getTime() <= Date.now();
-};
-
-const extractTutorName = (relation: PublicBudgetRow['tutor']): string => {
-  if (!relation) return 'Sin tutor';
-  if (Array.isArray(relation)) return relation[0]?.full_name ?? 'Sin tutor';
-  return relation.full_name;
-};
-
-const readBudgetByToken = async (locals: App.Locals, token: string): Promise<PublicBudgetRow | null> => {
-  const result = await locals.supabase
-    .from('budgets')
-    .select('id, status, final_sale_price, expires_at, notes, rejection_reason, accepted_at, rejected_at, sent_at, tutor:tutors(full_name)')
-    .eq('public_token', token)
-    .maybeSingle();
-
+const readBudgetByToken = async (
+  locals: App.Locals,
+  token: string,
+): Promise<PublicBudgetRow | null> => {
+  const result = await locals.supabase.rpc("public_get_budget_response", {
+    p_token: token,
+  });
   if (result.error) throw result.error;
-  return (result.data ?? null) as PublicBudgetRow | null;
-};
-
-const expireBudgetIfNeeded = async (locals: App.Locals, budget: PublicBudgetRow): Promise<PublicBudgetRow> => {
-  if (!activeResponseStatuses.has(budget.status) || !isPastDue(budget.expires_at)) {
-    return budget;
-  }
-
-  const { error } = await locals.supabase
-    .from('budgets')
-    .update({ status: 'expired' })
-    .eq('id', budget.id)
-    .in('status', Array.from(activeResponseStatuses));
-
-  if (error) {
-    return budget;
-  }
+  const row = ((result.data ?? []) as PublicBudgetRpcRow[])[0];
+  if (!row) return null;
 
   return {
-    ...budget,
-    status: 'expired'
+    id: row.id,
+    status: row.status,
+    final_sale_price: Number(row.final_sale_price ?? 0),
+    expires_at: row.expires_at,
+    notes: row.notes,
+    rejection_reason: row.rejection_reason,
+    accepted_at: row.accepted_at,
+    rejected_at: row.rejected_at,
+    sent_at: row.sent_at,
+    tutorName: row.tutor_name ?? "Sin tutor",
+    canRespond: row.can_respond,
   };
 };
 
-const getBlockedResponseMessage = (status: string): string => {
-  if (status === 'accepted') return 'Este presupuesto ya fue aceptado. ¡Gracias por confirmarlo!';
-  if (status === 'rejected') return 'Este presupuesto ya fue rechazado y no admite nuevas respuestas.';
-  if (status === 'expired') return 'Este presupuesto venció y ya no puede responderse.';
-  return 'Este presupuesto no admite respuesta en este momento.';
+const getBlockedResponseMessageFromCode = (code: string): string => {
+  if (code === "blocked_accepted")
+    return "Este presupuesto ya fue aceptado. ¡Gracias por confirmarlo!";
+  if (code === "blocked_rejected")
+    return "Este presupuesto ya fue rechazado y no admite nuevas respuestas.";
+  if (code === "blocked_expired")
+    return "Este presupuesto venció y ya no puede responderse.";
+  return "Este presupuesto no admite respuesta en este momento.";
 };
 
 const mapPublicView = (budget: PublicBudgetRow) => ({
@@ -88,8 +92,8 @@ const mapPublicView = (budget: PublicBudgetRow) => ({
   acceptedAt: budget.accepted_at,
   rejectedAt: budget.rejected_at,
   sentAt: budget.sent_at,
-  tutorName: extractTutorName(budget.tutor),
-  canRespond: activeResponseStatuses.has(budget.status) && !isPastDue(budget.expires_at)
+  tutorName: budget.tutorName,
+  canRespond: budget.canRespond,
 });
 
 export const load: PageServerLoad = async ({ params, locals }) => {
@@ -98,12 +102,12 @@ export const load: PageServerLoad = async ({ params, locals }) => {
     if (!token) {
       return {
         budget: null,
-        pageState: 'error' as const,
+        pageState: "error" as const,
         pageMessage: {
-          kind: 'error' as const,
-          title: 'Enlace inválido',
-          detail: 'El enlace de respuesta está incompleto.'
-        }
+          kind: "error" as const,
+          title: "Enlace inválido",
+          detail: "El enlace de respuesta está incompleto.",
+        },
       };
     }
 
@@ -111,27 +115,25 @@ export const load: PageServerLoad = async ({ params, locals }) => {
     if (!budget) {
       return {
         budget: null,
-        pageState: 'error' as const,
+        pageState: "error" as const,
         pageMessage: {
-          kind: 'error' as const,
-          title: 'Presupuesto no encontrado',
-          detail: 'No encontramos un presupuesto asociado a este enlace.'
-        }
+          kind: "error" as const,
+          title: "Presupuesto no encontrado",
+          detail: "No encontramos un presupuesto asociado a este enlace.",
+        },
       };
     }
 
-    const resolvedBudget = await expireBudgetIfNeeded(locals, budget);
-
     return {
-      budget: mapPublicView(resolvedBudget),
-      pageState: 'success' as const,
-      pageMessage: null
+      budget: mapPublicView(budget),
+      pageState: "success" as const,
+      pageMessage: null,
     };
   } catch {
     return {
       budget: null,
-      pageState: 'error' as const,
-      pageMessage: fallbackError
+      pageState: "error" as const,
+      pageMessage: fallbackError,
     };
   }
 };
@@ -141,48 +143,58 @@ export const actions: Actions = {
     try {
       const token = params.token?.trim();
       if (!token) {
-        return fail(400, { actionType: 'accept', operatorError: 'El enlace de respuesta es inválido.' });
+        return fail(400, {
+          actionType: "accept",
+          operatorError: "El enlace de respuesta es inválido.",
+        });
       }
 
       const budget = await readBudgetByToken(locals, token);
       if (!budget) {
-        return fail(404, { actionType: 'accept', operatorError: 'No encontramos el presupuesto para este enlace.' });
-      }
-
-      const resolvedBudget = await expireBudgetIfNeeded(locals, budget);
-      if (!activeResponseStatuses.has(resolvedBudget.status)) {
-        return fail(400, {
-          actionType: 'accept',
-          operatorError: getBlockedResponseMessage(resolvedBudget.status)
+        return fail(404, {
+          actionType: "accept",
+          operatorError: "No encontramos el presupuesto para este enlace.",
         });
       }
 
-      const { error } = await locals.supabase
-        .from('budgets')
-        .update({
-          status: 'accepted',
-          accepted_at: new Date().toISOString(),
-          rejected_at: null,
-          rejection_reason: null
-        })
-        .eq('id', resolvedBudget.id)
-        .in('status', Array.from(activeResponseStatuses));
+      const mutation = await locals.supabase.rpc("public_accept_budget", {
+        p_token: token,
+      });
 
-      if (error) {
+      if (mutation.error) {
         return fail(400, {
-          actionType: 'accept',
-          operatorError: 'No pudimos registrar tu aceptación. Reintentá en unos segundos.'
+          actionType: "accept",
+          operatorError:
+            "No pudimos registrar tu respuesta. Reintentá en unos segundos.",
+        });
+      }
+
+      const result = ((mutation.data ?? []) as PublicBudgetMutationRpcRow[])[0];
+      if (!result?.ok) {
+        if (result?.code === "not_found") {
+          return fail(404, {
+            actionType: "accept",
+            operatorError: "No encontramos el presupuesto para este enlace.",
+          });
+        }
+
+        return fail(400, {
+          actionType: "accept",
+          operatorError: getBlockedResponseMessageFromCode(
+            result?.code ?? "blocked_other",
+          ),
         });
       }
 
       return {
-        actionType: 'accept',
-        operatorSuccess: '¡Gracias! Confirmamos tu aceptación del presupuesto.'
+        actionType: "accept",
+        operatorSuccess: "¡Gracias! Confirmamos tu aceptación del presupuesto.",
       };
     } catch {
       return fail(400, {
-        actionType: 'accept',
-        operatorError: 'No pudimos registrar tu respuesta. Reintentá en unos segundos.'
+        actionType: "accept",
+        operatorError:
+          "No pudimos registrar tu respuesta. Reintentá en unos segundos.",
       });
     }
   },
@@ -191,71 +203,88 @@ export const actions: Actions = {
       const token = params.token?.trim();
       if (!token) {
         return fail(400, {
-          actionType: 'reject',
-          operatorError: 'El enlace de respuesta es inválido.',
-          rejectionReason: ''
+          actionType: "reject",
+          operatorError: "El enlace de respuesta es inválido.",
+          rejectionReason: "",
         });
       }
 
       const formData = await request.formData();
-      const rejectionReason = parseText(formData.get('rejectionReason'));
+      const rejectionReason = parseText(formData.get("rejectionReason"));
 
       if (rejectionReason.length > 500) {
         return fail(400, {
-          actionType: 'reject',
-          operatorError: 'El motivo de rechazo puede tener hasta 500 caracteres.',
-          rejectionReason
+          actionType: "reject",
+          operatorError:
+            "El motivo de rechazo puede tener hasta 500 caracteres.",
+          rejectionReason,
         });
       }
 
       const budget = await readBudgetByToken(locals, token);
       if (!budget) {
         return fail(404, {
-          actionType: 'reject',
-          operatorError: 'No encontramos el presupuesto para este enlace.',
-          rejectionReason
+          actionType: "reject",
+          operatorError: "No encontramos el presupuesto para este enlace.",
+          rejectionReason,
         });
       }
 
-      const resolvedBudget = await expireBudgetIfNeeded(locals, budget);
-      if (!activeResponseStatuses.has(resolvedBudget.status)) {
+      const mutation = await locals.supabase.rpc("public_reject_budget", {
+        p_token: token,
+        p_rejection_reason: rejectionReason,
+      });
+
+      if (mutation.error) {
         return fail(400, {
-          actionType: 'reject',
-          operatorError: getBlockedResponseMessage(resolvedBudget.status),
-          rejectionReason
+          actionType: "reject",
+          operatorError:
+            "No pudimos registrar tu respuesta. Reintentá en unos segundos.",
+          rejectionReason,
         });
       }
 
-      const { error } = await locals.supabase
-        .from('budgets')
-        .update({
-          status: 'rejected',
-          rejected_at: new Date().toISOString(),
-          accepted_at: null,
-          rejection_reason: rejectionReason || null
-        })
-        .eq('id', resolvedBudget.id)
-        .in('status', Array.from(activeResponseStatuses));
+      const result = ((mutation.data ?? []) as PublicBudgetMutationRpcRow[])[0];
+      if (!result?.ok) {
+        if (result?.code === "not_found") {
+          return fail(404, {
+            actionType: "reject",
+            operatorError: "No encontramos el presupuesto para este enlace.",
+            rejectionReason,
+          });
+        }
 
-      if (error) {
+        if (result?.code === "reason_too_long") {
+          return fail(400, {
+            actionType: "reject",
+            operatorError:
+              "El motivo de rechazo puede tener hasta 500 caracteres.",
+            rejectionReason,
+          });
+        }
+
         return fail(400, {
-          actionType: 'reject',
-          operatorError: 'No pudimos registrar el rechazo. Reintentá en unos segundos.',
-          rejectionReason
+          actionType: "reject",
+          operatorError: getBlockedResponseMessageFromCode(
+            result?.code ?? "blocked_other",
+          ),
+          rejectionReason,
         });
       }
 
       return {
-        actionType: 'reject',
-        operatorSuccess: 'Gracias por tu respuesta. Registramos el rechazo del presupuesto.',
-        rejectionReason: rejectionReason || ''
+        actionType: "reject",
+        operatorSuccess:
+          "Gracias por tu respuesta. Registramos el rechazo del presupuesto.",
+        rejectionReason: rejectionReason || "",
       };
     } catch {
       return fail(400, {
-        actionType: 'reject',
-        operatorError: 'No pudimos registrar tu respuesta. Reintentá en unos segundos.',
-        rejectionReason: ''
+        actionType: "reject",
+        operatorError:
+          "No pudimos registrar tu respuesta. Reintentá en unos segundos.",
+        rejectionReason: "",
       });
     }
-  }
+  },
 };

@@ -95,7 +95,7 @@
   description="Seleccioná tutor, composición por perro/receta y costos globales."
   action="?/create"
   method="POST"
-  form={form as any}
+  form={form}
   primaryLabel="Crear borrador"
 >
   <div class="grid gap-1">

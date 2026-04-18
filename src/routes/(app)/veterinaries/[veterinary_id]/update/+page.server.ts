@@ -1,18 +1,18 @@
-import { fail, redirect } from '@sveltejs/kit';
-import type { Actions, PageServerLoad } from './$types';
-import { parseFormValue, getVeterinaryError } from '$lib/server/forms/parsers';
+import { fail, redirect } from "@sveltejs/kit";
+import type { Actions, PageServerLoad } from "./$types";
+import { parseFormValue, getVeterinaryError } from "$lib/server/forms/parsers";
 
 export const load: PageServerLoad = async ({ locals, params }) => {
   const veterinaryId = params.veterinary_id;
 
   const { data, error } = await locals.supabase
-    .from('veterinaries')
-    .select('id, name')
-    .eq('id', veterinaryId)
+    .from("veterinaries")
+    .select("id, name")
+    .eq("id", veterinaryId)
     .single();
 
   if (error || !data) {
-    throw redirect(303, '/veterinaries');
+    throw redirect(303, "/veterinaries");
   }
 
   return { veterinary: data };
@@ -22,27 +22,27 @@ export const actions: Actions = {
   update: async ({ request, locals, params }) => {
     const veterinaryId = params.veterinary_id;
     const formData = await request.formData();
-    const name = parseFormValue(formData.get('name'));
+    const name = parseFormValue(formData.get("name"));
 
     if (!veterinaryId || !name) {
       return fail(400, {
-        operatorError: 'El nombre de la veterinaria es obligatorio.',
-        values: { name }
+        operatorError: "El nombre de la veterinaria es obligatorio.",
+        values: { name },
       });
     }
 
     const { error } = await locals.supabase
-      .from('veterinaries')
+      .from("veterinaries")
       .update({ name })
-      .eq('id', veterinaryId);
+      .eq("id", veterinaryId);
 
     if (error) {
       return fail(400, {
-        operatorError: getVeterinaryError('update', error.message),
-        values: { name }
+        operatorError: getVeterinaryError("update", error.message),
+        values: { name },
       });
     }
 
-    throw redirect(303, '/veterinaries');
-  }
+    throw redirect(303, "/veterinaries");
+  },
 };

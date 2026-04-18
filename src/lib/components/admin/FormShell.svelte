@@ -2,14 +2,14 @@
   import { applyAction, enhance } from '$app/forms';
   import type { Snippet } from 'svelte';
   import { Alert, Button, Card } from 'flowbite-svelte';
-  import { isFormError, isFormSuccess, type EnhancedFormState } from '$lib/components/admin/form-shell.model';
+  import { isFormError, isFormSuccess, type FormShellFormState } from '$lib/components/admin/form-shell.model';
 
   type FormShellProps = {
     title: string;
     description?: string;
     action?: string;
     method?: 'POST' | 'GET';
-    form?: EnhancedFormState | null;
+    form?: FormShellFormState;
     primaryLabel?: string;
     showPrimary?: boolean;
     children?: Snippet;

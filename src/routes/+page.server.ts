@@ -1,15 +1,17 @@
-import { fail, redirect } from '@sveltejs/kit';
-import { parseFormString, sanitizeInternalNext } from '$lib/server/auth/next';
-import type { Actions, PageServerLoad } from './$types';
+import { fail, redirect } from "@sveltejs/kit";
+import { parseFormString, sanitizeInternalNext } from "$lib/server/auth/next";
+import type { Actions, PageServerLoad } from "./$types";
 
-const LOGIN_ERROR_MESSAGE = 'No pudimos iniciar sesión. Verificá email y contraseña e intentá de nuevo.';
-const LOGIN_INVALID_CREDENTIALS_MESSAGE = 'Credenciales inválidas. Revisá email y contraseña.';
+const LOGIN_ERROR_MESSAGE =
+  "No pudimos iniciar sesión. Verificá email y contraseña e intentá de nuevo.";
+const LOGIN_INVALID_CREDENTIALS_MESSAGE =
+  "Credenciales inválidas. Revisá email y contraseña.";
 
 const getOperatorLoginError = (errorMessage: string | undefined): string => {
   if (!errorMessage) return LOGIN_ERROR_MESSAGE;
 
   const normalized = errorMessage.toLowerCase();
-  if (normalized.includes('invalid login credentials')) {
+  if (normalized.includes("invalid login credentials")) {
     return LOGIN_INVALID_CREDENTIALS_MESSAGE;
   }
 
@@ -17,14 +19,14 @@ const getOperatorLoginError = (errorMessage: string | undefined): string => {
 };
 
 export const load: PageServerLoad = async ({ locals, url }) => {
-  const nextPath = sanitizeInternalNext(url.searchParams.get('next'));
+  const nextPath = sanitizeInternalNext(url.searchParams.get("next"));
 
   if (locals.user) {
     throw redirect(303, nextPath);
   }
 
   return {
-    nextPath
+    nextPath,
   };
 };
 
@@ -32,29 +34,33 @@ export const actions: Actions = {
   login: async ({ request, locals, url }) => {
     const formData = await request.formData();
     const nextPath = sanitizeInternalNext(
-      parseFormString(formData.get('next')) ?? url.searchParams.get('next')
+      parseFormString(formData.get("next")) ?? url.searchParams.get("next"),
     );
-    const email = parseFormString(formData.get('email'))?.trim().toLowerCase() ?? '';
-    const password = parseFormString(formData.get('password')) ?? '';
+    const email =
+      parseFormString(formData.get("email"))?.trim().toLowerCase() ?? "";
+    const password = parseFormString(formData.get("password")) ?? "";
 
     if (!email || !password) {
       return fail(400, {
         operatorError: LOGIN_ERROR_MESSAGE,
         nextPath,
-        email
+        email,
       });
     }
 
-    const { error } = await locals.supabase.auth.signInWithPassword({ email, password });
+    const { error } = await locals.supabase.auth.signInWithPassword({
+      email,
+      password,
+    });
 
     if (error) {
       return fail(400, {
         operatorError: getOperatorLoginError(error.message),
         nextPath,
-        email
+        email,
       });
     }
 
     throw redirect(303, nextPath);
-  }
+  },
 };
