@@ -1,5 +1,5 @@
 import type { OperatorMessage } from "./ui-state";
-import type { PostgrestFilterBuilder } from "@supabase/postgrest-js";
+import type { PostgrestFilterBuilder } from "@supabase/supabase-js";
 
 export const DEFAULT_PAGE_SIZE = 10;
 

@@ -1,4 +1,4 @@
-import type { PostgrestFilterBuilder } from "@supabase/postgrest-js";
+import type { PostgrestFilterBuilder } from "@supabase/supabase-js";
 import type { BudgetStatus } from "$lib/types/budget";
 
 export type BudgetListStatusFilter = BudgetStatus | "pending" | "all";
