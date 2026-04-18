@@ -1,5 +1,6 @@
 import { describe, expect, it, vi } from "vitest";
 import { actions } from "./+page.server";
+import { asActionEvent } from "$lib/test-helpers/sveltekit-events";
 
 describe("(app)/tutors/new actions.create", () => {
   it("crea tutor y redirige al listado", async () => {
@@ -10,10 +11,12 @@ describe("(app)/tutors/new actions.create", () => {
     formData.set("notes", "Prefiere contacto por la tarde");
 
     await expect(
-      actions.create({
-        request: { formData: async () => formData },
-        locals: { supabase: { from: vi.fn().mockReturnValue({ insert }) } },
-      } as unknown as Parameters<(typeof actions)["create"]>[0]),
+      actions.create(
+        asActionEvent<Parameters<(typeof actions)["create"]>[0]>({
+          request: { formData: async () => formData },
+          locals: { supabase: { from: vi.fn().mockReturnValue({ insert }) } },
+        }),
+      ),
     ).rejects.toMatchObject({ status: 303, location: "/tutors" });
 
     expect(insert).toHaveBeenCalledWith({

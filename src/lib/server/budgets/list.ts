@@ -3,6 +3,19 @@ import type { BudgetStatus } from "$lib/types/budget";
 
 export type BudgetListStatusFilter = BudgetStatus | "pending" | "all";
 
+const allowedStatusFilters = new Set<BudgetListStatusFilter>([
+  "all",
+  "pending",
+  "draft",
+  "ready_to_send",
+  "sent",
+  "accepted",
+  "rejected",
+  "expired",
+  "discarded",
+  "closed",
+]);
+
 export type BudgetListFilters = {
   status: BudgetListStatusFilter;
   search: string;
@@ -16,12 +29,15 @@ export type BudgetTableMessage = {
 };
 
 export const parseBudgetFilters = (url: URL): BudgetListFilters => {
-  const statusParam = url.searchParams.get(
-    "status",
-  ) as BudgetListStatusFilter | null;
+  const statusParam = url.searchParams.get("status");
+  const status =
+    statusParam &&
+    allowedStatusFilters.has(statusParam as BudgetListStatusFilter)
+      ? (statusParam as BudgetListStatusFilter)
+      : "all";
 
   return {
-    status: statusParam ?? "all",
+    status,
     search: url.searchParams.get("q")?.trim() ?? "",
     tutorId: url.searchParams.get("tutor"),
   };

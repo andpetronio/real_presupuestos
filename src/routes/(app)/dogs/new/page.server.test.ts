@@ -1,15 +1,18 @@
 import { describe, expect, it, vi } from "vitest";
 import { actions } from "./+page.server";
+import { asActionEvent } from "$lib/test-helpers/sveltekit-events";
 
 describe("(app)/dogs/new actions.create", () => {
   it("requiere tutor, nombre, tipo de dieta y comidas diarias válidas", async () => {
     const formData = new FormData();
     formData.set("name", "Firulais");
 
-    const result = (await actions.create({
-      request: { formData: async () => formData },
-      locals: { supabase: { from: vi.fn() } },
-    } as unknown as Parameters<(typeof actions)["create"]>[0])) as {
+    const result = (await actions.create(
+      asActionEvent<Parameters<(typeof actions)["create"]>[0]>({
+        request: { formData: async () => formData },
+        locals: { supabase: { from: vi.fn() } },
+      }),
+    )) as {
       status: number;
       data: { operatorError: string };
     };
@@ -49,10 +52,12 @@ describe("(app)/dogs/new actions.create", () => {
     formData.set("mealsPerDay", "2");
     formData.set("deliverySchedule", '[{"day_of_month":1,"pct":100}]');
 
-    const result = (await actions.create({
-      request: { formData: async () => formData },
-      locals: { supabase: { from } },
-    } as unknown as Parameters<(typeof actions)["create"]>[0])) as {
+    const result = (await actions.create(
+      asActionEvent<Parameters<(typeof actions)["create"]>[0]>({
+        request: { formData: async () => formData },
+        locals: { supabase: { from } },
+      }),
+    )) as {
       status: number;
       data: { operatorError: string };
     };

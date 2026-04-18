@@ -1,5 +1,6 @@
 import { describe, expect, it, vi } from "vitest";
 import { actions } from "./+page.server";
+import { asActionEvent } from "$lib/test-helpers/sveltekit-events";
 
 describe("(app)/recipes/[recipe_id]/update actions.update", () => {
   it("actualiza receta y reemplaza items", async () => {
@@ -39,11 +40,13 @@ describe("(app)/recipes/[recipe_id]/update actions.update", () => {
     formData.append("dailyQuantity", "120");
 
     await expect(
-      actions.update({
-        params: { recipe_id: "r-1" },
-        request: { formData: async () => formData },
-        locals: { supabase: { from } },
-      } as unknown as Parameters<(typeof actions)["update"]>[0]),
+      actions.update(
+        asActionEvent<Parameters<(typeof actions)["update"]>[0]>({
+          params: { recipe_id: "r-1" },
+          request: { formData: async () => formData },
+          locals: { supabase: { from } },
+        }),
+      ),
     ).rejects.toMatchObject({ status: 303, location: "/recipes" });
 
     expect(recipesUpdate).toHaveBeenCalledWith({

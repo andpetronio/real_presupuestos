@@ -1,5 +1,6 @@
 import { describe, expect, it, vi } from "vitest";
 import { actions } from "./+page.server";
+import { asActionEvent } from "$lib/test-helpers/sveltekit-events";
 
 describe("(app)/raw-materials/[raw_material_id]/update actions.update", () => {
   it("actualiza materia prima y redirige", async () => {
@@ -13,11 +14,13 @@ describe("(app)/raw-materials/[raw_material_id]/update actions.update", () => {
     formData.set("wastagePercentage", "30");
 
     await expect(
-      actions.update({
-        params: { raw_material_id: "rm-1" },
-        request: { formData: async () => formData },
-        locals: { supabase: { from: vi.fn().mockReturnValue({ update }) } },
-      } as unknown as Parameters<(typeof actions)["update"]>[0]),
+      actions.update(
+        asActionEvent<Parameters<(typeof actions)["update"]>[0]>({
+          params: { raw_material_id: "rm-1" },
+          request: { formData: async () => formData },
+          locals: { supabase: { from: vi.fn().mockReturnValue({ update }) } },
+        }),
+      ),
     ).rejects.toMatchObject({ status: 303, location: "/raw-materials" });
 
     expect(update).toHaveBeenCalledWith({

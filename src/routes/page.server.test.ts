@@ -1,5 +1,6 @@
 import { describe, expect, it, vi } from "vitest";
 import { actions, load } from "./+page.server";
+import { asLoadEvent, asActionEvent } from "$lib/test-helpers/sveltekit-events";
 
 type TestEventInput = {
   userId?: string | null;
@@ -15,14 +16,14 @@ type LoginActionInput = {
 };
 
 const createEvent = ({ userId = null, next }: TestEventInput) =>
-  ({
+  asLoadEvent<Parameters<typeof load>[0]>({
     locals: {
       user: userId ? ({ id: userId } as { id: string }) : null,
     },
     url: new URL(
       `https://example.test/${next ? `?next=${encodeURIComponent(next)}` : ""}`,
     ),
-  }) as Parameters<typeof load>[0];
+  });
 
 const createLoginEvent = ({
   email,
@@ -43,7 +44,7 @@ const createLoginEvent = ({
   if (formNext !== undefined) formData.set("next", formNext);
 
   return {
-    event: {
+    event: asActionEvent<Parameters<(typeof actions)["login"]>[0]>({
       request: {
         formData: async () => formData,
       },
@@ -57,7 +58,7 @@ const createLoginEvent = ({
       url: new URL(
         `https://example.test/${queryNext ? `?next=${encodeURIComponent(queryNext)}` : ""}`,
       ),
-    } as unknown as Parameters<(typeof actions)["login"]>[0],
+    }),
     signInWithPassword,
   };
 };

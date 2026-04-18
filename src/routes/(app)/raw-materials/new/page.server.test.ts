@@ -1,5 +1,6 @@
 import { describe, expect, it, vi } from "vitest";
 import { actions } from "./+page.server";
+import { asActionEvent } from "$lib/test-helpers/sveltekit-events";
 
 describe("(app)/raw-materials/new actions.create", () => {
   it("calcula costo_con_merma e inserta materia prima", async () => {
@@ -12,10 +13,12 @@ describe("(app)/raw-materials/new actions.create", () => {
     formData.set("wastagePercentage", "30");
 
     await expect(
-      actions.create({
-        request: { formData: async () => formData },
-        locals: { supabase: { from: vi.fn().mockReturnValue({ insert }) } },
-      } as unknown as Parameters<(typeof actions)["create"]>[0]),
+      actions.create(
+        asActionEvent<Parameters<(typeof actions)["create"]>[0]>({
+          request: { formData: async () => formData },
+          locals: { supabase: { from: vi.fn().mockReturnValue({ insert }) } },
+        }),
+      ),
     ).rejects.toMatchObject({ status: 303, location: "/raw-materials" });
 
     expect(insert).toHaveBeenCalledWith({
@@ -41,10 +44,12 @@ describe("(app)/raw-materials/new actions.create", () => {
     formData.set("baseCost", "1000");
     formData.set("wastagePercentage", "101");
 
-    const result = (await actions.create({
-      request: { formData: async () => formData },
-      locals: { supabase: { from: vi.fn().mockReturnValue({ insert }) } },
-    } as unknown as Parameters<(typeof actions)["create"]>[0])) as {
+    const result = (await actions.create(
+      asActionEvent<Parameters<(typeof actions)["create"]>[0]>({
+        request: { formData: async () => formData },
+        locals: { supabase: { from: vi.fn().mockReturnValue({ insert }) } },
+      }),
+    )) as {
       status: number;
       data: { operatorError: string };
     };

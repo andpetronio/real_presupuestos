@@ -54,6 +54,22 @@ describe("parseBudgetFilters", () => {
       tutorId: "t-1",
     });
   });
+
+  it("falls back to all when status is invalid", () => {
+    const url = new URL("http://localhost/budgets?status=whatever");
+
+    const result = parseBudgetFilters(url);
+
+    expect(result.status).toBe("all");
+  });
+
+  it("accepts discarded status from URL params", () => {
+    const url = new URL("http://localhost/budgets?status=discarded");
+
+    const result = parseBudgetFilters(url);
+
+    expect(result.status).toBe("discarded");
+  });
 });
 
 describe("applyBudgetListFilters", () => {

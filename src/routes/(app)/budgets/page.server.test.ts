@@ -50,7 +50,7 @@ describe("(app)/budgets/+page.server load", () => {
     });
 
     const data = (await load(
-      asLoadEvent<typeof load>({
+      asLoadEvent<Parameters<typeof load>[0]>({
         locals: { supabase: { from } },
         url: new URL("https://test.local/budgets"),
       }),
@@ -78,7 +78,7 @@ describe("(app)/budgets/+page.server actions.create", () => {
     formData.set("budgetDays", "30");
 
     const result = (await actions.create(
-      asActionEvent<typeof actions.create>({
+      asActionEvent<Parameters<(typeof actions)["create"]>[0]>({
         request: { formData: async () => formData },
         locals: { supabase: { from: vi.fn() } },
       }),
@@ -231,7 +231,7 @@ describe("(app)/budgets/+page.server actions.create", () => {
     formData.set("kefirQty", "1");
 
     const result = (await actions.create(
-      asActionEvent<typeof actions.create>({
+      asActionEvent<Parameters<(typeof actions)["create"]>[0]>({
         request: { formData: async () => formData },
         locals: { supabase: { from } },
       }),
@@ -328,7 +328,7 @@ describe("(app)/budgets/+page.server actions.create", () => {
 
     await expect(
       actions.sendWhatsapp(
-        asActionEvent<typeof actions.sendWhatsapp>({
+        asActionEvent<Parameters<(typeof actions)["sendWhatsapp"]>[0]>({
           request: { formData: async () => formData },
           url: new URL("https://test.local/budgets"),
           locals: { supabase: { from } },
@@ -425,7 +425,7 @@ describe("(app)/budgets/+page.server actions.create", () => {
     formData.set("budgetId", "b-1");
 
     const result = (await actions.sendWhatsapp(
-      asActionEvent<typeof actions.sendWhatsapp>({
+      asActionEvent<Parameters<(typeof actions)["sendWhatsapp"]>[0]>({
         request: { formData: async () => formData },
         url: new URL("https://test.local/budgets"),
         locals: { supabase: { from } },
@@ -511,7 +511,7 @@ describe("(app)/budgets/+page.server actions.create", () => {
     formData.set("budgetId", "b-1");
 
     const result = (await actions.sendWhatsapp(
-      asActionEvent<typeof actions.sendWhatsapp>({
+      asActionEvent<Parameters<(typeof actions)["sendWhatsapp"]>[0]>({
         request: { formData: async () => formData },
         url: new URL("https://test.local/budgets"),
         locals: { supabase: { from } },
@@ -547,7 +547,7 @@ describe("(app)/budgets/+page.server actions.accept", () => {
     formData.set("budgetId", "b-inexistente");
 
     const result = (await actions.accept(
-      asActionEvent<typeof actions.accept>({
+      asActionEvent<Parameters<(typeof actions)["accept"]>[0]>({
         request: { formData: async () => formData },
         locals: { supabase: { from } },
       }),
@@ -580,7 +580,7 @@ describe("(app)/budgets/+page.server actions.accept", () => {
     formData.set("budgetId", "b-1");
 
     const result = (await actions.accept(
-      asActionEvent<typeof actions.accept>({
+      asActionEvent<Parameters<(typeof actions)["accept"]>[0]>({
         request: { formData: async () => formData },
         locals: { supabase: { from } },
       }),
@@ -615,7 +615,7 @@ describe("(app)/budgets/+page.server actions.reject", () => {
     formData.set("budgetId", "b-1");
 
     const result = (await actions.reject(
-      asActionEvent<typeof actions.reject>({
+      asActionEvent<Parameters<(typeof actions)["reject"]>[0]>({
         request: { formData: async () => formData },
         locals: { supabase: { from } },
       }),
@@ -650,7 +650,7 @@ describe("(app)/budgets/+page.server actions.delete", () => {
     formData.set("budgetId", "b-1");
 
     const result = (await actions.delete(
-      asActionEvent<typeof actions.delete>({
+      asActionEvent<Parameters<(typeof actions)["delete"]>[0]>({
         request: { formData: async () => formData },
         locals: { supabase: { from } },
       }),

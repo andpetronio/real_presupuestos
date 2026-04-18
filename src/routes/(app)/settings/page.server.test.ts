@@ -1,5 +1,6 @@
 import { describe, expect, it, vi } from "vitest";
 import { actions, load } from "./+page.server";
+import { asLoadEvent, asActionEvent } from "$lib/test-helpers/sveltekit-events";
 
 describe("(app)/settings/+page.server load", () => {
   it("retorna success con configuración extendida", async () => {
@@ -37,17 +38,19 @@ describe("(app)/settings/+page.server load", () => {
       error: null,
     });
 
-    const data = (await load({
-      locals: {
-        supabase: {
-          from: vi.fn().mockReturnValue({
-            select: vi.fn().mockReturnValue({
-              eq: vi.fn().mockReturnValue({ single }),
+    const data = (await load(
+      asLoadEvent<Parameters<typeof load>[0]>({
+        locals: {
+          supabase: {
+            from: vi.fn().mockReturnValue({
+              select: vi.fn().mockReturnValue({
+                eq: vi.fn().mockReturnValue({ single }),
+              }),
             }),
-          }),
+          },
         },
-      },
-    } as unknown as Parameters<typeof load>[0])) as {
+      }),
+    )) as {
       formState: string;
       settings: { budget_validity_days: number };
     };
@@ -143,14 +146,16 @@ describe("(app)/settings/+page.server actions.update", () => {
     const formData = buildFormData();
     formData.set("settingsSection", "comercial");
 
-    const result = (await actions.update({
-      request: { formData: async () => formData },
-      locals: {
-        supabase: {
-          from,
+    const result = (await actions.update(
+      asActionEvent<Parameters<(typeof actions)["update"]>[0]>({
+        request: { formData: async () => formData },
+        locals: {
+          supabase: {
+            from,
+          },
         },
-      },
-    } as unknown as Parameters<(typeof actions)["update"]>[0])) as {
+      }),
+    )) as {
       operatorSuccess: string;
     };
 
@@ -170,14 +175,16 @@ describe("(app)/settings/+page.server actions.update", () => {
     formData.set("settingsSection", "encuesta");
     formData.set("satisfactionSurveyUrl", "");
 
-    const result = (await actions.update({
-      request: { formData: async () => formData },
-      locals: {
-        supabase: {
-          from,
+    const result = (await actions.update(
+      asActionEvent<Parameters<(typeof actions)["update"]>[0]>({
+        request: { formData: async () => formData },
+        locals: {
+          supabase: {
+            from,
+          },
         },
-      },
-    } as unknown as Parameters<(typeof actions)["update"]>[0])) as {
+      }),
+    )) as {
       status: number;
       data: { operatorError: string; fieldErrors: ReadonlyArray<string> };
     };
@@ -198,14 +205,16 @@ describe("(app)/settings/+page.server actions.update", () => {
     formData.set("whatsappDefaultTemplate", "Hola {{tutor_nombre}}");
     formData.set("enableWhatsappNotifications", "on");
 
-    const result = (await actions.update({
-      request: { formData: async () => formData },
-      locals: {
-        supabase: {
-          from,
+    const result = (await actions.update(
+      asActionEvent<Parameters<(typeof actions)["update"]>[0]>({
+        request: { formData: async () => formData },
+        locals: {
+          supabase: {
+            from,
+          },
         },
-      },
-    } as unknown as Parameters<(typeof actions)["update"]>[0])) as {
+      }),
+    )) as {
       operatorSuccess: string;
     };
 

@@ -1,5 +1,6 @@
 import { describe, expect, it, vi } from "vitest";
 import { actions } from "./+page.server";
+import { asActionEvent } from "$lib/test-helpers/sveltekit-events";
 
 describe("(app)/recipes/new actions.create", () => {
   it("requiere al menos una materia prima al crear", async () => {
@@ -7,10 +8,12 @@ describe("(app)/recipes/new actions.create", () => {
     formData.set("dogId", "d-1");
     formData.set("name", "Mix semanal");
 
-    const result = (await actions.create({
-      request: { formData: async () => formData },
-      locals: { supabase: { from: vi.fn() } },
-    } as unknown as Parameters<(typeof actions)["create"]>[0])) as {
+    const result = (await actions.create(
+      asActionEvent<Parameters<(typeof actions)["create"]>[0]>({
+        request: { formData: async () => formData },
+        locals: { supabase: { from: vi.fn() } },
+      }),
+    )) as {
       status: number;
       data: { operatorError: string };
     };
@@ -61,10 +64,12 @@ describe("(app)/recipes/new actions.create", () => {
     formData.append("dailyQuantity", "50");
 
     await expect(
-      actions.create({
-        request: { formData: async () => formData },
-        locals: { supabase: { from } },
-      } as unknown as Parameters<(typeof actions)["create"]>[0]),
+      actions.create(
+        asActionEvent<Parameters<(typeof actions)["create"]>[0]>({
+          request: { formData: async () => formData },
+          locals: { supabase: { from } },
+        }),
+      ),
     ).rejects.toMatchObject({ status: 303, location: "/recipes" });
 
     expect(recipeItemsInsert).toHaveBeenCalledWith([

@@ -1,5 +1,6 @@
 import { describe, expect, it, vi } from "vitest";
 import { actions, load } from "./+page.server";
+import { asLoadEvent, asActionEvent } from "$lib/test-helpers/sveltekit-events";
 
 describe("(app)/dogs/+page.server load", () => {
   it("retorna listado de perros cuando query pasa", async () => {
@@ -29,10 +30,12 @@ describe("(app)/dogs/+page.server load", () => {
 
     const mockUrl = new URL("http://localhost/dogs");
 
-    const data = (await load({
-      locals: { supabase: { from } },
-      url: mockUrl,
-    } as unknown as Parameters<typeof load>[0])) as {
+    const data = (await load(
+      asLoadEvent<Parameters<typeof load>[0]>({
+        locals: { supabase: { from } },
+        url: mockUrl,
+      }),
+    )) as {
       tableState: string;
       dogs: ReadonlyArray<unknown>;
     };
@@ -50,10 +53,12 @@ describe("(app)/dogs/+page.server actions.delete", () => {
     const formData = new FormData();
     formData.set("dogId", "d-1");
 
-    const result = (await actions.delete({
-      request: { formData: async () => formData },
-      locals: { supabase: { from: vi.fn().mockReturnValue({ update }) } },
-    } as unknown as Parameters<(typeof actions)["delete"]>[0])) as {
+    const result = (await actions.delete(
+      asActionEvent<Parameters<(typeof actions)["delete"]>[0]>({
+        request: { formData: async () => formData },
+        locals: { supabase: { from: vi.fn().mockReturnValue({ update }) } },
+      }),
+    )) as {
       operatorSuccess: string;
     };
 

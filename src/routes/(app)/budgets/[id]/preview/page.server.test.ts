@@ -1,5 +1,6 @@
 import { describe, expect, it, vi } from "vitest";
 import { actions } from "./+page.server";
+import { asActionEvent } from "$lib/test-helpers/sveltekit-events";
 
 describe("(app)/budgets/[id]/preview sendWhatsapp", () => {
   it("genera enlace de WhatsApp Web válido con emojis preservados", async () => {
@@ -64,14 +65,16 @@ describe("(app)/budgets/[id]/preview sendWhatsapp", () => {
       return { select: vi.fn(), update: vi.fn() };
     });
 
-    const result = (await actions.sendWhatsapp({
-      params: { id: "b-1" },
-      request: {
-        url: "https://test.local/budgets/b-1/preview",
-        headers: { get: vi.fn().mockReturnValue(null) },
-      },
-      locals: { supabase: { from } },
-    } as unknown as Parameters<(typeof actions)["sendWhatsapp"]>[0])) as {
+    const result = (await actions.sendWhatsapp(
+      asActionEvent<Parameters<(typeof actions)["sendWhatsapp"]>[0]>({
+        params: { id: "b-1" },
+        request: {
+          url: "https://test.local/budgets/b-1/preview",
+          headers: { get: vi.fn().mockReturnValue(null) },
+        },
+        locals: { supabase: { from } },
+      }),
+    )) as {
       waUrl?: string;
       error?: string;
     };
@@ -121,10 +124,12 @@ describe("(app)/budgets/[id]/preview sendWhatsapp", () => {
     });
 
     await expect(
-      actions.markSent({
-        params: { id: "b-1" },
-        locals: { supabase: { from } },
-      } as unknown as Parameters<(typeof actions)["markSent"]>[0]),
+      actions.markSent(
+        asActionEvent<Parameters<(typeof actions)["markSent"]>[0]>({
+          params: { id: "b-1" },
+          locals: { supabase: { from } },
+        }),
+      ),
     ).rejects.toMatchObject({ status: 303, location: "/budgets" });
 
     expect(updateEq).toHaveBeenCalledWith("id", "b-1");
@@ -183,14 +188,16 @@ describe("(app)/budgets/[id]/preview sendWhatsapp", () => {
       return { select: vi.fn(), update: vi.fn() };
     });
 
-    const result = (await actions.sendWhatsapp({
-      params: { id: "b-1" },
-      request: {
-        url: "https://test.local/budgets/b-1/preview",
-        headers: { get: vi.fn().mockReturnValue(null) },
-      },
-      locals: { supabase: { from } },
-    } as unknown as Parameters<(typeof actions)["sendWhatsapp"]>[0])) as {
+    const result = (await actions.sendWhatsapp(
+      asActionEvent<Parameters<(typeof actions)["sendWhatsapp"]>[0]>({
+        params: { id: "b-1" },
+        request: {
+          url: "https://test.local/budgets/b-1/preview",
+          headers: { get: vi.fn().mockReturnValue(null) },
+        },
+        locals: { supabase: { from } },
+      }),
+    )) as {
       waUrl?: string;
       error?: string;
     };
@@ -214,14 +221,16 @@ describe("(app)/budgets/[id]/preview sendWhatsapp", () => {
       return { select: vi.fn(), update: vi.fn() };
     });
 
-    const result = (await actions.sendWhatsapp({
-      params: { id: "non-existent" },
-      request: {
-        url: "https://test.local/budgets/non-existent/preview",
-        headers: { get: vi.fn().mockReturnValue(null) },
-      },
-      locals: { supabase: { from } },
-    } as unknown as Parameters<(typeof actions)["sendWhatsapp"]>[0])) as {
+    const result = (await actions.sendWhatsapp(
+      asActionEvent<Parameters<(typeof actions)["sendWhatsapp"]>[0]>({
+        params: { id: "non-existent" },
+        request: {
+          url: "https://test.local/budgets/non-existent/preview",
+          headers: { get: vi.fn().mockReturnValue(null) },
+        },
+        locals: { supabase: { from } },
+      }),
+    )) as {
       waUrl?: string;
       error?: string;
     };
@@ -259,14 +268,16 @@ describe("(app)/budgets/[id]/preview sendWhatsapp", () => {
       return { select: vi.fn(), update: vi.fn() };
     });
 
-    const result = (await actions.sendWhatsapp({
-      params: { id: "b-1" },
-      request: {
-        url: "https://test.local/budgets/b-1/preview",
-        headers: { get: vi.fn().mockReturnValue(null) },
-      },
-      locals: { supabase: { from } },
-    } as unknown as Parameters<(typeof actions)["sendWhatsapp"]>[0])) as {
+    const result = (await actions.sendWhatsapp(
+      asActionEvent<Parameters<(typeof actions)["sendWhatsapp"]>[0]>({
+        params: { id: "b-1" },
+        request: {
+          url: "https://test.local/budgets/b-1/preview",
+          headers: { get: vi.fn().mockReturnValue(null) },
+        },
+        locals: { supabase: { from } },
+      }),
+    )) as {
       waUrl?: string;
       error?: string;
     };
@@ -301,14 +312,16 @@ describe("(app)/budgets/[id]/preview sendWhatsapp", () => {
       return { select: vi.fn(), update: vi.fn() };
     });
 
-    const result = (await actions.sendWhatsapp({
-      params: { id: "b-1" },
-      request: {
-        url: "https://test.local/budgets/b-1/preview",
-        headers: { get: vi.fn().mockReturnValue(null) },
-      },
-      locals: { supabase: { from } },
-    } as unknown as Parameters<(typeof actions)["sendWhatsapp"]>[0])) as {
+    const result = (await actions.sendWhatsapp(
+      asActionEvent<Parameters<(typeof actions)["sendWhatsapp"]>[0]>({
+        params: { id: "b-1" },
+        request: {
+          url: "https://test.local/budgets/b-1/preview",
+          headers: { get: vi.fn().mockReturnValue(null) },
+        },
+        locals: { supabase: { from } },
+      }),
+    )) as {
       waUrl?: string;
       error?: string;
     };
@@ -372,14 +385,16 @@ describe("(app)/budgets/[id]/preview sendWhatsapp", () => {
       return { select: vi.fn(), update: vi.fn() };
     });
 
-    const result = (await actions.sendWhatsapp({
-      params: { id: "b-1" },
-      request: {
-        url: "https://test.local/budgets/b-1/preview",
-        headers: { get: vi.fn().mockReturnValue(null) },
-      },
-      locals: { supabase: { from } },
-    } as unknown as Parameters<(typeof actions)["sendWhatsapp"]>[0])) as {
+    const result = (await actions.sendWhatsapp(
+      asActionEvent<Parameters<(typeof actions)["sendWhatsapp"]>[0]>({
+        params: { id: "b-1" },
+        request: {
+          url: "https://test.local/budgets/b-1/preview",
+          headers: { get: vi.fn().mockReturnValue(null) },
+        },
+        locals: { supabase: { from } },
+      }),
+    )) as {
       waUrl?: string;
       error?: string;
     };
@@ -450,14 +465,16 @@ describe("(app)/budgets/[id]/preview sendWhatsapp", () => {
       return { select: vi.fn(), update: vi.fn() };
     });
 
-    const result = (await actions.sendWhatsapp({
-      params: { id: "b-1" },
-      request: {
-        url: "https://test.local/budgets/b-1/preview",
-        headers: { get: vi.fn().mockReturnValue(null) },
-      },
-      locals: { supabase: { from } },
-    } as unknown as Parameters<(typeof actions)["sendWhatsapp"]>[0])) as {
+    const result = (await actions.sendWhatsapp(
+      asActionEvent<Parameters<(typeof actions)["sendWhatsapp"]>[0]>({
+        params: { id: "b-1" },
+        request: {
+          url: "https://test.local/budgets/b-1/preview",
+          headers: { get: vi.fn().mockReturnValue(null) },
+        },
+        locals: { supabase: { from } },
+      }),
+    )) as {
       waUrl?: string;
       error?: string;
     };
@@ -484,10 +501,12 @@ describe("(app)/budgets/[id]/preview markSent", () => {
       return { select: vi.fn(), update: vi.fn() };
     });
 
-    const result = (await actions.markSent({
-      params: { id: "non-existent" },
-      locals: { supabase: { from } },
-    } as unknown as Parameters<(typeof actions)["markSent"]>[0])) as {
+    const result = (await actions.markSent(
+      asActionEvent<Parameters<(typeof actions)["markSent"]>[0]>({
+        params: { id: "non-existent" },
+        locals: { supabase: { from } },
+      }),
+    )) as {
       error?: string;
     };
 
@@ -512,10 +531,12 @@ describe("(app)/budgets/[id]/preview markSent", () => {
       return { select: vi.fn(), update: vi.fn() };
     });
 
-    const result = (await actions.markSent({
-      params: { id: "b-1" },
-      locals: { supabase: { from } },
-    } as unknown as Parameters<(typeof actions)["markSent"]>[0])) as {
+    const result = (await actions.markSent(
+      asActionEvent<Parameters<(typeof actions)["markSent"]>[0]>({
+        params: { id: "b-1" },
+        locals: { supabase: { from } },
+      }),
+    )) as {
       error?: string;
     };
 
@@ -545,10 +566,12 @@ describe("(app)/budgets/[id]/preview markSent", () => {
       return { select: vi.fn(), update: vi.fn() };
     });
 
-    const result = (await actions.markSent({
-      params: { id: "b-1" },
-      locals: { supabase: { from } },
-    } as unknown as Parameters<(typeof actions)["markSent"]>[0])) as {
+    const result = (await actions.markSent(
+      asActionEvent<Parameters<(typeof actions)["markSent"]>[0]>({
+        params: { id: "b-1" },
+        locals: { supabase: { from } },
+      }),
+    )) as {
       error?: string;
     };
 

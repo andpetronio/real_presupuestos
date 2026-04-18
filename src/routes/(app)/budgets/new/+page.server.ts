@@ -1,43 +1,33 @@
-import { redirect } from "@sveltejs/kit";
-import type { Actions, PageServerLoad } from "./$types";
-import { loadBudgetOptions } from "$lib/server/budgets/queries";
-import {
-  actions as budgetsActions,
-  load as budgetsLoad,
-} from "../+page.server";
+import type { PageServerLoad } from "./$types";
+import { loadBudgetFormData } from "$lib/server/budgets/form-data";
+import { parseActionValues } from "$lib/server/budgets/parsers";
+import { saveBudget } from "$lib/server/budgets/save";
 
-export const load: PageServerLoad = async ({ locals, url }) => {
-  const [options, listData] = await Promise.all([
-    loadBudgetOptions(locals.supabase),
-    // Cross-route load call (`/(app)/budgets/new` -> `/(app)/budgets`) requires
-    // RouteId coercion in SvelteKit generated types.
-    budgetsLoad({ locals, url } as unknown as Parameters<
-      typeof budgetsLoad
-    >[0]),
-  ]);
+export const load: PageServerLoad = async ({ locals }) => {
+  const formData = await loadBudgetFormData({
+    supabase: locals.supabase,
+    editingBudgetId: null,
+  });
 
   return {
-    tutorOptions: options.tutorOptions,
-    dogOptions: options.dogOptions,
-    recipeOptions: options.recipeOptions,
-    settings: options.settings,
-    editingBudget: (listData as { editingBudget?: unknown }).editingBudget,
-    editingRows: (listData as { editingRows?: unknown }).editingRows,
+    tutorOptions: formData.tutorOptions,
+    dogOptions: formData.dogOptions,
+    recipeOptions: formData.recipeOptions,
+    settings: formData.settings,
+    editingBudget: formData.editingBudget,
+    editingRows: formData.editingRows,
   };
 };
 
-export const actions: Actions = {
-  create: async (event) => {
-    const result = await budgetsActions.create(
-      // Cross-route action reuse (`/(app)/budgets/new` -> `/(app)/budgets`) needs
-      // RouteId coercion between distinct RequestEvent route IDs.
-      event as unknown as Parameters<typeof budgetsActions.create>[0],
-    );
+export const actions = {
+  create: async ({ request, locals }) => {
+    const formData = await request.formData();
+    const values = parseActionValues(formData);
 
-    if (result && typeof result === "object" && "status" in result) {
-      return result;
-    }
-
-    throw redirect(303, "/budgets");
+    return saveBudget({
+      action: "create",
+      values,
+      locals,
+    });
   },
 };

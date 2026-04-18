@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { navItems } from "$lib/constants/navigation";
 import { load } from "./+layout.server";
+import { asLoadEvent } from "$lib/test-helpers/sveltekit-events";
 
 type TestEventInput = {
   userId?: string;
@@ -13,7 +14,7 @@ const createEvent = ({
   pathname = "/dashboard",
   search = "",
 }: TestEventInput) =>
-  ({
+  asLoadEvent<Parameters<typeof load>[0]>({
     locals: {
       user: userId === undefined ? null : ({ id: userId } as { id: string }),
       supabase: {
@@ -27,7 +28,7 @@ const createEvent = ({
       },
     },
     url: new URL(`https://example.test${pathname}${search}`),
-  }) as unknown as Parameters<typeof load>[0];
+  });
 
 describe("(app)/+layout.server load", () => {
   it("acepta user autenticado desde locals y devuelve nav interna", async () => {

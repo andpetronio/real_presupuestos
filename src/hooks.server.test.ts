@@ -1,4 +1,5 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
+import { asHandleEvent } from "$lib/test-helpers/sveltekit-events";
 
 const importHandleWithUser = async (user: { id: string } | null) => {
   vi.resetModules();
@@ -30,10 +31,10 @@ describe("hooks.server handle", () => {
     const { handle, getUser } = await importHandleWithUser({ id: "user-123" });
     const resolve = vi.fn(async () => new Response("ok"));
 
-    const event = {
+    const event = asHandleEvent<Parameters<typeof handle>[0]["event"]>({
       cookies: { getAll: () => [], set: vi.fn() },
       locals: {},
-    } as unknown as Parameters<typeof handle>[0]["event"];
+    });
 
     await handle({ event, resolve });
 
@@ -47,10 +48,10 @@ describe("hooks.server handle", () => {
     const { handle } = await importHandleWithUser(null);
     const resolve = vi.fn(async () => new Response("ok"));
 
-    const event = {
+    const event = asHandleEvent<Parameters<typeof handle>[0]["event"]>({
       cookies: { getAll: () => [], set: vi.fn() },
       locals: {},
-    } as unknown as Parameters<typeof handle>[0]["event"];
+    });
 
     await handle({ event, resolve });
 

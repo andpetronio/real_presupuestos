@@ -1,5 +1,6 @@
 import { describe, expect, it, vi } from "vitest";
 import { load } from "./+page.server";
+import { asLoadEvent } from "$lib/test-helpers/sveltekit-events";
 
 type BudgetMetricRow = {
   status:
@@ -57,11 +58,11 @@ const createEvent = (params: {
 
   const from = createSupabaseFromMock(rows, error, 0);
 
-  return {
+  return asLoadEvent<Parameters<typeof load>[0]>({
     parent: async () => ({ actorId: "op-1" }),
     locals: { supabase: { from } },
     url: new URL(`http://localhost/dashboard?period=${period}`),
-  } as unknown as Parameters<typeof load>[0];
+  });
 };
 
 describe("(app)/dashboard/+page.server load", () => {
@@ -251,13 +252,13 @@ describe("(app)/dashboard/+page.server period options", () => {
   const createPeriodEvent = (period: string | null) => {
     const from = createSupabaseFromMock([], null, 0);
 
-    return {
+    return asLoadEvent<Parameters<typeof load>[0]>({
       parent: async () => ({ actorId: "op-1" }),
       locals: { supabase: { from } },
       url: new URL(
         `http://localhost/dashboard${period ? `?period=${period}` : ""}`,
       ),
-    } as unknown as Parameters<typeof load>[0];
+    });
   };
 
   it("incluye las 4 opciones de periodo con las claves correctas", async () => {
@@ -325,11 +326,11 @@ describe("(app)/dashboard/+page.server metrics calculation", () => {
   const createMetricsEvent = (rows: BudgetMetricRow[], period = "30d") => {
     const from = createSupabaseFromMock(rows, null, 0);
 
-    return {
+    return asLoadEvent<Parameters<typeof load>[0]>({
       parent: async () => ({ actorId: "op-1" }),
       locals: { supabase: { from } },
       url: new URL(`http://localhost/dashboard?period=${period}`),
-    } as unknown as Parameters<typeof load>[0];
+    });
   };
 
   it("devuelve metricas en cero cuando no hay presupuestos", async () => {
@@ -539,11 +540,13 @@ describe("(app)/dashboard/+page.server metrics calculation", () => {
   it("devuelve error state cuando la query de supabase falla", async () => {
     const from = createSupabaseFromMock([], new Error("Network error"), 0);
 
-    const data = (await load({
-      parent: async () => ({ actorId: "op-1" }),
-      locals: { supabase: { from } },
-      url: new URL("http://localhost/dashboard?period=30d"),
-    } as unknown as Parameters<typeof load>[0])) as {
+    const data = (await load(
+      asLoadEvent<Parameters<typeof load>[0]>({
+        parent: async () => ({ actorId: "op-1" }),
+        locals: { supabase: { from } },
+        url: new URL("http://localhost/dashboard?period=30d"),
+      }),
+    )) as {
       state: string;
       message: { kind: string; title: string; detail: string };
       metrics: { sent: number; accepted: number; rejected: number };

@@ -32,7 +32,7 @@
   description="Actualizá los datos de la veterinaria seleccionada."
   action="?/update"
   method="POST"
-  form={form as any}
+  form={form}
   primaryLabel="Guardar cambios"
 >
   <div>

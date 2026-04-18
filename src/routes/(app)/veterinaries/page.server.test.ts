@@ -1,5 +1,6 @@
 import { describe, expect, it, vi } from "vitest";
 import { load } from "./+page.server";
+import { asLoadEvent } from "$lib/test-helpers/sveltekit-events";
 
 describe("(app)/veterinaries/+page.server load", () => {
   it("retorna success cuando Supabase devuelve veterinarias", async () => {
@@ -11,16 +12,18 @@ describe("(app)/veterinaries/+page.server load", () => {
       }),
     });
 
-    const data = (await load({
-      url: new URL("https://test.local/veterinaries"),
-      locals: {
-        supabase: {
-          from: vi.fn().mockReturnValue({
-            select: vi.fn().mockReturnValue({ order }),
-          }),
+    const data = (await load(
+      asLoadEvent<Parameters<typeof load>[0]>({
+        url: new URL("https://test.local/veterinaries"),
+        locals: {
+          supabase: {
+            from: vi.fn().mockReturnValue({
+              select: vi.fn().mockReturnValue({ order }),
+            }),
+          },
         },
-      },
-    } as unknown as Parameters<typeof load>[0])) as {
+      }),
+    )) as {
       tableState: string;
       veterinaries: ReadonlyArray<unknown>;
     };

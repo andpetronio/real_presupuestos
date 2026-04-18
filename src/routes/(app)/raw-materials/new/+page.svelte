@@ -35,7 +35,7 @@
   description="Completá los datos para dar de alta una materia prima."
   action="?/create"
   method="POST"
-  form={form as any}
+  form={form}
   primaryLabel="Crear materia prima"
 >
   <div class="grid gap-1">

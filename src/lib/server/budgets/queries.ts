@@ -7,6 +7,8 @@
 
 import type { SupabaseClient } from "@supabase/supabase-js";
 
+type BudgetOptionsSupabase = Pick<SupabaseClient, "from">;
+
 // ─── Types ───────────────────────────────────────────────────────────────────
 
 export type TutorOption = { id: string; fullName: string };
@@ -38,7 +40,7 @@ export type BudgetOptions = {
  * Runs 4 queries in parallel for best performance.
  */
 export async function loadBudgetOptions(
-  supabase: SupabaseClient,
+  supabase: BudgetOptionsSupabase,
 ): Promise<BudgetOptions> {
   const [tutorsResult, dogsResult, recipesResult, settingsResult] =
     await Promise.all([

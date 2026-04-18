@@ -29,7 +29,7 @@
   description="Completá los datos para dar de alta un tutor."
   action="?/create"
   method="POST"
-  form={form as any}
+  form={form}
   primaryLabel="Crear tutor"
 >
   <div>

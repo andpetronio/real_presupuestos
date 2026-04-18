@@ -22,21 +22,31 @@ export type EnhancedFormState =
       errors?: Record<string, string[]>;
     };
 
+export type LegacyActionFormState = {
+  operatorError?: string;
+  operatorSuccess?: string;
+  state?: "idle" | "error" | "success";
+  errors?: Record<string, string[]>;
+  message?: string;
+};
+
+export type FormShellFormState =
+  | EnhancedFormState
+  | LegacyActionFormState
+  | null
+  | undefined;
+
 /**
  * Check if a SvelteKit EnhancedFormState represents an error state
  */
-export const isFormError = (
-  form: EnhancedFormState | undefined | null,
-): boolean => {
+export const isFormError = (form: FormShellFormState): boolean => {
   return form?.state === "error";
 };
 
 /**
  * Check if a SvelteKit EnhancedFormState represents a success state
  */
-export const isFormSuccess = (
-  form: EnhancedFormState | undefined | null,
-): boolean => {
+export const isFormSuccess = (form: FormShellFormState): boolean => {
   return form?.state === "success";
 };
 

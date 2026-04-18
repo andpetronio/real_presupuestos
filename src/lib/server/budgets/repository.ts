@@ -13,6 +13,67 @@ export type BudgetEditingRow = {
   assignedDays: string;
 };
 
+export type BudgetEditingBudget = {
+  id: string;
+  tutor_id: string | null;
+  reference_month?: string | null;
+  reference_days?: number | null;
+  notes: string | null;
+  vacuum_bag_small_qty?: number;
+  vacuum_bag_large_qty?: number;
+  labels_qty?: number;
+  non_woven_bag_qty?: number;
+  labor_hours_qty?: number;
+  cooking_hours_qty?: number;
+  calcium_qty?: number;
+  kefir_qty?: number;
+};
+
+const toNullableString = (value: unknown): string | null =>
+  typeof value === "string" ? value : null;
+
+const toOptionalNumber = (value: unknown): number | undefined =>
+  typeof value === "number" && Number.isFinite(value) ? value : undefined;
+
+const toOptionalNullableString = (
+  value: unknown,
+): string | null | undefined => {
+  if (typeof value === "string") return value;
+  if (value === null) return null;
+  return undefined;
+};
+
+const toOptionalNullableNumber = (
+  value: unknown,
+): number | null | undefined => {
+  if (value === null) return null;
+  if (typeof value === "number" && Number.isFinite(value)) return value;
+  return undefined;
+};
+
+const toBudgetEditingBudget = (value: unknown): BudgetEditingBudget | null => {
+  if (!value || typeof value !== "object") return null;
+
+  const row = value as Record<string, unknown>;
+  if (typeof row.id !== "string") return null;
+
+  return {
+    id: row.id,
+    tutor_id: toNullableString(row.tutor_id),
+    reference_month: toOptionalNullableString(row.reference_month),
+    reference_days: toOptionalNullableNumber(row.reference_days),
+    notes: toNullableString(row.notes),
+    vacuum_bag_small_qty: toOptionalNumber(row.vacuum_bag_small_qty),
+    vacuum_bag_large_qty: toOptionalNumber(row.vacuum_bag_large_qty),
+    labels_qty: toOptionalNumber(row.labels_qty),
+    non_woven_bag_qty: toOptionalNumber(row.non_woven_bag_qty),
+    labor_hours_qty: toOptionalNumber(row.labor_hours_qty),
+    cooking_hours_qty: toOptionalNumber(row.cooking_hours_qty),
+    calcium_qty: toOptionalNumber(row.calcium_qty),
+    kefir_qty: toOptionalNumber(row.kefir_qty),
+  };
+};
+
 export const autoExpireSentBudgets = async (
   supabase: SupabaseClient,
 ): Promise<void> => {
@@ -54,7 +115,7 @@ export const loadEditingBudget = async (params: {
   supabase: SupabaseClient;
   editingBudgetId: string | null;
 }): Promise<{
-  editingBudget: unknown | null;
+  editingBudget: BudgetEditingBudget | null;
   editingRows: BudgetEditingRow[];
 }> => {
   const { supabase, editingBudgetId } = params;
@@ -87,7 +148,7 @@ export const loadEditingBudget = async (params: {
   }));
 
   return {
-    editingBudget: editingBudgetData ?? null,
+    editingBudget: toBudgetEditingBudget(editingBudgetData),
     editingRows,
   };
 };

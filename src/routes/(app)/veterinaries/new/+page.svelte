@@ -25,7 +25,7 @@
   description="Completá los datos para dar de alta una veterinaria."
   action="?/create"
   method="POST"
-  form={form as any}
+  form={form}
   primaryLabel="Crear veterinaria"
 >
   <div>

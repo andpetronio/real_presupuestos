@@ -1,5 +1,6 @@
 import { describe, expect, it, vi } from "vitest";
 import { POST } from "./+server";
+import { asActionEvent } from "$lib/test-helpers/sveltekit-events";
 
 type LogoutRequestInput = {
   pathname?: string;
@@ -18,7 +19,7 @@ const createEvent = ({
   if (formNext !== undefined) formData.set("next", formNext);
 
   return {
-    event: {
+    event: asActionEvent<Parameters<typeof POST>[0]>({
       request: {
         formData: async () => formData,
       },
@@ -30,7 +31,7 @@ const createEvent = ({
         },
       },
       url: new URL(`https://example.test${pathname}${search}`),
-    } as unknown as Parameters<typeof POST>[0],
+    }),
     signOut,
   };
 };

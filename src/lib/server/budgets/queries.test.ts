@@ -77,7 +77,7 @@ describe("loadBudgetOptions", () => {
   it("happy path: all 4 queries succeed → returns BudgetOptions with correct data", async () => {
     mockSupabase.from = createMockFrom();
 
-    const result = await loadBudgetOptions(mockSupabase as any);
+    const result = await loadBudgetOptions(mockSupabase);
 
     expect(result.tutorOptions).toHaveLength(2);
     expect(result.dogOptions).toHaveLength(2);
@@ -138,7 +138,7 @@ describe("loadBudgetOptions", () => {
       return {};
     });
 
-    const result = await loadBudgetOptions(mockSupabase as any);
+    const result = await loadBudgetOptions(mockSupabase);
 
     expect(result.tutorOptions).toEqual([]);
     expect(result.tutorOptions).toBeInstanceOf(Array);
@@ -188,7 +188,7 @@ describe("loadBudgetOptions", () => {
       return {};
     });
 
-    const result = await loadBudgetOptions(mockSupabase as any);
+    const result = await loadBudgetOptions(mockSupabase);
 
     expect(result.settings).toBeNull();
   });
@@ -249,7 +249,7 @@ describe("loadBudgetOptions", () => {
       return {};
     });
 
-    const result = await loadBudgetOptions(mockSupabase as any);
+    const result = await loadBudgetOptions(mockSupabase);
 
     // Tutor: full_name → fullName
     expect(result.tutorOptions[0].fullName).toBe("Ana García");
@@ -266,7 +266,7 @@ describe("loadBudgetOptions", () => {
   it("settings has all 8 cost fields", async () => {
     mockSupabase.from = createMockFrom();
 
-    const result = await loadBudgetOptions(mockSupabase as any);
+    const result = await loadBudgetOptions(mockSupabase);
 
     expect(result.settings).toEqual({
       vacuum_bag_small_unit_cost: 100,
