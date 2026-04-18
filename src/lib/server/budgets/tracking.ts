@@ -1,5 +1,7 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 
+type BudgetTrackingSupabase = Pick<SupabaseClient, "from">;
+
 export type PaymentMethod = "cash" | "transfer" | "mercadopago" | "other";
 
 export type PaymentRow = {
@@ -52,7 +54,7 @@ type BudgetWithRelations = {
 type BudgetsQueryResult = BudgetWithRelations[];
 
 export const getUnviewedAcceptedBudgetCount = async (
-  supabase: SupabaseClient,
+  supabase: BudgetTrackingSupabase,
 ): Promise<number> => {
   const { count, error } = await supabase
     .from("budgets")
@@ -65,7 +67,7 @@ export const getUnviewedAcceptedBudgetCount = async (
 };
 
 export const markBudgetViewed = async (params: {
-  supabase: SupabaseClient;
+  supabase: BudgetTrackingSupabase;
   budgetId: string;
 }): Promise<void> => {
   const { supabase, budgetId } = params;
@@ -162,6 +164,7 @@ export const getPaymentSummary = (
 };
 
 export type DeliveryAlertEntry = {
+  kind: "due_soon" | "overdue";
   budgetId: string;
   budgetReferenceMonth: string;
   dogId: string;
@@ -175,14 +178,16 @@ export type DeliveryAlertEntry = {
   pct: number;
   totalMealsForPortion: number;
   deliveredMeals: number;
+  missingMeals: number;
   remainingMeals: number;
+  daysOffset: number;
   daysUntil: number;
 };
 
 export type DeliveryAlert = DeliveryAlertEntry;
 
 export const getDeliveryAlerts = async (
-  supabase: SupabaseClient,
+  supabase: BudgetTrackingSupabase,
   alertThresholdDays: number = 5,
   filterBudgetId?: string,
 ): Promise<DeliveryAlert[]> => {
@@ -308,10 +313,12 @@ export const getDeliveryAlerts = async (
 
           if (!dayOfMonth || !pct) continue;
 
-          let daysUntil = dayOfMonth - todayOfMonth;
-          if (daysUntil < 0) daysUntil += 30;
+          const daysUntil = dayOfMonth - todayOfMonth;
+          const kind = daysUntil < 0 ? "overdue" : "due_soon";
 
-          if (daysUntil > alertThresholdDays) continue;
+          if (kind === "due_soon" && daysUntil > alertThresholdDays) {
+            continue;
+          }
 
           const totalMealsForPortion = Math.round(assignedDays * (pct / 100));
           const remainingMeals = Math.max(
@@ -322,6 +329,7 @@ export const getDeliveryAlerts = async (
           if (remainingMeals <= 0) continue;
 
           alerts.push({
+            kind,
             budgetId: budget.id,
             budgetReferenceMonth: budget.reference_month ?? "",
             dogId,
@@ -335,7 +343,9 @@ export const getDeliveryAlerts = async (
             pct,
             totalMealsForPortion,
             deliveredMeals,
+            missingMeals: remainingMeals,
             remainingMeals,
+            daysOffset: Math.abs(daysUntil),
             daysUntil,
           });
         }
@@ -343,5 +353,9 @@ export const getDeliveryAlerts = async (
     }
   }
 
-  return alerts.sort((a, b) => a.daysUntil - b.daysUntil);
+  return alerts.sort((a, b) => {
+    if (a.kind !== b.kind) return a.kind === "overdue" ? -1 : 1;
+    if (a.kind === "overdue") return b.daysOffset - a.daysOffset;
+    return a.daysOffset - b.daysOffset;
+  });
 };
