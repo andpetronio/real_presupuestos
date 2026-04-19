@@ -1,6 +1,9 @@
 <script lang="ts">
+  import { applyAction, enhance } from '$app/forms';
   import { Card, Button } from 'flowbite-svelte';
+  import ActiveStatusBadge from '$lib/components/admin/ActiveStatusBadge.svelte';
   import { route } from '$lib/shared/navigation';
+  import { closeBlockingLoader, confirmAlert, presentActionFeedback, showBlockingLoader } from '$lib/shared/alerts';
 
   type DogRow = {
     id: string;
@@ -17,6 +20,29 @@
   };
 
   let { dogs }: DogMobileCardsProps = $props();
+
+  const enhanceDelete = () => {
+    return async ({ cancel }: { cancel: () => void }) => {
+      const confirmed = await confirmAlert({
+        title: 'Desactivar perro',
+        text: 'El perro quedara inactivo para nuevos presupuestos.',
+        confirmButtonText: 'Si, desactivar'
+      });
+
+      if (!confirmed) {
+        cancel();
+        return;
+      }
+
+      void showBlockingLoader();
+
+      return async ({ result }: { result: import('@sveltejs/kit').ActionResult }) => {
+        await closeBlockingLoader();
+        await applyAction(result);
+        await presentActionFeedback(result);
+      };
+    };
+  };
 </script>
 
 <div class="space-y-3 md:hidden" aria-label="Lista de perros">
@@ -25,13 +51,7 @@
       <!-- Nombre + Estado -->
       <div class="mb-3 flex items-start justify-between gap-2">
         <p class="font-semibold text-gray-900">{dog.name}</p>
-        <span
-          class={dog.is_active
-            ? 'rounded bg-green-100 px-2 py-1 text-xs font-semibold text-green-700'
-            : 'rounded bg-gray-100 px-2 py-1 text-xs font-semibold text-gray-600'}
-        >
-          {dog.is_active ? 'Activo' : 'Inactivo'}
-        </span>
+        <ActiveStatusBadge isActive={dog.is_active} />
       </div>
 
       <!-- Tutor -->
@@ -80,13 +100,11 @@
           <form
             method="POST"
             action="?/delete"
-            onsubmit={(event) => {
-              if (!confirm('¿Desactivar este perro?')) event.preventDefault();
-            }}
+            use:enhance={enhanceDelete()}
           >
             <input type="hidden" name="dogId" value={dog.id} />
             <Button type="submit" size="xs" color="red" aria-label="Desactivar {dog.name}">
-              Eliminar
+              Desactivar
             </Button>
           </form>
         {/if}

@@ -1,7 +1,10 @@
 <script lang="ts">
+  import { applyAction, enhance } from '$app/forms';
+  import { invalidateAll } from '$app/navigation';
   import { Card, Button } from 'flowbite-svelte';
-  import StatusBadge from '$lib/components/admin/StatusBadge.svelte';
+  import ActiveStatusBadge from '$lib/components/admin/ActiveStatusBadge.svelte';
   import { route } from '$lib/shared/navigation';
+  import { closeBlockingLoader, confirmAlert, presentActionFeedback, showBlockingLoader } from '$lib/shared/alerts';
 
   type RecipeRow = {
     id: string;
@@ -17,6 +20,32 @@
   };
 
   let { recipes }: RecipeMobileCardsProps = $props();
+
+  const enhanceDelete = () => {
+    return async ({ cancel }: { cancel: () => void }) => {
+      const confirmed = await confirmAlert({
+        title: 'Desactivar receta',
+        text: 'La receta quedara inactiva para nuevos presupuestos.',
+        confirmButtonText: 'Si, desactivar'
+      });
+
+      if (!confirmed) {
+        cancel();
+        return;
+      }
+
+      void showBlockingLoader();
+
+      return async ({ result }: { result: import('@sveltejs/kit').ActionResult }) => {
+        await closeBlockingLoader();
+        await applyAction(result);
+        await presentActionFeedback(result);
+        if (result.type === 'success') {
+          await invalidateAll();
+        }
+      };
+    };
+  };
 </script>
 
 <div class="space-y-3 md:hidden" aria-label="Lista de recetas">
@@ -25,9 +54,10 @@
       <!-- Nombre + Estado -->
       <div class="mb-3 flex items-start justify-between gap-2">
         <p class="font-semibold text-gray-900">{recipe.name}</p>
-        <StatusBadge
-          status={recipe.is_active ? 'accepted' : 'rejected'}
-          label={recipe.is_active ? 'Activa' : 'Inactiva'}
+        <ActiveStatusBadge
+          isActive={recipe.is_active}
+          activeLabel="Activa"
+          inactiveLabel="Inactiva"
         />
       </div>
 
@@ -55,6 +85,14 @@
         >
           Editar
         </Button>
+        {#if recipe.is_active}
+          <form method="POST" action="?/delete" use:enhance={enhanceDelete()}>
+            <input type="hidden" name="recipeId" value={recipe.id} />
+            <Button type="submit" size="xs" color="red" aria-label="Desactivar {recipe.name}">
+              Desactivar
+            </Button>
+          </form>
+        {/if}
       </div>
     </Card>
   {/each}

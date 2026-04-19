@@ -69,3 +69,34 @@ export const load: PageServerLoad = async ({ locals, url }) => {
     };
   }
 };
+
+export const actions: Actions = {
+  delete: async ({ request, locals }) => {
+    const formData = await request.formData();
+    const recipeId = parseFormValue(formData.get('recipeId'));
+
+    if (!recipeId) {
+      return fail(400, {
+        actionType: 'delete',
+        operatorError: 'No encontramos la receta a desactivar.'
+      });
+    }
+
+    const { error } = await locals.supabase
+      .from('recipes')
+      .update({ is_active: false })
+      .eq('id', recipeId);
+
+    if (error) {
+      return fail(400, {
+        actionType: 'delete',
+        operatorError: 'No pudimos desactivar la receta. Reintenta en unos segundos.'
+      });
+    }
+
+    return {
+      actionType: 'delete',
+      operatorSuccess: 'Receta desactivada correctamente.'
+    };
+  }
+};

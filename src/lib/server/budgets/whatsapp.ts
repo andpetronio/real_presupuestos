@@ -301,7 +301,8 @@ export const sendBudgetWhatsapp = async (params: {
     userAgent,
   });
 
-  // 8. Guardar mensaje en draft
+// 8. Guardar mensaje en draft y marcar como enviado
+  const newSentAt = new Date().toISOString();
   const { error: updateError } = await supabase
     .from("budgets")
     .update({

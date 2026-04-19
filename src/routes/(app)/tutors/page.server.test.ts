@@ -19,6 +19,8 @@ describe("(app)/tutors/+page.server load", () => {
         error: null,
       }),
     });
+    const statusEq = vi.fn().mockReturnValue({ range });
+    const order = vi.fn().mockReturnValue({ range, eq: statusEq });
 
     const data = (await load(
       asLoadEvent<Parameters<typeof load>[0]>({
@@ -38,5 +40,106 @@ describe("(app)/tutors/+page.server load", () => {
 
     expect(data.tableState).toBe("success");
     expect(data.tutors).toHaveLength(1);
+  });
+
+  it('aplica filtro por estado activo', async () => {
+    const range = vi.fn().mockResolvedValue({ data: [], count: 0, error: null });
+    const statusEq = vi.fn().mockReturnValue({ range });
+    const order = vi.fn().mockReturnValue({ range, eq: statusEq });
+
+    await load({
+      url: new URL('https://test.local/tutors?status=active'),
+      locals: {
+        supabase: {
+          from: vi.fn().mockReturnValue({
+            select: vi.fn().mockReturnValue({ order })
+          })
+        }
+      }
+    } as unknown as Parameters<typeof load>[0]);
+
+    expect(statusEq).toHaveBeenCalledWith('is_active', true);
+  });
+});
+
+describe('(app)/tutors/+page.server actions', () => {
+  it('delete desactiva tutor y cascada perros/recetas', async () => {
+    const tutorEq = vi.fn().mockResolvedValue({ error: null });
+    const dogsSelectEq = vi.fn().mockResolvedValue({ data: [{ id: 'd-1' }, { id: 'd-2' }], error: null });
+    const dogsUpdateEq = vi.fn().mockResolvedValue({ error: null });
+    const recipesIn = vi.fn().mockResolvedValue({ error: null });
+
+    const from = vi.fn((table: string) => {
+      if (table === 'tutors') {
+        return { update: vi.fn().mockReturnValue({ eq: tutorEq }) };
+      }
+
+      if (table === 'dogs') {
+        return {
+          select: vi.fn().mockReturnValue({ eq: dogsSelectEq }),
+          update: vi.fn().mockReturnValue({ eq: dogsUpdateEq })
+        };
+      }
+
+      if (table === 'recipes') {
+        return { update: vi.fn().mockReturnValue({ in: recipesIn }) };
+      }
+
+      return {};
+    });
+
+    const formData = new FormData();
+    formData.set('tutorId', 't-1');
+
+    const result = (await actions.delete({
+      request: { formData: async () => formData },
+      locals: { supabase: { from } }
+    } as unknown as Parameters<(typeof actions)['delete']>[0])) as { operatorSuccess: string };
+
+    expect(tutorEq).toHaveBeenCalledWith('id', 't-1');
+    expect(dogsSelectEq).toHaveBeenCalledWith('tutor_id', 't-1');
+    expect(dogsUpdateEq).toHaveBeenCalledWith('tutor_id', 't-1');
+    expect(recipesIn).toHaveBeenCalledWith('dog_id', ['d-1', 'd-2']);
+    expect(result.operatorSuccess).toContain('Tutor desactivado correctamente');
+  });
+
+  it('restore reactiva tutor y cascada perros/recetas', async () => {
+    const tutorEq = vi.fn().mockResolvedValue({ error: null });
+    const dogsSelectEq = vi.fn().mockResolvedValue({ data: [{ id: 'd-1' }], error: null });
+    const dogsUpdateEq = vi.fn().mockResolvedValue({ error: null });
+    const recipesIn = vi.fn().mockResolvedValue({ error: null });
+
+    const from = vi.fn((table: string) => {
+      if (table === 'tutors') {
+        return { update: vi.fn().mockReturnValue({ eq: tutorEq }) };
+      }
+
+      if (table === 'dogs') {
+        return {
+          select: vi.fn().mockReturnValue({ eq: dogsSelectEq }),
+          update: vi.fn().mockReturnValue({ eq: dogsUpdateEq })
+        };
+      }
+
+      if (table === 'recipes') {
+        return { update: vi.fn().mockReturnValue({ in: recipesIn }) };
+      }
+
+      return {};
+    });
+
+    const formData = new FormData();
+    formData.set('tutorId', 't-1');
+
+    const result = (await actions.restore({
+      request: { formData: async () => formData },
+      locals: { supabase: { from } }
+    } as unknown as Parameters<(typeof actions)['restore']>[0])) as { operatorSuccess: string };
+
+    expect(tutorEq).toHaveBeenCalledWith('id', 't-1');
+    expect(dogsSelectEq).toHaveBeenCalledWith('tutor_id', 't-1');
+    expect(dogsUpdateEq).toHaveBeenCalledWith('tutor_id', 't-1');
+    expect(recipesIn).toHaveBeenCalledWith('dog_id', ['d-1']);
+    expect(result.operatorSuccess).toContain('Tutor restaurado correctamente');
   });
 });

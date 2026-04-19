@@ -36,6 +36,46 @@ type PublicBudgetMutationRpcRow = {
   rejection_reason?: string;
 };
 
+type BudgetDogRow = {
+  id: string;
+  dog_id: string;
+};
+
+type BudgetDogRecipeRow = {
+  budget_dog_id: string;
+  recipe_id: string;
+};
+
+type DogRow = {
+  id: string;
+  name: string;
+};
+
+type RecipeRow = {
+  id: string;
+  name: string;
+};
+
+type RecipeItemRow = {
+  recipe_id: string;
+  raw_material_id: string;
+};
+
+type RawMaterialRow = {
+  id: string;
+  name: string;
+};
+
+type DogRecipeRawMaterialsView = {
+  dogId: string;
+  dogName: string;
+  recipes: Array<{
+    recipeId: string;
+    recipeName: string;
+    rawMaterials: string[];
+  }>;
+};
+
 const fallbackError = {
   kind: "error" as const,
   title: "No pudimos cargar este presupuesto",

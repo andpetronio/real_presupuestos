@@ -47,6 +47,7 @@
     "@supabase/supabase-js": "^2.103.0",
     "apexcharts": "^3.54.1",
     "phosphor-svelte": "^3.1.0",
-    "svelte-apexcharts": "^1.0.2"
+    "svelte-apexcharts": "^1.0.2",
+    "sweetalert2": "^11.26.24"
   }
 }

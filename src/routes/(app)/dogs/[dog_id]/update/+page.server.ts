@@ -38,9 +38,24 @@ export const load: PageServerLoad = async ({ locals, params }) => {
     throw redirect(303, "/dogs");
   }
 
+  const activeTutors = tutorsResult.data ?? [];
+  let tutorOptions = activeTutors;
+
+  if (!activeTutors.some((tutor) => tutor.id === dogResult.data.tutor_id)) {
+    const { data: currentTutor } = await locals.supabase
+      .from('tutors')
+      .select('id, full_name')
+      .eq('id', dogResult.data.tutor_id)
+      .maybeSingle();
+
+    if (currentTutor) {
+      tutorOptions = [currentTutor, ...activeTutors];
+    }
+  }
+
   return {
     dog: dogResult.data,
-    tutorOptions: tutorsResult.data ?? [],
+    tutorOptions,
     veterinaryOptions: veterinaryResult.data ?? [],
     deliverySchedule: scheduleResult.data ?? [],
   };

@@ -3,6 +3,7 @@
 
   type TutorFilterBarProps = {
     currentSearch: string;
+    currentStatus: string;
   };
 
   let { currentSearch }: TutorFilterBarProps = $props();

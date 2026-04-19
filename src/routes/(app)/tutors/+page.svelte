@@ -11,6 +11,7 @@
     full_name: string;
     whatsapp_number: string;
     notes: string | null;
+    is_active: boolean;
     created_at: string;
   };
 
@@ -21,6 +22,7 @@
     pagination: { page: number; totalPages: number; total: number };
     filters: {
       search: string;
+      status: string;
     };
   };
 
@@ -43,6 +45,7 @@
     <div class="p-4">
       <TutorFilterBar
         currentSearch={data.filters.search}
+        currentStatus={data.filters.status}
       />
     </div>
 
@@ -63,6 +66,7 @@
         totalPages={data.pagination.totalPages}
         total={data.pagination.total}
         search={data.filters.search}
+        status={data.filters.status}
       />
     </div>
   </Card>

@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { applyAction, enhance } from '$app/forms';
   import {
     Alert,
     Button,
@@ -11,6 +12,7 @@
     Textarea
   } from 'flowbite-svelte';
   import type { SettingsFormValues, SettingsRow } from '$lib/server/settings/validation';
+  import { closeBlockingLoader, presentActionFeedback, showBlockingLoader } from '$lib/shared/alerts';
 
   type PageData = {
     formState: 'success' | 'error';
@@ -35,15 +37,23 @@
   const values = $derived<SettingsFormValues>(form?.values ?? data.settingsForm);
   type SettingsTab = 'operativos' | 'comercial' | 'whatsapp' | 'encuesta' | 'cobros';
   let activeTab = $state<SettingsTab>('operativos');
+
+  const enhanceWithFeedback = () => {
+    return async () => {
+      void showBlockingLoader();
+
+      return async ({ result }: { result: import('@sveltejs/kit').ActionResult }) => {
+        await closeBlockingLoader();
+        await applyAction(result);
+        await presentActionFeedback(result);
+      };
+    };
+  };
 </script>
 
 <div class="mb-4"><!-- título en el layout --></div>
 
-{#if form?.operatorError}
-  <Alert color="red" class="mb-4">{form.operatorError}</Alert>
-{:else if form?.operatorSuccess}
-  <Alert color="green" class="mb-4">{form.operatorSuccess}</Alert>
-{:else if data.formState === 'error'}
+{#if data.formState === 'error'}
   <Alert color="red" class="mb-4">{data.formMessage.detail ?? 'No pudimos cargar configuración.'}</Alert>
 {/if}
 
@@ -58,7 +68,7 @@
 {/if}
 
 <Card size="xl" class="w-full p-6 md:p-8 shadow-sm">
-  <form method="POST" action="?/update" class="space-y-6">
+  <form method="POST" action="?/update" class="space-y-6" use:enhance={enhanceWithFeedback()}>
     <input type="hidden" name="settingsSection" value={activeTab} />
 
     <Tabs bind:selected={activeTab} tabStyle="underline" classes={{ content: 'pt-6' }}>

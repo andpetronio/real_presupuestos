@@ -50,3 +50,22 @@ describe("(app)/recipes/+page.server load", () => {
     expect(data.recipes).toEqual([]);
   });
 });
+
+describe('(app)/recipes/+page.server actions.delete', () => {
+  it('hace soft delete de receta', async () => {
+    const eq = vi.fn().mockResolvedValue({ error: null });
+    const update = vi.fn().mockReturnValue({ eq });
+
+    const formData = new FormData();
+    formData.set('recipeId', 'r-1');
+
+    const result = (await actions.delete({
+      request: { formData: async () => formData },
+      locals: { supabase: { from: vi.fn().mockReturnValue({ update }) } }
+    } as unknown as Parameters<(typeof actions)['delete']>[0])) as { operatorSuccess: string };
+
+    expect(update).toHaveBeenCalledWith({ is_active: false });
+    expect(eq).toHaveBeenCalledWith('id', 'r-1');
+    expect(result.operatorSuccess).toBe('Receta desactivada correctamente.');
+  });
+});

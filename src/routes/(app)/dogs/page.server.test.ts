@@ -21,6 +21,8 @@ describe("(app)/dogs/+page.server load", () => {
         error: null,
       }),
     });
+    const statusEq = vi.fn().mockReturnValue({ range });
+    const dogsOrder = vi.fn().mockReturnValue({ range, eq: statusEq });
 
     const from = vi.fn((table: string) => {
       if (table === "dogs")

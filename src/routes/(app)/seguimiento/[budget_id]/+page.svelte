@@ -1,8 +1,9 @@
 <script lang="ts">
+  import { applyAction, enhance } from '$app/forms';
   import { Badge, Button, Card, Input, Label, Select, Textarea } from 'flowbite-svelte';
-  import FeedbackBanner from '$lib/components/FeedbackBanner.svelte';
   import { formatArs } from '$lib/shared/currency';
   import DeliveryAlertBanner from '$lib/components/delivery/DeliveryAlertBanner.svelte';
+  import { closeBlockingLoader, confirmAlert, presentActionFeedback, showBlockingLoader } from '$lib/shared/alerts';
 
   type RecipeTracking = {
     budgetDogRecipeId: string;
@@ -83,12 +84,7 @@
     deliveryAlerts: DeliveryAlert[];
   };
 
-  type ActionData = {
-    operatorError?: string;
-    operatorSuccess?: string;
-  };
-
-  let { data, form }: { data: PageData; form: ActionData | null } = $props();
+  let { data }: { data: PageData } = $props();
 
   const paymentMethodLabels: Record<string, string> = {
     cash: 'Efectivo',
@@ -105,13 +101,31 @@
   };
 
   const isClosed = $derived(data.budget.status === 'closed');
-</script>
 
-{#if form?.operatorError}
-  <FeedbackBanner message={form.operatorError} color="red" />
-{:else if form?.operatorSuccess}
-  <FeedbackBanner message={form.operatorSuccess} color="green" />
-{/if}
+  const enhanceWithFeedback = (confirmOptions?: {
+    title: string;
+    text: string;
+    confirmButtonText: string;
+  }) => {
+    return async ({ cancel }: { cancel: () => void }) => {
+      if (confirmOptions) {
+        const confirmed = await confirmAlert(confirmOptions);
+        if (!confirmed) {
+          cancel();
+          return;
+        }
+      }
+
+      void showBlockingLoader();
+
+      return async ({ result }: { result: import('@sveltejs/kit').ActionResult }) => {
+        await closeBlockingLoader();
+        await applyAction(result);
+        await presentActionFeedback(result);
+      };
+    };
+  };
+</script>
 
 <DeliveryAlertBanner alerts={data.deliveryAlerts} showLink={false} />
 
@@ -126,7 +140,7 @@
       {#if isClosed}
         <Badge color="gray">Cerrado</Badge>
       {:else}
-        <form method="POST" action="?/close">
+        <form method="POST" action="?/close" use:enhance={enhanceWithFeedback()}>
           <Button type="submit" color="secondary" size="xs">Cerrar presupuesto</Button>
         </form>
       {/if}
@@ -190,7 +204,7 @@
   {#if !isClosed}
   <Card size="xl" class="p-6 shadow-sm xl:col-span-4">
     <p class="text-sm font-semibold text-gray-900">Registrar cobro</p>
-    <form method="POST" action="?/addPayment" class="mt-3 space-y-3">
+    <form method="POST" action="?/addPayment" class="mt-3 space-y-3" use:enhance={enhanceWithFeedback()}>
       <div>
         <Label for="amount">Monto</Label>
         <Input id="amount" name="amount" type="number" min="0.01" step="0.01" required />
@@ -218,7 +232,7 @@
 
   <Card size="xl" class="p-6 shadow-sm xl:col-span-4">
     <p class="text-sm font-semibold text-gray-900">Registrar preparación</p>
-    <form method="POST" action="?/addPreparation" class="mt-3 space-y-3">
+    <form method="POST" action="?/addPreparation" class="mt-3 space-y-3" use:enhance={enhanceWithFeedback()}>
       <div>
         <Label for="preparationRecipe">Receta</Label>
         <Select id="preparationRecipe" name="budgetDogRecipeId" required>
@@ -245,7 +259,7 @@
 
   <Card size="xl" class="p-6 shadow-sm xl:col-span-4">
     <p class="text-sm font-semibold text-gray-900">Registrar entrega</p>
-    <form method="POST" action="?/addDelivery" class="mt-3 space-y-3">
+    <form method="POST" action="?/addDelivery" class="mt-3 space-y-3" use:enhance={enhanceWithFeedback()}>
       <div>
         <Label for="deliveryRecipe">Receta</Label>
         <Select id="deliveryRecipe" name="budgetDogRecipeId" required>
@@ -284,7 +298,15 @@
               <p class="text-xs text-gray-500">{formatDate(payment.paid_at)}{payment.notes ? ` · ${payment.notes}` : ''}</p>
             </div>
             {#if !isClosed}
-            <form method="POST" action="?/deletePayment" onsubmit={(event) => { if (!confirm('¿Eliminar este cobro?')) event.preventDefault(); }}>
+            <form
+              method="POST"
+              action="?/deletePayment"
+              use:enhance={enhanceWithFeedback({
+                title: 'Eliminar cobro',
+                text: 'Esta accion quitara el cobro registrado.',
+                confirmButtonText: 'Si, eliminar'
+              })}
+            >
               <input type="hidden" name="paymentId" value={payment.id} />
               <Button type="submit" size="xs" color="red">Eliminar</Button>
             </form>
@@ -307,7 +329,16 @@
             <p class="text-xs text-gray-500">{formatDate(preparation.prepared_at)}</p>
             {#if preparation.notes}<p class="text-gray-500">{preparation.notes}</p>{/if}
             {#if !isClosed}
-            <form method="POST" action="?/deletePreparation" class="mt-1" onsubmit={(event) => { if (!confirm('¿Eliminar esta preparación?')) event.preventDefault(); }}>
+            <form
+              method="POST"
+              action="?/deletePreparation"
+              class="mt-1"
+              use:enhance={enhanceWithFeedback({
+                title: 'Eliminar preparacion',
+                text: 'Esta accion eliminara el registro de preparacion.',
+                confirmButtonText: 'Si, eliminar'
+              })}
+            >
               <input type="hidden" name="preparationId" value={preparation.id} />
               <Button type="submit" size="xs" color="red">Eliminar</Button>
             </form>
@@ -330,7 +361,16 @@
             <p class="text-xs text-gray-500">{formatDate(delivery.delivered_at)}</p>
             {#if delivery.notes}<p class="text-gray-500">{delivery.notes}</p>{/if}
             {#if !isClosed}
-            <form method="POST" action="?/deleteDelivery" class="mt-1" onsubmit={(event) => { if (!confirm('¿Eliminar esta entrega?')) event.preventDefault(); }}>
+            <form
+              method="POST"
+              action="?/deleteDelivery"
+              class="mt-1"
+              use:enhance={enhanceWithFeedback({
+                title: 'Eliminar entrega',
+                text: 'Esta accion eliminara el registro de entrega.',
+                confirmButtonText: 'Si, eliminar'
+              })}
+            >
               <input type="hidden" name="deliveryId" value={delivery.id} />
               <Button type="submit" size="xs" color="red">Eliminar</Button>
             </form>

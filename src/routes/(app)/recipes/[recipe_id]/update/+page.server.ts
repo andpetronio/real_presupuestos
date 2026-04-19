@@ -67,7 +67,7 @@ export const load: PageServerLoad = async ({ locals, params }) => {
   return {
     recipe: recipeResult.data,
     recipeItems,
-    dogOptions: (dogsResult.data ?? []).map((dog) => ({
+    dogOptions: dogOptions.map((dog) => ({
       id: dog.id,
       name: dog.name,
       tutorName: readTutorName(dog.tutors),

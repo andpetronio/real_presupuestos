@@ -1,7 +1,10 @@
 <script lang="ts">
+  import { applyAction, enhance } from '$app/forms';
+  import { invalidateAll } from '$app/navigation';
   import { Button, Table, TableBody, TableBodyCell, TableBodyRow, TableHead, TableHeadCell } from 'flowbite-svelte';
-  import StatusBadge from '$lib/components/admin/StatusBadge.svelte';
+  import ActiveStatusBadge from '$lib/components/admin/ActiveStatusBadge.svelte';
   import { route } from '$lib/shared/navigation';
+  import { closeBlockingLoader, confirmAlert, presentActionFeedback, showBlockingLoader } from '$lib/shared/alerts';
 
   type RecipeRow = {
     id: string;
@@ -17,6 +20,32 @@
   };
 
   let { recipes }: RecipeTableProps = $props();
+
+  const enhanceDelete = () => {
+    return async ({ cancel }: { cancel: () => void }) => {
+      const confirmed = await confirmAlert({
+        title: 'Desactivar receta',
+        text: 'La receta quedara inactiva para nuevos presupuestos.',
+        confirmButtonText: 'Si, desactivar'
+      });
+
+      if (!confirmed) {
+        cancel();
+        return;
+      }
+
+      void showBlockingLoader();
+
+      return async ({ result }: { result: import('@sveltejs/kit').ActionResult }) => {
+        await closeBlockingLoader();
+        await applyAction(result);
+        await presentActionFeedback(result);
+        if (result.type === 'success') {
+          await invalidateAll();
+        }
+      };
+    };
+  };
 </script>
 
 <Table hoverable striped aria-label="Tabla de recetas">
@@ -34,13 +63,22 @@
         <TableBodyCell>{recipe.dog?.name ?? 'Sin perro'}</TableBodyCell>
         <TableBodyCell>{recipe.notes ?? '—'}</TableBodyCell>
         <TableBodyCell>
-          <StatusBadge
-            status={recipe.is_active ? 'accepted' : 'rejected'}
-            label={recipe.is_active ? 'Activa' : 'Inactiva'}
+          <ActiveStatusBadge
+            isActive={recipe.is_active}
+            activeLabel="Activa"
+            inactiveLabel="Inactiva"
           />
         </TableBodyCell>
         <TableBodyCell>
-          <Button href={route('/recipes/', recipe.id, '/update')} size="xs" color="light" aria-label="Editar {recipe.name}">Editar</Button>
+          <div class="flex items-center gap-2">
+            <Button href={route('/recipes/', recipe.id, '/update')} size="xs" color="light" aria-label="Editar {recipe.name}">Editar</Button>
+            {#if recipe.is_active}
+              <form method="POST" action="?/delete" use:enhance={enhanceDelete()}>
+                <input type="hidden" name="recipeId" value={recipe.id} />
+                <Button type="submit" size="xs" color="red" aria-label="Desactivar {recipe.name}">Desactivar</Button>
+              </form>
+            {/if}
+          </div>
         </TableBodyCell>
       </TableBodyRow>
     {/each}

@@ -1,6 +1,6 @@
 <script lang="ts">
   import { Button, Table, TableBody, TableBodyCell, TableBodyRow, TableHead, TableHeadCell } from 'flowbite-svelte';
-  import StatusBadge from '$lib/components/admin/StatusBadge.svelte';
+  import ActiveStatusBadge from '$lib/components/admin/ActiveStatusBadge.svelte';
   import { formatArs } from '$lib/shared/currency';
   import { route } from '$lib/shared/navigation';
 
@@ -47,9 +47,10 @@
         <TableBodyCell>{material.wastage_percentage.toFixed(2)}%</TableBodyCell>
         <TableBodyCell>{formatArs(material.cost_with_wastage)}</TableBodyCell>
         <TableBodyCell>
-          <StatusBadge
-            status={material.is_active ? 'accepted' : 'rejected'}
-            label={material.is_active ? 'Activa' : 'Inactiva'}
+          <ActiveStatusBadge
+            isActive={material.is_active}
+            activeLabel="Activa"
+            inactiveLabel="Inactiva"
           />
         </TableBodyCell>
         <TableBodyCell>

@@ -1,9 +1,8 @@
 <script lang="ts">
+  import { applyAction, enhance } from '$app/forms';
   import { Alert, Button, Card, Label, Textarea } from 'flowbite-svelte';
-  import FeedbackBanner from '$lib/components/FeedbackBanner.svelte';
-  import StatusBadge from '$lib/components/admin/StatusBadge.svelte';
-  import type { BudgetStatus } from '$lib/types/budget';
   import { formatArs } from '$lib/shared/currency';
+  import { closeBlockingLoader, presentActionFeedback, showBlockingLoader } from '$lib/shared/alerts';
 
   type BudgetResponseData = {
     id: string;
@@ -19,8 +18,19 @@
     canRespond: boolean;
   };
 
+  type RecipeMaterialsByDog = {
+    dogId: string;
+    dogName: string;
+    recipes: ReadonlyArray<{
+      recipeId: string;
+      recipeName: string;
+      rawMaterials: ReadonlyArray<string>;
+    }>;
+  };
+
   type PageData = {
     budget: BudgetResponseData | null;
+    recipeDetailsByDog: ReadonlyArray<RecipeMaterialsByDog>;
     pageState: 'success' | 'error';
     pageMessage: { kind: 'error'; title: string; detail: string } | null;
   };
@@ -41,9 +51,19 @@
     return date.toLocaleDateString('es-AR', { day: '2-digit', month: '2-digit', year: 'numeric' });
   };
 
-  const feedbackMessage = $derived(form?.operatorError ?? form?.operatorSuccess ?? '');
-  const feedbackColor = $derived(form?.operatorError ? 'red' : 'green');
   const rejectionDraft = $derived(form?.rejectionReason ?? '');
+
+  const enhanceWithFeedback = () => {
+    return async () => {
+      void showBlockingLoader();
+
+      return async ({ result }: { result: import('@sveltejs/kit').ActionResult }) => {
+        await closeBlockingLoader();
+        await applyAction(result);
+        await presentActionFeedback(result);
+      };
+    };
+  };
 </script>
 
 <svelte:head>
@@ -55,10 +75,6 @@
     <Card size="xl" class="w-full p-5 shadow-sm sm:p-6">
       <h1 class="mt-1 text-2xl font-bold text-gray-900 sm:text-3xl">Confirmá tu presupuesto</h1>
       <p class="mt-1 text-sm text-gray-600">Acá podés confirmar o descartar la propuesta.</p>
-
-      {#if feedbackMessage}
-        <FeedbackBanner message={feedbackMessage} color={feedbackColor} />
-      {/if}
 
       {#if data.pageState === 'error' || !data.budget}
         <Alert color="red" class="mt-4">
@@ -81,6 +97,43 @@
           </div>
         </div>
 
+        <div class="mt-4 space-y-3">
+          <p class="text-xs uppercase tracking-wide text-gray-500">Detalle del presupuesto</p>
+          {#if data.recipeDetailsByDog.length === 0}
+            <p class="text-sm text-gray-700">Este presupuesto no tiene recetas/materias primas para mostrar.</p>
+          {:else}
+            <div class="space-y-3">
+              {#each data.recipeDetailsByDog as dog (dog.dogId)}
+                <div class="rounded-lg border border-gray-200 bg-white p-3">
+                  <p class="text-sm font-semibold text-gray-900">{dog.dogName}</p>
+
+                  {#if dog.recipes.length === 0}
+                    <p class="mt-2 text-sm text-gray-600">Sin recetas asociadas.</p>
+                  {:else}
+                    <div class="mt-2 space-y-2">
+                      {#each dog.recipes as recipe (recipe.recipeId)}
+                        <div>
+                          <p class="text-sm font-medium text-gray-800">{recipe.recipeName}</p>
+
+                          {#if recipe.rawMaterials.length === 0}
+                            <p class="mt-1 text-sm text-gray-600">Sin materias primas registradas.</p>
+                          {:else}
+                            <ul class="mt-1 list-disc pl-5 text-sm text-gray-700">
+                              {#each recipe.rawMaterials as material (material)}
+                                <li>{material}</li>
+                              {/each}
+                            </ul>
+                          {/if}
+                        </div>
+                      {/each}
+                    </div>
+                  {/if}
+                </div>
+              {/each}
+            </div>
+          {/if}
+        </div>
+
         {#if data.budget.notes}
           <Card size="xl" class="mt-4 w-full border border-gray-200 bg-gray-50 p-4 shadow-none">
             <p class="text-xs uppercase tracking-wide text-gray-500">Notas del presupuesto</p>
@@ -100,7 +153,7 @@
             <Card size="xl" class="w-full p-4 shadow-sm">
               <p class="text-sm font-semibold text-gray-900">¿Te sirve la propuesta?</p>
               <p class="mt-1 text-sm text-gray-600">Si está todo bien, por favor aceptá y listo.</p>
-              <form method="POST" action="?/accept" class="mt-4">
+              <form method="POST" action="?/accept" class="mt-4" use:enhance={enhanceWithFeedback()}>
                 <Button type="submit" color="green" class="h-12 w-full text-base font-semibold">Aceptar</Button>
               </form>
             </Card>
@@ -108,7 +161,7 @@
             <Card size="xl" class="w-full p-4 shadow-sm">
               <p class="text-sm font-semibold text-gray-900">¿Querés rechazar?</p>
               <p class="mt-1 text-sm text-gray-600">Podés dejar un comentario opcional para mejorar la propuesta.</p>
-              <form method="POST" action="?/reject" class="mt-4 space-y-3">
+              <form method="POST" action="?/reject" class="mt-4 space-y-3" use:enhance={enhanceWithFeedback()}>
                 <div>
                   <Label for="rejectionReason">Motivo de rechazo (opcional)</Label>
                   <Textarea
