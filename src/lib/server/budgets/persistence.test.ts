@@ -1,6 +1,6 @@
 import { describe, it, expect, vi } from 'vitest';
 import type { SupabaseClient } from '@supabase/supabase-js';
-import { saveBudgetComposition, buildBudgetPayload, saveBudgetSnapshot, updateBudgetStatus, deleteBudget, getBudgetById } from './persistence';
+import { saveBudgetComposition, buildBudgetPayload, saveBudgetSnapshot, updateBudgetStatus, deleteBudget, getBudgetById, getBudgetExpiry } from './persistence';
 import type { ParsedCompositionRow } from './types';
 
 const makeMockSupabase = (overrides: Record<string, unknown> = {}) => {
@@ -298,6 +298,51 @@ describe('buildBudgetPayload', () => {
     expect(result.cooking_hours_qty).toBe(6);
     expect(result.calcium_qty).toBe(7);
     expect(result.kefir_qty).toBe(8);
+  });
+});
+
+// ─── getBudgetExpiry ────────────────────────────────────────────────────────
+
+describe('getBudgetExpiry', () => {
+  it('create usa settingsValidityDays para calcular expiracion', async () => {
+    vi.useFakeTimers();
+    vi.setSystemTime(new Date('2026-04-01T10:00:00.000Z'));
+
+    const result = await getBudgetExpiry({
+      action: 'create',
+      settingsValidityDays: 7,
+      values: {} as any,
+      supabase: makeMockSupabase()
+    });
+
+    vi.useRealTimers();
+
+    expect(result.ok).toBe(true);
+    if (result.ok) {
+      expect(result.expiresAt).toBe('2026-04-08T10:00:00.000Z');
+    }
+  });
+
+  it('update renueva expiracion fija a 10 dias desde la edicion', async () => {
+    vi.useFakeTimers();
+    vi.setSystemTime(new Date('2026-04-01T10:00:00.000Z'));
+
+    const fromSpy = vi.fn();
+    const result = await getBudgetExpiry({
+      action: 'update',
+      budgetId: 'b-1',
+      settingsValidityDays: 45,
+      values: {} as any,
+      supabase: { from: fromSpy } as unknown as SupabaseClient
+    });
+
+    vi.useRealTimers();
+
+    expect(result.ok).toBe(true);
+    if (result.ok) {
+      expect(result.expiresAt).toBe('2026-04-11T10:00:00.000Z');
+    }
+    expect(fromSpy).not.toHaveBeenCalled();
   });
 });
 

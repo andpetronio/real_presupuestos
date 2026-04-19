@@ -55,6 +55,15 @@ export const actions: Actions = {
       return result;
     }
 
+    const budgetId =
+      result && typeof result === 'object' && 'budgetId' in result && typeof result.budgetId === 'string'
+        ? result.budgetId
+        : null;
+
+    if (budgetId) {
+      throw redirect(303, `/budgets/${budgetId}/preview`);
+    }
+
     throw redirect(303, '/budgets');
   }
 };

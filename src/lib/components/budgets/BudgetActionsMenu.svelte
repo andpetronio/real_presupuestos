@@ -1,8 +1,10 @@
 <script lang="ts">
+  import { applyAction, enhance } from '$app/forms';
   import { Button, Dropdown, DropdownItem, DropdownDivider } from 'flowbite-svelte';
   import type { BudgetStatus } from '$lib/types/budget';
   import { route } from '$lib/shared/navigation';
   import { ArrowCounterClockwiseIcon, ChartLineIcon, CheckCircleIcon, EyeIcon, PencilSimpleIcon, TrashIcon, XCircleIcon } from 'phosphor-svelte';
+  import { closeBlockingLoader, confirmAlert, presentActionFeedback, showBlockingLoader } from '$lib/shared/alerts';
 
   type BudgetActionsMenuProps = {
     budget: {
@@ -19,19 +21,80 @@
   const previewPath = $derived(route('/budgets/', budget.id, '/preview'));
   const editPath = $derived(route('/budgets/', budget.id, '/update'));
   const seguimientoPath = $derived(route('/seguimiento/', budget.id));
+
+  const createEnhancedSubmit = (confirmOptions?: {
+    title: string;
+    text: string;
+    confirmButtonText: string;
+  }) => {
+    return async ({ cancel }: { cancel: () => void }) => {
+      if (confirmOptions) {
+        const confirmed = await confirmAlert(confirmOptions);
+        if (!confirmed) {
+          cancel();
+          return;
+        }
+      }
+
+      open = false;
+      void showBlockingLoader();
+
+      return async ({ result }: { result: import('@sveltejs/kit').ActionResult }) => {
+        await closeBlockingLoader();
+        await applyAction(result);
+        await presentActionFeedback(result);
+      };
+    };
+  };
 </script>
 
 <div class="relative inline-block">
-  <form id="accept-form-{budget.id}" method="POST" action="?/accept" class="hidden">
+  <form
+    id="accept-form-{budget.id}"
+    method="POST"
+    action="?/accept"
+    class="hidden"
+    use:enhance={createEnhancedSubmit()}
+  >
     <input type="hidden" name="budgetId" value={budget.id} />
   </form>
-  <form id="reject-form-{budget.id}" method="POST" action="?/reject" class="hidden">
+  <form
+    id="reject-form-{budget.id}"
+    method="POST"
+    action="?/reject"
+    class="hidden"
+    use:enhance={createEnhancedSubmit({
+      title: 'Rechazar presupuesto',
+      text: 'Esta accion lo marcara como rechazado.',
+      confirmButtonText: 'Si, rechazar'
+    })}
+  >
     <input type="hidden" name="budgetId" value={budget.id} />
   </form>
-  <form id="delete-form-{budget.id}" method="POST" action="?/delete" class="hidden">
+  <form
+    id="delete-form-{budget.id}"
+    method="POST"
+    action="?/delete"
+    class="hidden"
+    use:enhance={createEnhancedSubmit({
+      title: 'Eliminar borrador',
+      text: 'Esta accion eliminara el presupuesto definitivamente.',
+      confirmButtonText: 'Si, eliminar'
+    })}
+  >
     <input type="hidden" name="budgetId" value={budget.id} />
   </form>
-  <form id="undo-form-{budget.id}" method="POST" action="?/undoSent" class="hidden">
+  <form
+    id="undo-form-{budget.id}"
+    method="POST"
+    action="?/undoSent"
+    class="hidden"
+    use:enhance={createEnhancedSubmit({
+      title: 'Reabrir presupuesto',
+      text: 'El presupuesto volvera a estado borrador.',
+      confirmButtonText: 'Si, reabrir'
+    })}
+  >
     <input type="hidden" name="budgetId" value={budget.id} />
   </form>
 
@@ -77,9 +140,6 @@
         aClass="w-full cursor-pointer text-red-600 dark:text-red-500"
         type="submit"
         form="delete-form-{budget.id}"
-        onclick={() => {
-          if (!confirm('¿Eliminar este presupuesto?')) open = false;
-        }}
       >
         <div class="flex items-center gap-2">
           <TrashIcon size={16} />
@@ -104,9 +164,6 @@
         aClass="w-full cursor-pointer text-red-600 dark:text-red-500"
         type="submit"
         form="reject-form-{budget.id}"
-        onclick={() => {
-          if (!confirm('¿Rechazar este presupuesto?')) open = false;
-        }}
       >
         <div class="flex items-center gap-2">
           <XCircleIcon size={16} />
@@ -117,9 +174,6 @@
         aClass="w-full cursor-pointer"
         type="submit"
         form="undo-form-{budget.id}"
-        onclick={() => {
-          if (!confirm('¿Reabrir este presupuesto? Volverá a borrador.')) open = false;
-        }}
       >
         <div class="flex items-center gap-2">
           <ArrowCounterClockwiseIcon size={16} />

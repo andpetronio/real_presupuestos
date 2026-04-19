@@ -1,8 +1,8 @@
 <script lang="ts">
+  import { applyAction, enhance } from '$app/forms';
   import { browser } from '$app/environment';
   import { resolve } from '$app/paths';
   import {
-    Alert,
     Button,
     Card,
     Table,
@@ -17,8 +17,8 @@
   import type { BudgetStatus } from '$lib/types/budget';
   import { formatArs, formatQuantity } from '$lib/shared/currency';
   import type { UIState } from '$lib/server/shared/ui-state';
-
-import { route } from '$lib/shared/navigation';
+  import { route } from '$lib/shared/navigation';
+  import { closeBlockingLoader, presentActionFeedback, showBlockingLoader } from '$lib/shared/alerts';
   type RecipeItemDetail = {
     materialId: string;
     materialName: string;
@@ -111,6 +111,18 @@ import { route } from '$lib/shared/navigation';
 
   const canSendWhatsapp = $derived(data.budget?.status === 'draft' && !form?.waUrl);
 
+  const enhanceWithFeedback = () => {
+    return async () => {
+      void showBlockingLoader();
+
+      return async ({ result }: { result: import('@sveltejs/kit').ActionResult }) => {
+        await closeBlockingLoader();
+        await applyAction(result);
+        await presentActionFeedback(result);
+      };
+    };
+  };
+
   $effect(() => {
     const waUrl = form?.waUrl;
     if (!browser || !waUrl || waUrl === lastOpenedWaUrl) return;
@@ -135,11 +147,6 @@ import { route } from '$lib/shared/navigation';
     </div>
   </FormShell>
 {:else if data.budget}
-  {#if form?.error}
-    <div class="mb-4">
-      <Alert color="red">{form.error}</Alert>
-    </div>
-  {/if}
   <div class="grid grid-cols-1 gap-4 xl:grid-cols-12">
     <div class="space-y-4 xl:col-span-8">
       <Card size="xl" class="w-full p-6 shadow-sm">
@@ -156,7 +163,7 @@ import { route } from '$lib/shared/navigation';
           <div class="flex min-w-56 flex-col items-stretch gap-2">
             {#if canSendWhatsapp}
               <Button href={getEditPath()} color="light">Editar</Button>
-              <form method="POST" action="?/sendWhatsapp">
+              <form method="POST" action="?/sendWhatsapp" use:enhance={enhanceWithFeedback()}>
                 <Button type="submit" class="w-full">Enviar WhatsApp</Button>
               </form>
             {:else if form?.waUrl}

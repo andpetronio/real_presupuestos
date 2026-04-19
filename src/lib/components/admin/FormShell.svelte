@@ -1,8 +1,9 @@
 <script lang="ts">
   import { applyAction, enhance } from '$app/forms';
   import type { Snippet } from 'svelte';
-  import { Alert, Button, Card } from 'flowbite-svelte';
-  import { isFormError, isFormSuccess, type EnhancedFormState } from '$lib/components/admin/form-shell.model';
+  import { Button, Card } from 'flowbite-svelte';
+  import type { EnhancedFormState } from '$lib/components/admin/form-shell.model';
+  import { closeBlockingLoader, presentActionFeedback, showBlockingLoader } from '$lib/shared/alerts';
 
   type FormShellProps = {
     title: string;
@@ -30,26 +31,8 @@
     children,
     actions,
     loading = false,
-    state: explicitState
+    state: _explicitState
   }: FormShellProps = $props();
-
-  // Derived state from SvelteKit form
-  const hasError = $derived(isFormError(form) || explicitState === 'error');
-  const hasSuccess = $derived(isFormSuccess(form) || explicitState === 'success');
-  const legacyErrorMessage = $derived((form as { operatorError?: string } | null)?.operatorError);
-  const legacySuccessMessage = $derived((form as { operatorSuccess?: string } | null)?.operatorSuccess);
-  const hasLegacyError = $derived(Boolean(legacyErrorMessage));
-  const hasLegacySuccess = $derived(Boolean(legacySuccessMessage));
-  const errorMessage = $derived(
-    form?.state === 'error' ? form.message :
-    legacyErrorMessage ? legacyErrorMessage :
-    explicitState === 'error' && description ? description : undefined
-  );
-  const successMessage = $derived(
-    form?.state === 'success'
-      ? form.message
-      : legacySuccessMessage || 'Cambios guardados correctamente.'
-  );
 
   // Get all field errors as flat array for validation summary
   const fieldErrors = $derived(form?.state === 'error' && form.errors ? form.errors : {});
@@ -70,25 +53,16 @@
     {/if}
   </header>
 
-  {#if (hasError || hasLegacyError) && errorMessage}
-    <Alert color="red" role="status" aria-live="polite" class="mt-4">
-      {errorMessage}
-    </Alert>
-  {/if}
-
-  {#if hasSuccess || hasLegacySuccess}
-    <Alert color="green" role="status" aria-live="polite" class="mt-4">
-      {successMessage}
-    </Alert>
-  {/if}
-
   <form
     {action}
     {method}
     use:enhance={() => {
       handleSubmit();
+      void showBlockingLoader();
       return async ({ result }) => {
+        await closeBlockingLoader();
         await applyAction(result);
+        await presentActionFeedback(result);
         submitting = false;
       };
     }}

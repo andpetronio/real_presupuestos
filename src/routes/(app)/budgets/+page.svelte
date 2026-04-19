@@ -36,13 +36,7 @@
     tutors: ReadonlyArray<TutorOption>;
   };
 
-  type ActionData = {
-    actionType?: 'sendWhatsapp' | 'delete' | 'undoSent' | 'accept' | 'reject';
-    operatorError?: string;
-    operatorSuccess?: string;
-  };
-
-  let { data, form }: { data: PageData; form: ActionData | null } = $props();
+  let { data }: { data: PageData } = $props();
 
   const newBudgetPath = '/budgets/new';
 
@@ -53,17 +47,11 @@
     return date.toLocaleDateString('es-AR');
   };
 
-  const feedbackMessage = $derived(form?.operatorError ?? form?.operatorSuccess ?? '');
-  const feedbackColor = $derived(form?.operatorError ? 'red' : 'green');
 </script>
 
 <div class="mb-4 flex justify-end">
   <Button href={newBudgetPath} color="secondary">Nuevo presupuesto</Button>
 </div>
-
-{#if feedbackMessage}
-  <FeedbackBanner message={feedbackMessage} color={feedbackColor} />
-{/if}
 
 {#if data.tableState === 'error'}
   <FeedbackBanner message={data.tableMessage?.detail ?? 'No pudimos cargar presupuestos.'} color="red" />

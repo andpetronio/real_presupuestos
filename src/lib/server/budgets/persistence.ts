@@ -358,7 +358,7 @@ export type BudgetExpiryResult =
 
 /**
  * Fase 2: Calcula la fecha de vencimiento del presupuesto.
- * Para updates, mantiene la fecha de creación original.
+ * Para updates, renueva vencimiento a 10 días desde la edición.
  *
  * Llamado por: +page.server.ts saveBudget orchestrator
  */
@@ -369,27 +369,14 @@ export const getBudgetExpiry = async (params: {
   values: ActionValues;
   supabase: SupabaseClient;
 }): Promise<BudgetExpiryResult> => {
-  const { action, budgetId, settingsValidityDays, values, supabase } = params;
+  const { action, settingsValidityDays } = params;
 
-  let expiresAt = parseDefaultExpiration(settingsValidityDays);
-
-  // Para updates, mantener fecha de creación original
-  if (action === 'update' && budgetId) {
-    const { data: currentBudgetDate, error: currentBudgetDateError } = await supabase
-      .from('budgets')
-      .select('created_at')
-      .eq('id', budgetId)
-      .maybeSingle();
-
-    if (!currentBudgetDateError && currentBudgetDate?.created_at) {
-      const baseCreatedAt = new Date(currentBudgetDate.created_at);
-      if (!Number.isNaN(baseCreatedAt.getTime())) {
-        baseCreatedAt.setDate(baseCreatedAt.getDate() + settingsValidityDays);
-        expiresAt = baseCreatedAt.toISOString();
-      }
-    }
+  // Para updates, renovar siempre a 10 días desde la edición.
+  if (action === 'update') {
+    return { ok: true, expiresAt: parseDefaultExpiration(10) };
   }
 
+  const expiresAt = parseDefaultExpiration(settingsValidityDays);
   return { ok: true, expiresAt };
 };
 

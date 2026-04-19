@@ -103,6 +103,7 @@ const saveBudget = async (params: {
 
   return {
     actionType: action,
+    budgetId: persistence.budgetId,
     operatorSuccess: action === 'create' 
       ? 'Presupuesto borrador creado correctamente.' 
       : 'Borrador actualizado correctamente.',
@@ -181,28 +182,34 @@ export const load: PageServerLoad = async ({ locals, url }) => {
       const { data: editingBudgetData } = await locals.supabase
         .from('budgets')
         .select(
-          'id, status, tutor_id, reference_month, reference_days, notes, final_sale_price, total_cost, ingredient_total_global, operational_total_global, created_at, expires_at, tutor:tutors(full_name)'
+          'id, status, tutor_id, reference_month, reference_days, notes, final_sale_price, total_cost, ingredient_total_global, operational_total_global, vacuum_bag_small_qty, vacuum_bag_large_qty, labels_qty, non_woven_bag_qty, labor_hours_qty, cooking_hours_qty, calcium_qty, kefir_qty, created_at, expires_at, tutor:tutors(full_name)'
         )
         .eq('id', editingBudgetId)
         .single();
       editingBudget = editingBudgetData ?? null;
 
-      // Load editing rows
-      if (editingBudgetId) {
-        const { data: budgetDogRecipesData, error: budgetDogRecipesError } = await locals.supabase
-          .from('budget_dog_recipes')
-          .select('budget_dog_id, recipe_id, assigned_days, budget_dog:budget_dogs(dog_id)')
-          .eq('budget_dog.budget_id', editingBudgetId)
-          .order('created_at', { ascending: true });
+      const { data: budgetDogsData, error: budgetDogsError } = await locals.supabase
+        .from('budget_dogs')
+        .select('dog_id, budget_dog_recipes(recipe_id, assigned_days)')
+        .eq('budget_id', editingBudgetId)
+        .order('created_at', { ascending: true });
 
-        if (budgetDogRecipesError) throw budgetDogRecipesError;
+      if (budgetDogsError) throw budgetDogsError;
 
-        editingRows = (budgetDogRecipesData ?? []).map((row) => ({
-          dogId: (row.budget_dog as { dog_id?: string } | null)?.dog_id ?? '',
-          recipeId: row.recipe_id,
-          assignedDays: String(row.assigned_days)
-        }));
-      }
+      const typedBudgetDogs = (budgetDogsData ?? []) as Array<{
+        dog_id: string;
+        budget_dog_recipes: Array<{ recipe_id: string; assigned_days: number }> | null;
+      }>;
+
+      editingRows = typedBudgetDogs.flatMap((budgetDog) =>
+        (budgetDog.budget_dog_recipes ?? [])
+          .filter((recipeRow) => Boolean(budgetDog.dog_id && recipeRow.recipe_id))
+          .map((recipeRow) => ({
+            dogId: budgetDog.dog_id,
+            recipeId: recipeRow.recipe_id,
+            assignedDays: String(recipeRow.assigned_days)
+          }))
+      );
     }
 
     // Load tutors for filter dropdown
