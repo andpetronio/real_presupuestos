@@ -20,10 +20,42 @@ jobs:
       PUBLIC_SUPABASE_PUBLISHABLE_KEY: placeholder-key-for-ci
 
     steps:
+      - name: Debug
+        run: |
+          echo "=== DEBUG INFO ==="
+          echo "Runner OS: ${{ runner.os }}"
+          echo "GitHub Event: ${{ github.event_name }}"
+          echo "GitHub Ref: ${{ github.ref }}"
+          echo "===================="
+
       - name: Checkout
         uses: actions/checkout@v4
         with:
           fetch-depth: 0
+          persist-credentials: false
+
+      - name: Show commit
+        run: |
+          echo "=== COMMIT INFO ==="
+          echo "Current commit: $(git rev-parse HEAD)"
+          echo "Current branch: $(git branch --show-current)"
+          echo "Origin main: $(git rev-parse origin/main)"
+          echo "Last 3 commits:"
+          git log --oneline -3
+          echo "===================="
+
+      - name: Force fetch
+        run: |
+          git fetch --all --force
+          git checkout -B main origin/main || true
+
+      - name: Verify final state
+        run: |
+          echo "=== AFTER FETCH ==="
+          echo "Current commit: $(git rev-parse HEAD)"
+          echo "Last 3 commits:"
+          git log --oneline -3
+          echo "===================="
 
       - name: Setup Node.js
         uses: actions/setup-node@v4
