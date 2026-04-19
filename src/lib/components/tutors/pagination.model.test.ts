@@ -30,4 +30,3 @@ describe("hasActiveFilters", () => {
     expect(hasActiveFilters({ search: "", status: "all" })).toBe(false);
   });
 });
-

@@ -47,7 +47,9 @@ describe("(app)/tutors/+page.server load", () => {
   });
 
   it("aplica filtro status=active usando is_active=true", async () => {
-    const range = vi.fn().mockResolvedValue({ data: [], count: 0, error: null });
+    const range = vi
+      .fn()
+      .mockResolvedValue({ data: [], count: 0, error: null });
     const statusEq = vi.fn().mockReturnValue({ range });
     const order = vi.fn().mockReturnValue({ range, eq: statusEq });
 
@@ -68,7 +70,9 @@ describe("(app)/tutors/+page.server load", () => {
   });
 
   it("aplica filtro status=inactive usando is_active=false", async () => {
-    const range = vi.fn().mockResolvedValue({ data: [], count: 0, error: null });
+    const range = vi
+      .fn()
+      .mockResolvedValue({ data: [], count: 0, error: null });
     const statusEq = vi.fn().mockReturnValue({ range });
     const order = vi.fn().mockReturnValue({ range, eq: statusEq });
 
@@ -89,7 +93,9 @@ describe("(app)/tutors/+page.server load", () => {
   });
 
   it("no aplica filtro de estado cuando status=all", async () => {
-    const range = vi.fn().mockResolvedValue({ data: [], count: 0, error: null });
+    const range = vi
+      .fn()
+      .mockResolvedValue({ data: [], count: 0, error: null });
     const statusEq = vi.fn().mockReturnValue({ range });
     const order = vi.fn().mockReturnValue({ range, eq: statusEq });
 
