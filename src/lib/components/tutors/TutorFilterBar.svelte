@@ -6,10 +6,21 @@
     currentStatus: string;
   };
 
-  let { currentSearch }: TutorFilterBarProps = $props();
+  let { currentSearch, currentStatus }: TutorFilterBarProps = $props();
+
+  const statusOptions = [
+    { value: 'all', label: 'Todos' },
+    { value: 'active', label: 'Activos' },
+    { value: 'inactive', label: 'Inactivos' }
+  ] as const;
 </script>
 
 <GenericFilterBar
   searchPlaceholder="Nombre del tutor…"
   currentSearch={currentSearch}
+  filterLabel="Estado"
+  filterName="status"
+  filterOptions={statusOptions}
+  currentFilter={currentStatus}
+  showSubmitButton={true}
 />

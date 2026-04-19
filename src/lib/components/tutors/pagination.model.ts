@@ -12,6 +12,9 @@ export const buildPaginationHref = (
 ): string => {
   const params = new URLSearchParams();
   if (filters.search) params.set("q", filters.search);
+  if (filters.status && filters.status !== "all") {
+    params.set("status", filters.status);
+  }
   params.set("page", String(newPage));
   const queryString = params.toString();
   return `${baseUrl}?${queryString}`;

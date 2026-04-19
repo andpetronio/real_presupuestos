@@ -19,17 +19,21 @@ export const load: PageServerLoad = async ({ locals, url }) => {
   );
   const filters = {
     search: url.searchParams.get("q")?.trim() ?? "",
+    status: url.searchParams.get("status")?.trim() ?? "active",
   };
 
   try {
     let query = locals.supabase
       .from("tutors")
-      .select("id, full_name, whatsapp_number, notes, created_at", {
+      .select("id, full_name, whatsapp_number, notes, is_active, created_at", {
         count: "exact",
       })
       .order("created_at", { ascending: false });
 
-    query = applyListFilters(query, filters, { searchColumn: "full_name" });
+    query = applyListFilters(query, filters, {
+      searchColumn: "full_name",
+      hasStatusFilter: true,
+    });
 
     const { data, count, error } = await query.range(
       offset,
