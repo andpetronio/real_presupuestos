@@ -1,6 +1,9 @@
 import type { PageServerLoad, Actions } from "./$types";
 import { fail } from "@sveltejs/kit";
-import { parsePositiveInteger, parseFormValue } from "$lib/server/forms/parsers";
+import {
+  parsePositiveInteger,
+  parseFormValue,
+} from "$lib/server/forms/parsers";
 import {
   buildFallbackError,
   getTableState,
@@ -74,30 +77,31 @@ export const load: PageServerLoad = async ({ locals, url }) => {
 export const actions: Actions = {
   delete: async ({ request, locals }) => {
     const formData = await request.formData();
-    const recipeId = parseFormValue(formData.get('recipeId'));
+    const recipeId = parseFormValue(formData.get("recipeId"));
 
     if (!recipeId) {
       return fail(400, {
-        actionType: 'delete',
-        operatorError: 'No encontramos la receta a desactivar.'
+        actionType: "delete",
+        operatorError: "No encontramos la receta a desactivar.",
       });
     }
 
     const { error } = await locals.supabase
-      .from('recipes')
+      .from("recipes")
       .update({ is_active: false })
-      .eq('id', recipeId);
+      .eq("id", recipeId);
 
     if (error) {
       return fail(400, {
-        actionType: 'delete',
-        operatorError: 'No pudimos desactivar la receta. Reintenta en unos segundos.'
+        actionType: "delete",
+        operatorError:
+          "No pudimos desactivar la receta. Reintenta en unos segundos.",
       });
     }
 
     return {
-      actionType: 'delete',
-      operatorSuccess: 'Receta desactivada correctamente.'
+      actionType: "delete",
+      operatorSuccess: "Receta desactivada correctamente.",
     };
-  }
+  },
 };

@@ -64,11 +64,13 @@ export const load: PageServerLoad = async ({ locals, params }) => {
     };
   });
 
-  const dogOptions = (dogsResult.data ?? []).map((dog: { id: string; name: string; tutors: unknown }) => ({
+  const dogOptions = (dogsResult.data ?? []).map(
+    (dog: { id: string; name: string; tutors: unknown }) => ({
       id: dog.id,
       name: dog.name,
       tutorName: readTutorName(dog.tutors),
-    }));
+    }),
+  );
 
   return {
     recipe: recipeResult.data,

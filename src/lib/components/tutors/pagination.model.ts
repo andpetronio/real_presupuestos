@@ -20,6 +20,12 @@ export const buildPaginationHref = (
 /**
  * Determines if any filter is active.
  */
-export const hasActiveFilters = (filters: { search: string; status?: string }): boolean => {
-  return filters.search !== "" || (filters.status !== undefined && filters.status !== "all");
+export const hasActiveFilters = (filters: {
+  search: string;
+  status?: string;
+}): boolean => {
+  return (
+    filters.search !== "" ||
+    (filters.status !== undefined && filters.status !== "all")
+  );
 };

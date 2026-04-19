@@ -331,44 +331,44 @@ describe("buildBudgetPayload", () => {
 
 // ─── getBudgetExpiry ────────────────────────────────────────────────────────
 
-describe('getBudgetExpiry', () => {
-  it('create usa settingsValidityDays para calcular expiracion', async () => {
+describe("getBudgetExpiry", () => {
+  it("create usa settingsValidityDays para calcular expiracion", async () => {
     vi.useFakeTimers();
-    vi.setSystemTime(new Date('2026-04-01T10:00:00.000Z'));
+    vi.setSystemTime(new Date("2026-04-01T10:00:00.000Z"));
 
     const result = await getBudgetExpiry({
-      action: 'create',
+      action: "create",
       settingsValidityDays: 7,
       values: {} as any,
-      supabase: makeMockSupabase()
+      supabase: makeMockSupabase(),
     });
 
     vi.useRealTimers();
 
     expect(result.ok).toBe(true);
     if (result.ok) {
-      expect(result.expiresAt).toBe('2026-04-08T10:00:00.000Z');
+      expect(result.expiresAt).toBe("2026-04-08T10:00:00.000Z");
     }
   });
 
-  it('update renueva expiracion fija a 10 dias desde la edicion', async () => {
+  it("update renueva expiracion fija a 10 dias desde la edicion", async () => {
     vi.useFakeTimers();
-    vi.setSystemTime(new Date('2026-04-01T10:00:00.000Z'));
+    vi.setSystemTime(new Date("2026-04-01T10:00:00.000Z"));
 
     const fromSpy = vi.fn();
     const result = await getBudgetExpiry({
-      action: 'update',
-      budgetId: 'b-1',
+      action: "update",
+      budgetId: "b-1",
       settingsValidityDays: 45,
       values: {} as any,
-      supabase: { from: fromSpy } as unknown as SupabaseClient
+      supabase: { from: fromSpy } as unknown as SupabaseClient,
     });
 
     vi.useRealTimers();
 
     expect(result.ok).toBe(true);
     if (result.ok) {
-      expect(result.expiresAt).toBe('2026-04-11T10:00:00.000Z');
+      expect(result.expiresAt).toBe("2026-04-11T10:00:00.000Z");
     }
     expect(fromSpy).not.toHaveBeenCalled();
   });

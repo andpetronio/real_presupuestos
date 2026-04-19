@@ -69,13 +69,13 @@ describe("(app)/budgets/+page.server load", () => {
     expect(data.tutors).toEqual([]);
   });
 
-  it('carga filas de edicion desde budget_dogs y recetas anidadas', async () => {
+  it("carga filas de edicion desde budget_dogs y recetas anidadas", async () => {
     const from = vi.fn((table: string) => {
-      if (table === 'budgets') {
+      if (table === "budgets") {
         const baseBudget = {
-          id: 'b-1',
-          status: 'draft',
-          tutor_id: 't-1',
+          id: "b-1",
+          status: "draft",
+          tutor_id: "t-1",
           notes: null,
           vacuum_bag_small_qty: 1,
           vacuum_bag_large_qty: 2,
@@ -89,9 +89,9 @@ describe("(app)/budgets/+page.server load", () => {
           total_cost: 900,
           ingredient_total_global: 600,
           operational_total_global: 300,
-          created_at: '2026-01-01',
+          created_at: "2026-01-01",
           expires_at: null,
-          tutor: { full_name: 'Ana' }
+          tutor: { full_name: "Ana" },
         };
 
         return {
@@ -100,42 +100,44 @@ describe("(app)/budgets/+page.server load", () => {
               range: vi.fn().mockResolvedValue({
                 data: [baseBudget],
                 count: 1,
-                error: null
-              })
+                error: null,
+              }),
             })),
             eq: vi.fn().mockReturnValue({
-              single: vi.fn().mockResolvedValue({ data: baseBudget, error: null })
-            })
-          }))
+              single: vi
+                .fn()
+                .mockResolvedValue({ data: baseBudget, error: null }),
+            }),
+          })),
         };
       }
 
-      if (table === 'budget_dogs') {
+      if (table === "budget_dogs") {
         return {
           select: vi.fn().mockReturnValue({
             eq: vi.fn().mockReturnValue({
               order: vi.fn().mockResolvedValue({
                 data: [
                   {
-                    dog_id: 'd-1',
+                    dog_id: "d-1",
                     budget_dog_recipes: [
-                      { recipe_id: 'r-1', assigned_days: 5 },
-                      { recipe_id: 'r-2', assigned_days: 3 }
-                    ]
-                  }
+                      { recipe_id: "r-1", assigned_days: 5 },
+                      { recipe_id: "r-2", assigned_days: 3 },
+                    ],
+                  },
                 ],
-                error: null
-              })
-            })
-          })
+                error: null,
+              }),
+            }),
+          }),
         };
       }
 
-      if (table === 'tutors') {
+      if (table === "tutors") {
         return {
           select: vi.fn().mockReturnValue({
-            order: vi.fn().mockResolvedValue({ data: [], error: null })
-          })
+            order: vi.fn().mockResolvedValue({ data: [], error: null }),
+          }),
         };
       }
 
@@ -144,7 +146,7 @@ describe("(app)/budgets/+page.server load", () => {
 
     const data = (await load({
       locals: { supabase: { from } },
-      url: new URL('https://test.local/budgets?edit=b-1')
+      url: new URL("https://test.local/budgets?edit=b-1"),
     } as unknown as Parameters<typeof load>[0])) as {
       editingBudget: {
         vacuum_bag_small_qty?: number;
@@ -156,7 +158,11 @@ describe("(app)/budgets/+page.server load", () => {
         calcium_qty?: number;
         kefir_qty?: number;
       } | null;
-      editingRows: Array<{ dogId: string; recipeId: string; assignedDays: string }>;
+      editingRows: Array<{
+        dogId: string;
+        recipeId: string;
+        assignedDays: string;
+      }>;
     };
 
     expect(data.editingBudget).toMatchObject({
@@ -167,12 +173,12 @@ describe("(app)/budgets/+page.server load", () => {
       labor_hours_qty: 5,
       cooking_hours_qty: 6,
       calcium_qty: 7,
-      kefir_qty: 8
+      kefir_qty: 8,
     });
 
     expect(data.editingRows).toEqual([
-      { dogId: 'd-1', recipeId: 'r-1', assignedDays: '5' },
-      { dogId: 'd-1', recipeId: 'r-2', assignedDays: '3' }
+      { dogId: "d-1", recipeId: "r-1", assignedDays: "5" },
+      { dogId: "d-1", recipeId: "r-2", assignedDays: "3" },
     ]);
   });
 });
@@ -394,7 +400,11 @@ describe("(app)/budgets/+page.server actions.create", () => {
 
     const budgetUpdateEq = vi.fn().mockResolvedValue({ error: null });
     const budgetUpdateSecondEq = vi.fn().mockResolvedValue({ error: null });
-    const budgetUpdate = vi.fn().mockReturnValue({ eq: vi.fn().mockReturnValue({ eq: budgetUpdateSecondEq }) });
+    const budgetUpdate = vi
+      .fn()
+      .mockReturnValue({
+        eq: vi.fn().mockReturnValue({ eq: budgetUpdateSecondEq }),
+      });
 
     const from = vi.fn((table: string) => {
       if (table === "budgets") {

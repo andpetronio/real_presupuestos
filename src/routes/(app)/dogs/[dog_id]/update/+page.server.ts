@@ -43,9 +43,9 @@ export const load: PageServerLoad = async ({ locals, params }) => {
 
   if (!activeTutors.some((tutor) => tutor.id === dogResult.data.tutor_id)) {
     const { data: currentTutor } = await locals.supabase
-      .from('tutors')
-      .select('id, full_name')
-      .eq('id', dogResult.data.tutor_id)
+      .from("tutors")
+      .select("id, full_name")
+      .eq("id", dogResult.data.tutor_id)
       .maybeSingle();
 
     if (currentTutor) {
