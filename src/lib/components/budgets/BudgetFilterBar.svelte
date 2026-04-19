@@ -38,6 +38,11 @@
   ];
 
   let searchValue = $state('');
+  let filterForm: HTMLFormElement | undefined;
+
+  const submitFilters = () => {
+    filterForm?.requestSubmit();
+  };
 
   // Sync when parent URL params change (e.g., back navigation)
   $effect(() => {
@@ -59,7 +64,7 @@
   );
 </script>
 
-<form method="GET" class="mb-4 flex flex-wrap items-end gap-3">
+<form method="GET" class="mb-4 flex flex-wrap items-end gap-3" bind:this={filterForm} novalidate>
   <!-- Search -->
   <div class="min-w-48 flex-1">
     <Label for="budget-search" class="mb-1">Buscar tutor</Label>
@@ -67,6 +72,7 @@
       id="budget-search"
       name="q"
       placeholder="Nombre del tutor…"
+      required={false}
       bind:value={searchValue}
       oninput={handleSearchInput}
     />
@@ -79,6 +85,7 @@
       id="budget-status"
       name="status"
       value={currentStatus}
+      onchange={submitFilters}
     >
       {#each statusOptions as opt (opt.value)}
         <option value={opt.value}>{opt.label}</option>
@@ -94,6 +101,7 @@
         id="budget-tutor"
         name="tutor"
         value={currentTutorId ?? ''}
+        onchange={submitFilters}
       >
         <option value="">Todos los tutores</option>
         {#each tutors as tutor (tutor.id)}

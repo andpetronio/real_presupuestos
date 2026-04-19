@@ -25,6 +25,7 @@ export const load: PageServerLoad = async ({ locals, params }) => {
     locals.supabase
       .from('dogs')
       .select('id, tutor_id, name, tutors(full_name)')
+      .eq('is_active', true)
       .order('name', { ascending: true }),
     locals.supabase
       .from('raw_materials')
@@ -35,6 +36,21 @@ export const load: PageServerLoad = async ({ locals, params }) => {
 
   if (recipeResult.error || !recipeResult.data) {
     throw redirect(303, '/recipes');
+  }
+
+  const activeDogs = dogsResult.data ?? [];
+  let dogOptions = activeDogs;
+
+  if (!activeDogs.some((dog) => dog.id === recipeResult.data.dog_id)) {
+    const { data: currentDog } = await locals.supabase
+      .from('dogs')
+      .select('id, tutor_id, name, tutors(full_name)')
+      .eq('id', recipeResult.data.dog_id)
+      .maybeSingle();
+
+    if (currentDog) {
+      dogOptions = [currentDog, ...activeDogs];
+    }
   }
 
   const rawMaterialCosts = new Map((rawMaterialsResult.data ?? []).map((m) => [m.id, Number(m.derived_unit_cost)]));
@@ -52,7 +68,7 @@ export const load: PageServerLoad = async ({ locals, params }) => {
   return {
     recipe: recipeResult.data,
     recipeItems,
-    dogOptions: (dogsResult.data ?? []).map((dog) => ({
+    dogOptions: dogOptions.map((dog) => ({
       id: dog.id,
       name: dog.name,
       tutorName: ((dog.tutors as unknown) as { full_name: string } | null)?.full_name ?? ''

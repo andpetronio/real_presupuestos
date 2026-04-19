@@ -17,7 +17,7 @@
   const hasActiveFilters = $derived(currentSearch !== '');
 </script>
 
-<form method="GET" class="mb-4 flex flex-wrap items-end gap-3">
+<form method="GET" class="mb-4 flex flex-wrap items-end gap-3" novalidate>
   <!-- Search -->
   <div class="min-w-48 flex-1">
     <Label for="veterinary-search" class="mb-1">Buscar veterinaria</Label>
@@ -25,6 +25,7 @@
       id="veterinary-search"
       name="q"
       placeholder="Nombre de la veterinaria…"
+      required={false}
       bind:value={searchValue}
     />
   </div>

@@ -3,13 +3,13 @@ import { actions, load } from './+page.server';
 
 describe('(app)/dogs/+page.server load', () => {
   it('retorna listado de perros cuando query pasa', async () => {
-    const dogsOrder = vi.fn().mockReturnValue({
-      range: vi.fn().mockResolvedValue({
-        data: [{ id: 'd-1', name: 'Mora', diet_type: 'mixta', meals_per_day: 2, is_active: true, tutor: null, veterinary: null }],
-        count: 1,
-        error: null
-      })
+    const range = vi.fn().mockResolvedValue({
+      data: [{ id: 'd-1', name: 'Mora', diet_type: 'mixta', meals_per_day: 2, is_active: true, tutor: null, veterinary: null }],
+      count: 1,
+      error: null
     });
+    const statusEq = vi.fn().mockReturnValue({ range });
+    const dogsOrder = vi.fn().mockReturnValue({ range, eq: statusEq });
 
     const from = vi.fn((table: string) => {
       if (table === 'dogs') return { select: vi.fn().mockReturnValue({ order: dogsOrder }) };

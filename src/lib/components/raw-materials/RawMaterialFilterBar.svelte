@@ -9,6 +9,11 @@
   let { currentSearch, currentStatus }: RawMaterialFilterBarProps = $props();
 
   let searchValue = $state('');
+  let filterForm: HTMLFormElement | undefined;
+
+  const submitFilters = () => {
+    filterForm?.requestSubmit();
+  };
 
   // Sync when parent URL params change (e.g., back navigation)
   $effect(() => {
@@ -21,10 +26,10 @@
     { value: 'inactive', label: 'Inactivas' }
   ];
 
-  const hasActiveFilters = $derived(currentSearch !== '' || currentStatus !== 'all');
+  const hasActiveFilters = $derived(currentSearch !== '' || currentStatus !== 'active');
 </script>
 
-<form method="GET" class="mb-4 flex flex-wrap items-end gap-3">
+<form method="GET" class="mb-4 flex flex-wrap items-end gap-3" bind:this={filterForm} novalidate>
   <!-- Search -->
   <div class="min-w-48 flex-1">
     <Label for="raw-material-search" class="mb-1">Buscar materia prima</Label>
@@ -32,6 +37,7 @@
       id="raw-material-search"
       name="q"
       placeholder="Nombre de la materia prima…"
+      required={false}
       bind:value={searchValue}
     />
   </div>
@@ -43,6 +49,7 @@
       id="raw-material-status"
       name="status"
       value={currentStatus}
+      onchange={submitFilters}
     >
       {#each statusOptions as opt (opt.value)}
         <option value={opt.value}>{opt.label}</option>

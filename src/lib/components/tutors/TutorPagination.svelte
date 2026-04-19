@@ -7,13 +7,15 @@
     totalPages: number;
     total: number;
     search: string;
+    status: string;
   };
 
   let {
     page,
     totalPages,
     total,
-    search
+    search,
+    status
   }: TutorPaginationProps = $props();
 
   const hasPrev = $derived(page > 1);
@@ -29,7 +31,7 @@
     <div>
       {#if hasPrev}
         <Button
-          href={buildPaginationHref('/tutors', page - 1, { search })}
+          href={buildPaginationHref('/tutors', page - 1, { search, status })}
           size="sm"
           color="light"
           aria-label="Página anterior"
@@ -54,7 +56,7 @@
     <div>
       {#if hasNext}
         <Button
-          href={buildPaginationHref('/tutors', page + 1, { search })}
+          href={buildPaginationHref('/tutors', page + 1, { search, status })}
           size="sm"
           color="light"
           aria-label="Página siguiente"

@@ -137,11 +137,11 @@
         </div>
       </DropdownItem>
       <DropdownItem
-        aClass="w-full cursor-pointer text-red-600 dark:text-red-500"
+        aClass="w-full"
         type="submit"
         form="delete-form-{budget.id}"
       >
-        <div class="flex items-center gap-2">
+        <div class="flex items-center gap-2 cursor-pointer text-red-600 dark:text-red-500">
           <TrashIcon size={16} />
           Eliminar
         </div>

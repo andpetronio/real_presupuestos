@@ -13,7 +13,7 @@ export const load: PageServerLoad = async ({ locals, params }) => {
       .select('id, tutor_id, veterinary_id, name, diet_type, meals_per_day, notes')
       .eq('id', dogId)
       .single(),
-    locals.supabase.from('tutors').select('id, full_name').order('full_name', { ascending: true }),
+    locals.supabase.from('tutors').select('id, full_name').eq('is_active', true).order('full_name', { ascending: true }),
     locals.supabase.from('veterinaries').select('id, name').order('name', { ascending: true }),
     locals.supabase
       .from('dog_delivery_schedules')
@@ -26,9 +26,24 @@ export const load: PageServerLoad = async ({ locals, params }) => {
     throw redirect(303, '/dogs');
   }
 
+  const activeTutors = tutorsResult.data ?? [];
+  let tutorOptions = activeTutors;
+
+  if (!activeTutors.some((tutor) => tutor.id === dogResult.data.tutor_id)) {
+    const { data: currentTutor } = await locals.supabase
+      .from('tutors')
+      .select('id, full_name')
+      .eq('id', dogResult.data.tutor_id)
+      .maybeSingle();
+
+    if (currentTutor) {
+      tutorOptions = [currentTutor, ...activeTutors];
+    }
+  }
+
   return {
     dog: dogResult.data,
-    tutorOptions: tutorsResult.data ?? [],
+    tutorOptions,
     veterinaryOptions: veterinaryResult.data ?? [],
     deliverySchedule: scheduleResult.data ?? []
   };

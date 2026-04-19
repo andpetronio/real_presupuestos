@@ -13,6 +13,7 @@ export const load: PageServerLoad = async ({ locals }) => {
     locals.supabase
       .from('dogs')
       .select('id, tutor_id, name, tutors(full_name)')
+      .eq('is_active', true)
       .order('name', { ascending: true }),
     locals.supabase
       .from('raw_materials')

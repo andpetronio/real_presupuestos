@@ -15,12 +15,14 @@ describe('loadBudgetOptions', () => {
       if (table === 'tutors') {
         return {
           select: vi.fn().mockReturnValue({
-            order: vi.fn().mockResolvedValue({
-              data: [
-                { id: 't-1', full_name: 'Ana García' },
-                { id: 't-2', full_name: 'Juan Pérez' }
-              ],
-              error: null
+            eq: vi.fn().mockReturnValue({
+              order: vi.fn().mockResolvedValue({
+                data: [
+                  { id: 't-1', full_name: 'Ana García' },
+                  { id: 't-2', full_name: 'Juan Pérez' }
+                ],
+                error: null
+              })
             })
           })
         };
@@ -28,12 +30,14 @@ describe('loadBudgetOptions', () => {
       if (table === 'dogs') {
         return {
           select: vi.fn().mockReturnValue({
-            order: vi.fn().mockResolvedValue({
-              data: [
-                { id: 'd-1', tutor_id: 't-1', name: 'Mora' },
-                { id: 'd-2', tutor_id: 't-1', name: 'Luna' }
-              ],
-              error: null
+            eq: vi.fn().mockReturnValue({
+              order: vi.fn().mockResolvedValue({
+                data: [
+                  { id: 'd-1', tutor_id: 't-1', name: 'Mora' },
+                  { id: 'd-2', tutor_id: 't-1', name: 'Luna' }
+                ],
+                error: null
+              })
             })
           })
         };
@@ -41,9 +45,11 @@ describe('loadBudgetOptions', () => {
       if (table === 'recipes') {
         return {
           select: vi.fn().mockReturnValue({
-            order: vi.fn().mockResolvedValue({
-              data: [{ id: 'r-1', dog_id: 'd-1', name: 'Mix proteico' }],
-              error: null
+            eq: vi.fn().mockReturnValue({
+              order: vi.fn().mockResolvedValue({
+                data: [{ id: 'r-1', dog_id: 'd-1', name: 'Mix proteico' }],
+                error: null
+              })
             })
           })
         };
@@ -90,16 +96,20 @@ describe('loadBudgetOptions', () => {
       if (table === 'tutors') {
         return {
           select: vi.fn().mockReturnValue({
-            order: vi.fn().mockResolvedValue({ data: [], error: null })
+            eq: vi.fn().mockReturnValue({
+              order: vi.fn().mockResolvedValue({ data: [], error: null })
+            })
           })
         };
       }
       if (table === 'dogs') {
         return {
           select: vi.fn().mockReturnValue({
-            order: vi.fn().mockResolvedValue({
-              data: [{ id: 'd-1', tutor_id: 't-1', name: 'Mora' }],
-              error: null
+            eq: vi.fn().mockReturnValue({
+              order: vi.fn().mockResolvedValue({
+                data: [{ id: 'd-1', tutor_id: 't-1', name: 'Mora' }],
+                error: null
+              })
             })
           })
         };
@@ -107,9 +117,11 @@ describe('loadBudgetOptions', () => {
       if (table === 'recipes') {
         return {
           select: vi.fn().mockReturnValue({
-            order: vi.fn().mockResolvedValue({
-              data: [],
-              error: null
+            eq: vi.fn().mockReturnValue({
+              order: vi.fn().mockResolvedValue({
+                data: [],
+                error: null
+              })
             })
           })
         };
@@ -149,9 +161,11 @@ describe('loadBudgetOptions', () => {
       if (table === 'tutors') {
         return {
           select: vi.fn().mockReturnValue({
-            order: vi.fn().mockResolvedValue({
-              data: [{ id: 't-1', full_name: 'Ana García' }],
-              error: null
+            eq: vi.fn().mockReturnValue({
+              order: vi.fn().mockResolvedValue({
+                data: [{ id: 't-1', full_name: 'Ana García' }],
+                error: null
+              })
             })
           })
         };
@@ -159,9 +173,11 @@ describe('loadBudgetOptions', () => {
       if (table === 'dogs') {
         return {
           select: vi.fn().mockReturnValue({
-            order: vi.fn().mockResolvedValue({
-              data: [],
-              error: null
+            eq: vi.fn().mockReturnValue({
+              order: vi.fn().mockResolvedValue({
+                data: [],
+                error: null
+              })
             })
           })
         };
@@ -169,9 +185,11 @@ describe('loadBudgetOptions', () => {
       if (table === 'recipes') {
         return {
           select: vi.fn().mockReturnValue({
-            order: vi.fn().mockResolvedValue({
-              data: [],
-              error: null
+            eq: vi.fn().mockReturnValue({
+              order: vi.fn().mockResolvedValue({
+                data: [],
+                error: null
+              })
             })
           })
         };
@@ -198,9 +216,11 @@ describe('loadBudgetOptions', () => {
       if (table === 'tutors') {
         return {
           select: vi.fn().mockReturnValue({
-            order: vi.fn().mockResolvedValue({
-              data: [{ id: 't-1', full_name: 'Ana García' }],
-              error: null
+            eq: vi.fn().mockReturnValue({
+              order: vi.fn().mockResolvedValue({
+                data: [{ id: 't-1', full_name: 'Ana García' }],
+                error: null
+              })
             })
           })
         };
@@ -208,9 +228,11 @@ describe('loadBudgetOptions', () => {
       if (table === 'dogs') {
         return {
           select: vi.fn().mockReturnValue({
-            order: vi.fn().mockResolvedValue({
-              data: [{ id: 'd-1', tutor_id: 't-1', name: 'Mora' }],
-              error: null
+            eq: vi.fn().mockReturnValue({
+              order: vi.fn().mockResolvedValue({
+                data: [{ id: 'd-1', tutor_id: 't-1', name: 'Mora' }],
+                error: null
+              })
             })
           })
         };
@@ -218,9 +240,11 @@ describe('loadBudgetOptions', () => {
       if (table === 'recipes') {
         return {
           select: vi.fn().mockReturnValue({
-            order: vi.fn().mockResolvedValue({
-              data: [{ id: 'r-1', dog_id: 'd-1', name: 'Mix proteico' }],
-              error: null
+            eq: vi.fn().mockReturnValue({
+              order: vi.fn().mockResolvedValue({
+                data: [{ id: 'r-1', dog_id: 'd-1', name: 'Mix proteico' }],
+                error: null
+              })
             })
           })
         };

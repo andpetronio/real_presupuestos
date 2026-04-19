@@ -6,7 +6,7 @@ const DIET_TYPES = new Set(['mixta', 'cocida', 'barf']);
 
 export const load: PageServerLoad = async ({ locals }) => {
   const [tutorsResult, veterinaryResult] = await Promise.all([
-    locals.supabase.from('tutors').select('id, full_name').order('full_name', { ascending: true }),
+    locals.supabase.from('tutors').select('id, full_name').eq('is_active', true).order('full_name', { ascending: true }),
     locals.supabase.from('veterinaries').select('id, name').order('name', { ascending: true })
   ]);
 

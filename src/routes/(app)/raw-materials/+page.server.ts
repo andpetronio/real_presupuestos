@@ -16,7 +16,7 @@ export const load: PageServerLoad = async ({ locals, url }) => {
   const offset = (page - 1) * pageSize;
 
   const searchQuery = url.searchParams.get('q')?.trim() ?? '';
-  const statusParam = url.searchParams.get('status') ?? 'all';
+  const statusParam = url.searchParams.get('status') ?? 'active';
 
   try {
     let query = locals.supabase

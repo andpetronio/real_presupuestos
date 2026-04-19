@@ -1,6 +1,6 @@
 <script lang="ts">
   import { Card, Button } from 'flowbite-svelte';
-  import StatusBadge from '$lib/components/admin/StatusBadge.svelte';
+  import ActiveStatusBadge from '$lib/components/admin/ActiveStatusBadge.svelte';
   import { formatArs } from '$lib/shared/currency';
   import { route } from '$lib/shared/navigation';
 
@@ -32,9 +32,10 @@
       <!-- Nombre + Estado -->
       <div class="mb-3 flex items-start justify-between gap-2">
         <p class="font-semibold text-gray-900">{material.name}</p>
-        <StatusBadge
-          status={material.is_active ? 'accepted' : 'rejected'}
-          label={material.is_active ? 'Activa' : 'Inactiva'}
+        <ActiveStatusBadge
+          isActive={material.is_active}
+          activeLabel="Activa"
+          inactiveLabel="Inactiva"
         />
       </div>
 

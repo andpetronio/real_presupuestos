@@ -41,9 +41,9 @@ export async function loadBudgetOptions(
   supabase: SupabaseClient
 ): Promise<BudgetOptions> {
   const [tutorsResult, dogsResult, recipesResult, settingsResult] = await Promise.all([
-    supabase.from('tutors').select('id, full_name').order('full_name', { ascending: true }),
-    supabase.from('dogs').select('id, tutor_id, name').order('name', { ascending: true }),
-    supabase.from('recipes').select('id, dog_id, name').order('name', { ascending: true }),
+    supabase.from('tutors').select('id, full_name').eq('is_active', true).order('full_name', { ascending: true }),
+    supabase.from('dogs').select('id, tutor_id, name').eq('is_active', true).order('name', { ascending: true }),
+    supabase.from('recipes').select('id, dog_id, name').eq('is_active', true).order('name', { ascending: true }),
     supabase.from('settings').select('vacuum_bag_small_unit_cost, vacuum_bag_large_unit_cost, label_unit_cost, non_woven_bag_unit_cost, labor_hour_cost, cooking_hour_cost, calcium_unit_cost, kefir_unit_cost').eq('id', 1).single()
   ]);
 

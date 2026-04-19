@@ -24,6 +24,11 @@
   }: GenericFilterBarProps = $props();
 
   let searchValue = $state('');
+  let filterForm: HTMLFormElement | undefined;
+
+  const submitFilters = () => {
+    filterForm?.requestSubmit();
+  };
 
   // Sync when parent URL params change (e.g., back navigation)
   $effect(() => {
@@ -35,7 +40,7 @@
   );
 </script>
 
-<form method="GET" class="mb-4 flex flex-wrap items-end gap-3">
+<form method="GET" class="mb-4 flex flex-wrap items-end gap-3" bind:this={filterForm} novalidate>
   <!-- Search -->
   <div class="min-w-48 flex-1">
     <Label for="filter-search" class="mb-1">Buscar</Label>
@@ -43,6 +48,7 @@
       id="filter-search"
       name={searchName}
       placeholder={searchPlaceholder}
+      required={false}
       bind:value={searchValue}
     />
   </div>
@@ -51,7 +57,7 @@
   {#if filterOptions.length > 0}
     <div class="w-40">
       <Label for="filter-select" class="mb-1">{filterLabel}</Label>
-      <Select id="filter-select" name={filterName} value={currentFilter}>
+      <Select id="filter-select" name={filterName} value={currentFilter} onchange={submitFilters}>
         {#each filterOptions as option (option.value)}
           <option value={option.value}>{option.label}</option>
         {/each}

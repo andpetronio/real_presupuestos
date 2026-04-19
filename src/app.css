@@ -104,3 +104,13 @@ body {
 body {
   @apply bg-gray-50 text-gray-900 antialiased;
 }
+
+input[type='search'] {
+  color: var(--text-main);
+  -webkit-text-fill-color: var(--text-main);
+}
+
+input[type='search']::placeholder {
+  color: var(--text-subtle);
+  opacity: 1;
+}
