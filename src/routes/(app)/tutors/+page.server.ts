@@ -1,4 +1,6 @@
-import type { PageServerLoad } from "./$types";
+import type { PageServerLoad, Actions } from "./$types";
+import { fail } from "@sveltejs/kit";
+import { parseFormValue } from "$lib/server/forms/parsers";
 import {
   buildFallbackError,
   getTableState,
@@ -100,7 +102,7 @@ export const actions: Actions = {
       });
     }
 
-    const dogIds = (dogRows ?? []).map((dog) => dog.id);
+    const dogIds = (dogRows ?? []).map((dog: { id: string }) => dog.id);
 
     const { error: dogsUpdateError } = await locals.supabase
       .from('dogs')
@@ -169,7 +171,7 @@ export const actions: Actions = {
       });
     }
 
-    const dogIds = (dogRows ?? []).map((dog) => dog.id);
+    const dogIds = (dogRows ?? []).map((dog: { id: string }) => dog.id);
 
     const { error: dogsUpdateError } = await locals.supabase
       .from('dogs')

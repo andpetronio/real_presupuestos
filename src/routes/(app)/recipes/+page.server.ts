@@ -1,5 +1,6 @@
-import type { PageServerLoad } from "./$types";
-import { parsePositiveInteger } from "$lib/server/forms/parsers";
+import type { PageServerLoad, Actions } from "./$types";
+import { fail } from "@sveltejs/kit";
+import { parsePositiveInteger, parseFormValue } from "$lib/server/forms/parsers";
 import {
   buildFallbackError,
   getTableState,

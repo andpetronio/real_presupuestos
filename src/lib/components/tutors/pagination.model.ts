@@ -8,7 +8,7 @@
 export const buildPaginationHref = (
   baseUrl: string,
   newPage: number,
-  filters: { search: string },
+  filters: { search: string; status?: string },
 ): string => {
   const params = new URLSearchParams();
   if (filters.search) params.set("q", filters.search);
@@ -20,6 +20,6 @@ export const buildPaginationHref = (
 /**
  * Determines if any filter is active.
  */
-export const hasActiveFilters = (filters: { search: string }): boolean => {
-  return filters.search !== "";
+export const hasActiveFilters = (filters: { search: string; status?: string }): boolean => {
+  return filters.search !== "" || (filters.status !== undefined && filters.status !== "all");
 };

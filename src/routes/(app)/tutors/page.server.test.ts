@@ -1,23 +1,21 @@
 import { describe, expect, it, vi } from "vitest";
-import { load } from "./+page.server";
+import { load, actions } from "./+page.server";
 import { asLoadEvent } from "$lib/test-helpers/sveltekit-events";
 
 describe("(app)/tutors/+page.server load", () => {
   it("retorna success cuando Supabase devuelve tutores", async () => {
-    const order = vi.fn().mockReturnValue({
-      range: vi.fn().mockResolvedValue({
-        data: [
-          {
-            id: "t-1",
-            full_name: "Ana Tutor",
-            whatsapp_number: "+54911",
-            notes: null,
-            created_at: "2026-01-01",
-          },
-        ],
-        count: 1,
-        error: null,
-      }),
+    const range = vi.fn().mockResolvedValue({
+      data: [
+        {
+          id: "t-1",
+          full_name: "Ana Tutor",
+          whatsapp_number: "+54911",
+          notes: null,
+          created_at: "2026-01-01",
+        },
+      ],
+      count: 1,
+      error: null,
     });
     const statusEq = vi.fn().mockReturnValue({ range });
     const order = vi.fn().mockReturnValue({ range, eq: statusEq });

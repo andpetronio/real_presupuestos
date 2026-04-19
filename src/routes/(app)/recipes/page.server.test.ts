@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from "vitest";
-import { load } from "./+page.server";
+import { load, actions } from "./+page.server";
 import { asLoadEvent } from "$lib/test-helpers/sveltekit-events";
 
 describe("(app)/recipes/+page.server load", () => {
