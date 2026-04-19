@@ -356,7 +356,8 @@ describe('(app)/budgets/+page.server actions.create', () => {
     });
 
     const budgetUpdateEq = vi.fn().mockResolvedValue({ error: null });
-    const budgetUpdate = vi.fn().mockReturnValue({ eq: budgetUpdateEq });
+    const budgetUpdateSecondEq = vi.fn().mockResolvedValue({ error: null });
+    const budgetUpdate = vi.fn().mockReturnValue({ eq: vi.fn().mockReturnValue({ eq: budgetUpdateSecondEq }) });
 
     const from = vi.fn((table: string) => {
       if (table === 'budgets') {

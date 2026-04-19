@@ -163,7 +163,9 @@ const makeWhatsappSupabase = (overrides: {
         })
       }),
       update: vi.fn().mockReturnValue({
-        eq: vi.fn().mockReturnValue(overrides.budgetUpdateResult ?? { error: null })
+        eq: vi.fn().mockReturnValue({
+          eq: vi.fn().mockReturnValue(overrides.budgetUpdateResult ?? { error: null })
+        })
       })
     },
     tutors: {
@@ -228,10 +230,14 @@ describe('sendBudgetWhatsapp', () => {
       }
     });
 
-    it('preserva status draft del budget', async () => {
+    it('actualiza status a sent cuando budget está en draft', async () => {
       const supabase = makeWhatsappSupabase();
       const result = await sendBudgetWhatsapp({ budgetId: 'b-1', supabase, origin: 'https://example.com' });
-      // No modifica el status — solo guarda el mensaje draft
+
+      const updateCall = supabase.from('budgets').update;
+      expect(updateCall).toHaveBeenCalledWith(
+        expect.objectContaining({ status: 'sent', sent_at: expect.any(String) })
+      );
       expect(result).toMatchObject({ ok: true });
     });
 

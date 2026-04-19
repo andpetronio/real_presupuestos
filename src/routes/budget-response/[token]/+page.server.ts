@@ -15,6 +15,46 @@ type PublicBudgetRow = {
   tutor: { full_name: string } | Array<{ full_name: string }> | null;
 };
 
+type BudgetDogRow = {
+  id: string;
+  dog_id: string;
+};
+
+type BudgetDogRecipeRow = {
+  budget_dog_id: string;
+  recipe_id: string;
+};
+
+type DogRow = {
+  id: string;
+  name: string;
+};
+
+type RecipeRow = {
+  id: string;
+  name: string;
+};
+
+type RecipeItemRow = {
+  recipe_id: string;
+  raw_material_id: string;
+};
+
+type RawMaterialRow = {
+  id: string;
+  name: string;
+};
+
+type DogRecipeRawMaterialsView = {
+  dogId: string;
+  dogName: string;
+  recipes: Array<{
+    recipeId: string;
+    recipeName: string;
+    rawMaterials: string[];
+  }>;
+};
+
 const fallbackError = {
   kind: 'error' as const,
   title: 'No pudimos cargar este presupuesto',
@@ -39,6 +79,78 @@ const extractTutorName = (relation: PublicBudgetRow['tutor']): string => {
   return relation.full_name;
 };
 
+const safeName = (value: string | null | undefined, fallback: string): string => {
+  const normalized = typeof value === 'string' ? value.trim() : '';
+  return normalized || fallback;
+};
+
+const toUniqueStringArray = (values: string[]): string[] =>
+  Array.from(new Set(values.map((value) => value.trim()).filter(Boolean))).sort((a, b) =>
+    a.localeCompare(b, 'es-AR')
+  );
+
+const buildRecipeDetailsByDog = ({
+  budgetDogs,
+  budgetDogRecipes,
+  dogNameById,
+  recipeNameById,
+  recipeItemRows,
+  rawMaterialNameById
+}: {
+  budgetDogs: BudgetDogRow[];
+  budgetDogRecipes: BudgetDogRecipeRow[];
+  dogNameById: Map<string, string>;
+  recipeNameById: Map<string, string>;
+  recipeItemRows: RecipeItemRow[];
+  rawMaterialNameById: Map<string, string>;
+}): DogRecipeRawMaterialsView[] => {
+  const dogIdByBudgetDogId = new Map(budgetDogs.map((row) => [row.id, row.dog_id]));
+
+  const rawMaterialsByRecipeId = new Map<string, string[]>();
+  for (const row of recipeItemRows) {
+    const recipeId = row.recipe_id;
+    if (!recipeId) continue;
+    const materialName = rawMaterialNameById.get(row.raw_material_id) ?? '';
+    if (!materialName.trim()) continue;
+
+    const existing = rawMaterialsByRecipeId.get(recipeId) ?? [];
+    existing.push(materialName);
+    rawMaterialsByRecipeId.set(recipeId, existing);
+  }
+
+  const recipesByDogId = new Map<string, Map<string, string[]>>();
+
+  for (const row of budgetDogRecipes) {
+    const dogId = dogIdByBudgetDogId.get(row.budget_dog_id);
+    const recipeId = row.recipe_id;
+    if (!dogId || !recipeId) continue;
+
+    const materialsForRecipe = rawMaterialsByRecipeId.get(recipeId) ?? [];
+    const recipesMap = recipesByDogId.get(dogId) ?? new Map<string, string[]>();
+    const mergedMaterials = [...(recipesMap.get(recipeId) ?? []), ...materialsForRecipe];
+    recipesMap.set(recipeId, toUniqueStringArray(mergedMaterials));
+    recipesByDogId.set(dogId, recipesMap);
+  }
+
+  const view: DogRecipeRawMaterialsView[] = Array.from(recipesByDogId.entries()).map(([dogId, recipesMap]) => {
+    const recipes = Array.from(recipesMap.entries())
+      .map(([recipeId, rawMaterials]) => ({
+        recipeId,
+        recipeName: safeName(recipeNameById.get(recipeId), 'Receta'),
+        rawMaterials: toUniqueStringArray(rawMaterials)
+      }))
+      .sort((a, b) => a.recipeName.localeCompare(b.recipeName, 'es-AR') || a.recipeId.localeCompare(b.recipeId));
+
+    return {
+      dogId,
+      dogName: safeName(dogNameById.get(dogId), 'Perro'),
+      recipes
+    };
+  });
+
+  return view.sort((a, b) => a.dogName.localeCompare(b.dogName, 'es-AR') || a.dogId.localeCompare(b.dogId));
+};
+
 const readBudgetByToken = async (locals: App.Locals, token: string): Promise<PublicBudgetRow | null> => {
   const result = await locals.supabase
     .from('budgets')
@@ -48,6 +160,70 @@ const readBudgetByToken = async (locals: App.Locals, token: string): Promise<Pub
 
   if (result.error) throw result.error;
   return (result.data ?? null) as PublicBudgetRow | null;
+};
+
+const readRecipeDetailsByBudgetId = async (locals: App.Locals, budgetId: string): Promise<DogRecipeRawMaterialsView[]> => {
+  const budgetDogsResult = await locals.supabase.from('budget_dogs').select('id, dog_id').eq('budget_id', budgetId);
+  if (budgetDogsResult.error) throw budgetDogsResult.error;
+
+  const budgetDogs = (budgetDogsResult.data ?? []) as BudgetDogRow[];
+  if (budgetDogs.length === 0) return [];
+
+  const budgetDogIds = budgetDogs.map((row) => row.id);
+  const budgetDogRecipesResult = await locals.supabase
+    .from('budget_dog_recipes')
+    .select('budget_dog_id, recipe_id')
+    .in('budget_dog_id', budgetDogIds);
+  if (budgetDogRecipesResult.error) throw budgetDogRecipesResult.error;
+
+  const budgetDogRecipes = (budgetDogRecipesResult.data ?? []) as BudgetDogRecipeRow[];
+  if (budgetDogRecipes.length === 0) return [];
+
+  const dogIds = Array.from(new Set(budgetDogs.map((row) => row.dog_id).filter(Boolean)));
+  const recipeIds = Array.from(new Set(budgetDogRecipes.map((row) => row.recipe_id).filter(Boolean)));
+
+  const [dogsResult, recipesResult, recipeItemsResult] = await Promise.all([
+    dogIds.length > 0
+      ? locals.supabase.from('dogs').select('id, name').in('id', dogIds)
+      : Promise.resolve({ data: [], error: null }),
+    recipeIds.length > 0
+      ? locals.supabase.from('recipes').select('id, name').in('id', recipeIds)
+      : Promise.resolve({ data: [], error: null }),
+    recipeIds.length > 0
+      ? locals.supabase.from('recipe_items').select('recipe_id, raw_material_id').in('recipe_id', recipeIds)
+      : Promise.resolve({ data: [], error: null })
+  ]);
+
+  if (dogsResult.error) throw dogsResult.error;
+  if (recipesResult.error) throw recipesResult.error;
+  if (recipeItemsResult.error) throw recipeItemsResult.error;
+
+  const recipeItemRows = (recipeItemsResult.data ?? []) as RecipeItemRow[];
+  const rawMaterialIds = Array.from(new Set(recipeItemRows.map((row) => row.raw_material_id).filter(Boolean)));
+
+  const rawMaterialsResult =
+    rawMaterialIds.length > 0
+      ? await locals.supabase.from('raw_materials').select('id, name').in('id', rawMaterialIds)
+      : { data: [], error: null };
+
+  if (rawMaterialsResult.error) throw rawMaterialsResult.error;
+
+  const dogRows = (dogsResult.data ?? []) as DogRow[];
+  const recipeRows = (recipesResult.data ?? []) as RecipeRow[];
+  const rawMaterialRows = (rawMaterialsResult.data ?? []) as RawMaterialRow[];
+
+  const dogNameById = new Map(dogRows.map((row) => [row.id, row.name]));
+  const recipeNameById = new Map(recipeRows.map((row) => [row.id, row.name]));
+  const rawMaterialNameById = new Map(rawMaterialRows.map((row) => [row.id, row.name]));
+
+  return buildRecipeDetailsByDog({
+    budgetDogs,
+    budgetDogRecipes,
+    dogNameById,
+    recipeNameById,
+    recipeItemRows,
+    rawMaterialNameById
+  });
 };
 
 const expireBudgetIfNeeded = async (locals: App.Locals, budget: PublicBudgetRow): Promise<PublicBudgetRow> => {
@@ -98,6 +274,7 @@ export const load: PageServerLoad = async ({ params, locals }) => {
     if (!token) {
       return {
         budget: null,
+        recipeDetailsByDog: [],
         pageState: 'error' as const,
         pageMessage: {
           kind: 'error' as const,
@@ -111,6 +288,7 @@ export const load: PageServerLoad = async ({ params, locals }) => {
     if (!budget) {
       return {
         budget: null,
+        recipeDetailsByDog: [],
         pageState: 'error' as const,
         pageMessage: {
           kind: 'error' as const,
@@ -121,15 +299,18 @@ export const load: PageServerLoad = async ({ params, locals }) => {
     }
 
     const resolvedBudget = await expireBudgetIfNeeded(locals, budget);
+    const recipeDetailsByDog = await readRecipeDetailsByBudgetId(locals, resolvedBudget.id);
 
     return {
       budget: mapPublicView(resolvedBudget),
+      recipeDetailsByDog,
       pageState: 'success' as const,
       pageMessage: null
     };
   } catch {
     return {
       budget: null,
+      recipeDetailsByDog: [],
       pageState: 'error' as const,
       pageMessage: fallbackError
     };

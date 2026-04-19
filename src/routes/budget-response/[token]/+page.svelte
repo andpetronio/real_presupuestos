@@ -18,8 +18,19 @@
     canRespond: boolean;
   };
 
+  type RecipeMaterialsByDog = {
+    dogId: string;
+    dogName: string;
+    recipes: ReadonlyArray<{
+      recipeId: string;
+      recipeName: string;
+      rawMaterials: ReadonlyArray<string>;
+    }>;
+  };
+
   type PageData = {
     budget: BudgetResponseData | null;
+    recipeDetailsByDog: ReadonlyArray<RecipeMaterialsByDog>;
     pageState: 'success' | 'error';
     pageMessage: { kind: 'error'; title: string; detail: string } | null;
   };
@@ -84,6 +95,43 @@
             <p class="text-xs uppercase tracking-wide text-gray-500">Vencimiento</p>
             <p class="mt-1 text-lg font-semibold text-gray-900">{formatDate(data.budget.expiresAt)}</p>
           </div>
+        </div>
+
+        <div class="mt-4 space-y-3">
+          <p class="text-xs uppercase tracking-wide text-gray-500">Detalle del presupuesto</p>
+          {#if data.recipeDetailsByDog.length === 0}
+            <p class="text-sm text-gray-700">Este presupuesto no tiene recetas/materias primas para mostrar.</p>
+          {:else}
+            <div class="space-y-3">
+              {#each data.recipeDetailsByDog as dog (dog.dogId)}
+                <div class="rounded-lg border border-gray-200 bg-white p-3">
+                  <p class="text-sm font-semibold text-gray-900">{dog.dogName}</p>
+
+                  {#if dog.recipes.length === 0}
+                    <p class="mt-2 text-sm text-gray-600">Sin recetas asociadas.</p>
+                  {:else}
+                    <div class="mt-2 space-y-2">
+                      {#each dog.recipes as recipe (recipe.recipeId)}
+                        <div>
+                          <p class="text-sm font-medium text-gray-800">{recipe.recipeName}</p>
+
+                          {#if recipe.rawMaterials.length === 0}
+                            <p class="mt-1 text-sm text-gray-600">Sin materias primas registradas.</p>
+                          {:else}
+                            <ul class="mt-1 list-disc pl-5 text-sm text-gray-700">
+                              {#each recipe.rawMaterials as material (material)}
+                                <li>{material}</li>
+                              {/each}
+                            </ul>
+                          {/if}
+                        </div>
+                      {/each}
+                    </div>
+                  {/if}
+                </div>
+              {/each}
+            </div>
+          {/if}
         </div>
 
         {#if data.budget.notes}

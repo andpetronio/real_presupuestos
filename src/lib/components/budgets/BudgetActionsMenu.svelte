@@ -1,9 +1,11 @@
 <script lang="ts">
   import { applyAction, enhance } from '$app/forms';
+  import { browser } from '$app/environment';
+  import { invalidateAll } from '$app/navigation';
   import { Button, Dropdown, DropdownItem, DropdownDivider } from 'flowbite-svelte';
   import type { BudgetStatus } from '$lib/types/budget';
   import { route } from '$lib/shared/navigation';
-  import { ArrowCounterClockwiseIcon, ChartLineIcon, CheckCircleIcon, EyeIcon, PencilSimpleIcon, TrashIcon, XCircleIcon } from 'phosphor-svelte';
+  import { ArrowCounterClockwiseIcon, ChartLineIcon, CheckCircleIcon, EyeIcon, PencilSimpleIcon, TrashIcon, WhatsappLogoIcon, XCircleIcon } from 'phosphor-svelte';
   import { closeBlockingLoader, confirmAlert, presentActionFeedback, showBlockingLoader } from '$lib/shared/alerts';
 
   type BudgetActionsMenuProps = {
@@ -21,15 +23,31 @@
   const previewPath = $derived(route('/budgets/', budget.id, '/preview'));
   const editPath = $derived(route('/budgets/', budget.id, '/update'));
   const seguimientoPath = $derived(route('/seguimiento/', budget.id));
+  const acceptFormId = $derived(`accept-form-${budget.id}`);
+  const rejectFormId = $derived(`reject-form-${budget.id}`);
+  const deleteFormId = $derived(`delete-form-${budget.id}`);
+  const undoFormId = $derived(`undo-form-${budget.id}`);
+  const sendWhatsappFormId = $derived(`send-whatsapp-form-${budget.id}`);
 
-  const createEnhancedSubmit = (confirmOptions?: {
+  const submitFormById = (formId: string) => () => {
+    const form = document.getElementById(formId);
+    if (!(form instanceof HTMLFormElement)) return;
+    form.requestSubmit();
+  };
+
+  const createEnhancedSubmit = (options?: {
     title: string;
     text: string;
     confirmButtonText: string;
+    openRedirectInNamedTab?: string;
   }) => {
     return async ({ cancel }: { cancel: () => void }) => {
-      if (confirmOptions) {
-        const confirmed = await confirmAlert(confirmOptions);
+      if (options?.title && options?.text) {
+        const confirmed = await confirmAlert({
+          title: options.title,
+          text: options.text,
+          confirmButtonText: options.confirmButtonText
+        });
         if (!confirmed) {
           cancel();
           return;
@@ -41,7 +59,15 @@
 
       return async ({ result }: { result: import('@sveltejs/kit').ActionResult }) => {
         await closeBlockingLoader();
+        if (result.type === 'redirect' && options?.openRedirectInNamedTab && browser) {
+          window.open(result.location, options.openRedirectInNamedTab);
+          await invalidateAll();
+          return;
+        }
         await applyAction(result);
+        if (result.type === 'success') {
+          await invalidateAll();
+        }
         await presentActionFeedback(result);
       };
     };
@@ -50,7 +76,7 @@
 
 <div class="relative inline-block">
   <form
-    id="accept-form-{budget.id}"
+    id={acceptFormId}
     method="POST"
     action="?/accept"
     class="hidden"
@@ -59,7 +85,7 @@
     <input type="hidden" name="budgetId" value={budget.id} />
   </form>
   <form
-    id="reject-form-{budget.id}"
+    id={rejectFormId}
     method="POST"
     action="?/reject"
     class="hidden"
@@ -72,7 +98,7 @@
     <input type="hidden" name="budgetId" value={budget.id} />
   </form>
   <form
-    id="delete-form-{budget.id}"
+    id={deleteFormId}
     method="POST"
     action="?/delete"
     class="hidden"
@@ -85,7 +111,7 @@
     <input type="hidden" name="budgetId" value={budget.id} />
   </form>
   <form
-    id="undo-form-{budget.id}"
+    id={undoFormId}
     method="POST"
     action="?/undoSent"
     class="hidden"
@@ -93,6 +119,20 @@
       title: 'Reabrir presupuesto',
       text: 'El presupuesto volvera a estado borrador.',
       confirmButtonText: 'Si, reabrir'
+    })}
+  >
+    <input type="hidden" name="budgetId" value={budget.id} />
+  </form>
+  <form
+    id={sendWhatsappFormId}
+    method="POST"
+    action="?/sendWhatsapp"
+    class="hidden"
+    use:enhance={createEnhancedSubmit({
+      title: 'Enviar por WhatsApp',
+      text: 'Se abrirá WhatsApp en una pestaña nueva.',
+      confirmButtonText: 'Abrir WhatsApp',
+      openRedirectInNamedTab: 'whatsapp_compose'
     })}
   >
     <input type="hidden" name="budgetId" value={budget.id} />
@@ -136,12 +176,22 @@
           Editar
         </div>
       </DropdownItem>
+      {#if budget.status === 'draft'}
+        <DropdownItem
+          aClass="w-full cursor-pointer text-green-600 dark:text-green-500"
+          onclick={submitFormById(sendWhatsappFormId)}
+        >
+          <div class="flex items-center gap-2">
+            <WhatsappLogoIcon size={16} />
+            Enviar por WP
+          </div>
+        </DropdownItem>
+      {/if}
       <DropdownItem
-        aClass="w-full"
-        type="submit"
-        form="delete-form-{budget.id}"
+        aClass="w-full cursor-pointer text-red-600 dark:text-red-500"
+        onclick={submitFormById(deleteFormId)}
       >
-        <div class="flex items-center gap-2 cursor-pointer text-red-600 dark:text-red-500">
+        <div class="flex items-center gap-2">
           <TrashIcon size={16} />
           Eliminar
         </div>
@@ -152,8 +202,7 @@
       <DropdownDivider />
       <DropdownItem
         aClass="w-full cursor-pointer text-green-600 dark:text-green-500"
-        type="submit"
-        form="accept-form-{budget.id}"
+        onclick={submitFormById(acceptFormId)}
       >
         <div class="flex items-center gap-2">
           <CheckCircleIcon size={16} />
@@ -162,8 +211,7 @@
       </DropdownItem>
       <DropdownItem
         aClass="w-full cursor-pointer text-red-600 dark:text-red-500"
-        type="submit"
-        form="reject-form-{budget.id}"
+        onclick={submitFormById(rejectFormId)}
       >
         <div class="flex items-center gap-2">
           <XCircleIcon size={16} />
@@ -172,8 +220,7 @@
       </DropdownItem>
       <DropdownItem
         aClass="w-full cursor-pointer"
-        type="submit"
-        form="undo-form-{budget.id}"
+        onclick={submitFormById(undoFormId)}
       >
         <div class="flex items-center gap-2">
           <ArrowCounterClockwiseIcon size={16} />

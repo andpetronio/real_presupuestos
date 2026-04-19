@@ -251,14 +251,18 @@ export const sendBudgetWhatsapp = async (params: {
     userAgent
   });
 
-  // 8. Guardar mensaje en draft
+// 8. Guardar mensaje en draft y marcar como enviado
+  const newSentAt = new Date().toISOString();
   const { error: updateError } = await supabase
     .from('budgets')
     .update({
       whatsapp_message_draft: rendered,
-      whatsapp_message_sent: null
+      whatsapp_message_sent: null,
+      status: 'sent',
+      sent_at: newSentAt
     })
-      .eq('id', budgetTyped.id);
+    .eq('id', budgetTyped.id)
+    .eq('status', 'draft');
 
   if (updateError) {
     return { ok: false, message: 'No pudimos preparar el mensaje para WhatsApp. Reintentá en unos segundos.' };
