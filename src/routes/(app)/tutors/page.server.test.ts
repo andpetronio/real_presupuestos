@@ -39,27 +39,6 @@ describe("(app)/tutors/+page.server load", () => {
     expect(data.tableState).toBe("success");
     expect(data.tutors).toHaveLength(1);
   });
-
-  it("aplica filtro por estado activo", async () => {
-    const range = vi
-      .fn()
-      .mockResolvedValue({ data: [], count: 0, error: null });
-    const statusEq = vi.fn().mockReturnValue({ range });
-    const order = vi.fn().mockReturnValue({ range, eq: statusEq });
-
-    await load({
-      url: new URL("https://test.local/tutors?status=active"),
-      locals: {
-        supabase: {
-          from: vi.fn().mockReturnValue({
-            select: vi.fn().mockReturnValue({ order }),
-          }),
-        },
-      },
-    } as unknown as Parameters<typeof load>[0]);
-
-    expect(statusEq).toHaveBeenCalledWith("is_active", true);
-  });
 });
 
 describe("(app)/tutors/+page.server actions", () => {

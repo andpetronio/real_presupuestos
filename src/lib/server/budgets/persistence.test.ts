@@ -351,11 +351,18 @@ describe("getBudgetExpiry", () => {
     }
   });
 
-  it("update renueva expiracion fija a 10 dias desde la edicion", async () => {
+  it("update renueva expiracion fixa a settingsValidityDays desde la creacion", async () => {
     vi.useFakeTimers();
     vi.setSystemTime(new Date("2026-04-01T10:00:00.000Z"));
 
-    const fromSpy = vi.fn();
+    const maybeSingle = vi.fn().mockResolvedValue({
+      data: { created_at: "2026-04-01T10:00:00.000Z" },
+      error: null,
+    });
+    const eq = vi.fn().mockReturnValue({ maybeSingle });
+    const select = vi.fn().mockReturnValue({ eq });
+    const fromSpy = vi.fn().mockReturnValue({ select });
+
     const result = await getBudgetExpiry({
       action: "update",
       budgetId: "b-1",
@@ -368,9 +375,9 @@ describe("getBudgetExpiry", () => {
 
     expect(result.ok).toBe(true);
     if (result.ok) {
-      expect(result.expiresAt).toBe("2026-04-11T10:00:00.000Z");
+      expect(result.expiresAt).toBe("2026-05-16T10:00:00.000Z");
     }
-    expect(fromSpy).not.toHaveBeenCalled();
+    expect(fromSpy).toHaveBeenCalledWith("budgets");
   });
 });
 

@@ -112,22 +112,28 @@ describe("(app)/budgets/+page.server load", () => {
         };
       }
 
-      if (table === "budget_dogs") {
+      const budgetDogRecipesResult = {
+        data: [
+          {
+            budget_dog_id: "bd-1",
+            recipe_id: "r-1",
+            assigned_days: 5,
+            budget_dog: { dog_id: "d-1" },
+          },
+          {
+            budget_dog_id: "bd-1",
+            recipe_id: "r-2",
+            assigned_days: 3,
+            budget_dog: { dog_id: "d-1" },
+          },
+        ],
+        error: null,
+      };
+      if (table === "budget_dogs" || table === "budget_dog_recipes") {
         return {
           select: vi.fn().mockReturnValue({
             eq: vi.fn().mockReturnValue({
-              order: vi.fn().mockResolvedValue({
-                data: [
-                  {
-                    dog_id: "d-1",
-                    budget_dog_recipes: [
-                      { recipe_id: "r-1", assigned_days: 5 },
-                      { recipe_id: "r-2", assigned_days: 3 },
-                    ],
-                  },
-                ],
-                error: null,
-              }),
+              order: vi.fn().mockResolvedValue(budgetDogRecipesResult),
             }),
           }),
         };
