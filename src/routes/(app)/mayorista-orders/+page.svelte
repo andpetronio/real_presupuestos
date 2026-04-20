@@ -24,7 +24,6 @@
 
 <div class="space-y-4">
   <div>
-    <h1 class="text-2xl font-semibold text-gray-900">Pedidos mayoristas</h1>
     <p class="text-sm text-gray-600">
       Seguimiento operativo de pedidos, entregas y cobros del marketplace.
     </p>
