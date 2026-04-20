@@ -125,6 +125,8 @@
     nonactive:
       'flex items-center group-has-[ul]:ms-6 p-2 text-base font-normal rounded-sm text-white hover:bg-white/10 hover:text-white'
   };
+
+  const wholesalersSectionStartKey: AdminModule = 'wholesalers-dashboard';
 </script>
 
 <div class="flex h-screen flex-col bg-base-100">
@@ -152,11 +154,14 @@
         breakpoint="sm"
         position="static"
         classes={desktopSidebarClasses}
-        class="h-full w-72 border-r border-primary-800 bg-primary-700 p-4 [&>div]:bg-transparent [&>div]:px-0! [&>div]:py-0!"
+        class="h-full w-72 border-r border-primary-800 bg-primary-700 p-4 [&>div]:h-full [&>div]:overflow-y-auto [&>div]:bg-transparent [&>div]:px-0! [&>div]:py-0! [&>div]:pb-6"
       >
-        <SidebarGroup>
+        <SidebarGroup class="pb-4">
           <span class="mb-4 block px-2 text-lg font-semibold text-white">Menú</span>
           {#each resolvedNavItems as item (item.href)}
+            {#if item.key === wholesalersSectionStartKey}
+              <div class="my-2 border-t border-white/30 pt-2" aria-hidden="true"></div>
+            {/if}
             <SidebarItem
               href={item.href}
               label={getNavLabel(item)}
@@ -178,12 +183,15 @@
         closeSidebar={closeSidebar}
         backdrop
         position="fixed"
-        class="fixed inset-y-0 left-0 z-40 h-full w-64 transform transition-transform sm:hidden"
+        class="fixed inset-y-0 left-0 z-40 h-full w-64 transform overflow-y-auto transition-transform sm:hidden [&>div]:h-full [&>div]:overflow-y-auto [&>div]:pb-6"
       >
         <CloseButton onclick={closeSidebar} class="absolute inset-e-2.5 top-2.5" />
-        <SidebarGroup class="mt-12">
+        <SidebarGroup class="mt-12 pb-4">
           <span class="mb-4 block px-2 text-lg font-semibold text-primary">Menú</span>
           {#each resolvedNavItems as item (item.href)}
+            {#if item.key === wholesalersSectionStartKey}
+              <div class="my-2 border-t border-primary-200 pt-2" aria-hidden="true"></div>
+            {/if}
             <SidebarItem href={item.href} label={getNavLabel(item)} active={page.url.pathname.startsWith(item.href)} onclick={closeSidebar}>
               {#snippet icon()}
                 <item.icon class="me-2.5 h-5 w-5" />

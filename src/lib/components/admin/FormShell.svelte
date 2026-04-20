@@ -1,8 +1,8 @@
 <script lang="ts">
   import { applyAction, enhance } from '$app/forms';
   import type { Snippet } from 'svelte';
-  import { Alert, Button, Card } from 'flowbite-svelte';
-  import { isFormError, isFormSuccess, type FormShellFormState } from '$lib/components/admin/form-shell.model';
+  import { Button, Card } from 'flowbite-svelte';
+  import { type FormShellFormState } from '$lib/components/admin/form-shell.model';
   import { showBlockingLoader, closeBlockingLoader, presentActionFeedback } from '$lib/shared/alerts';
 
   type FormShellProps = {
@@ -10,13 +10,13 @@
     description?: string;
     action?: string;
     method?: 'POST' | 'GET';
+    enctype?: 'multipart/form-data' | 'application/x-www-form-urlencoded';
     form?: FormShellFormState;
     primaryLabel?: string;
     showPrimary?: boolean;
     children?: Snippet;
     actions?: Snippet;
     loading?: boolean;
-    // For displaying error/success states without a form
     state?: 'idle' | 'error' | 'success';
   };
 
@@ -25,19 +25,16 @@
     description,
     action,
     method = 'POST',
+    enctype = 'multipart/form-data',
     form = null,
     primaryLabel = 'Guardar cambios',
     showPrimary = true,
     children,
     actions,
     loading = false,
-    state: _explicitState
+    state: _state
   }: FormShellProps = $props();
 
-  // Get all field errors as flat array for validation summary
-  const fieldErrors = $derived(form?.state === 'error' && form.errors ? form.errors : {});
-
-  // Submitting state - controlled by use:enhance
   let submitting = $state(false);
 
   const handleSubmit = () => {
@@ -45,7 +42,7 @@
   };
 </script>
 
-<Card size="xl" class="w-full shadow-sm p-6">
+<Card size="xl" class="w-full shadow-sm p-6" id="form-shell-card">
   <header class="space-y-1">
     <h2 class="text-lg font-semibold text-gray-900">{title}</h2>
     {#if description}
@@ -56,6 +53,7 @@
   <form
     {action}
     {method}
+    {enctype}
     use:enhance={() => {
       handleSubmit();
       void showBlockingLoader();
@@ -84,12 +82,3 @@
     </footer>
   </form>
 </Card>
-
-<!-- Field error display helper - expose for child components -->
-{#snippet fieldError(name: string)}
-  {#if fieldErrors[name]?.length}
-    <p class="mt-1 text-xs text-red-600" role="alert">
-      {fieldErrors[name].join(', ')}
-    </p>
-  {/if}
-{/snippet}
