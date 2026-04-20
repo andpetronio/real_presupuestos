@@ -21,7 +21,6 @@
 <div class="space-y-4">
   <div class="flex flex-wrap items-start justify-between gap-3">
     <div>
-      <h1 class="text-2xl font-semibold text-gray-900">Dashboard mayoristas</h1>
       <p class="text-sm text-gray-600">
         Vista ejecutiva del marketplace mayorista con foco en operación y facturación.
       </p>
