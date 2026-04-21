@@ -20,6 +20,75 @@ export const saveBudgetComposition = async (params: {
 
   const tx = createTransaction(supabase);
 
+  const { data: existingBudgetDogs, error: existingBudgetDogsError } =
+    await supabase
+      .from("budget_dogs")
+      .select(
+        "id, budget_id, dog_id, requested_days, ingredient_total, operational_total, total_cost, final_sale_price",
+      )
+      .eq("budget_id", budgetId);
+
+  if (existingBudgetDogsError) {
+    return {
+      ok: false,
+      message: "No pudimos guardar los perros del presupuesto.",
+    };
+  }
+
+  const existingBudgetDogIds = (existingBudgetDogs ?? []).map((row) => row.id);
+  const { data: existingRecipeRows, error: existingRecipeRowsError } =
+    existingBudgetDogIds.length > 0
+      ? await supabase
+          .from("budget_dog_recipes")
+          .select("budget_dog_id, recipe_id, assigned_days")
+          .in("budget_dog_id", existingBudgetDogIds)
+      : { data: [], error: null };
+
+  if (existingRecipeRowsError) {
+    return {
+      ok: false,
+      message: "No pudimos guardar los perros del presupuesto.",
+    };
+  }
+
+  if (existingBudgetDogIds.length > 0) {
+    const { error: deleteExistingCompositionError } = await supabase
+      .from("budget_dogs")
+      .delete()
+      .eq("budget_id", budgetId);
+
+    if (deleteExistingCompositionError) {
+      return {
+        ok: false,
+        message: "No pudimos guardar los perros del presupuesto.",
+      };
+    }
+
+    tx.registerRollback(async () => {
+      const { error: restoreBudgetDogsError } = await supabase
+        .from("budget_dogs")
+        .insert(existingBudgetDogs ?? []);
+
+      if (restoreBudgetDogsError) {
+        throw new Error(
+          `No pudimos restaurar budget_dogs: ${restoreBudgetDogsError.message}`,
+        );
+      }
+
+      if (!existingRecipeRows || existingRecipeRows.length === 0) return;
+
+      const { error: restoreRecipeRowsError } = await supabase
+        .from("budget_dog_recipes")
+        .insert(existingRecipeRows);
+
+      if (restoreRecipeRowsError) {
+        throw new Error(
+          `No pudimos restaurar budget_dog_recipes: ${restoreRecipeRowsError.message}`,
+        );
+      }
+    });
+  }
+
   const requestedDaysByDog = new Map<string, number>();
   for (const row of composition) {
     requestedDaysByDog.set(
@@ -44,6 +113,7 @@ export const saveBudgetComposition = async (params: {
     .select("id, dog_id");
 
   if (budgetDogsError || !createdBudgetDogs) {
+    await tx.rollback();
     return {
       ok: false,
       message: "No pudimos guardar los perros del presupuesto.",

@@ -25,14 +25,19 @@ export const load: PageServerLoad = async ({ locals, params }) => {
 };
 
 export const actions: Actions = {
-  update: async ({ request, locals }) => {
+  update: async ({ request, locals, params }) => {
     const formData = await request.formData();
     const values = parseActionValues(formData);
-
-    return saveBudget({
+    const result = await saveBudget({
       action: "update",
       values,
       locals,
     });
+
+    if (result && typeof result === "object" && "status" in result) {
+      return result;
+    }
+
+    throw redirect(303, `/budgets/${params.budget_id}/preview`);
   },
 };

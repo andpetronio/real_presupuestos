@@ -4,8 +4,11 @@ import {
   type BudgetListFilters,
 } from "$lib/server/budgets/list";
 
-const budgetSelect =
+const budgetListSelect =
   "id, status, tutor_id, reference_month, reference_days, notes, final_sale_price, total_cost, ingredient_total_global, operational_total_global, created_at, expires_at, tutor:tutors(full_name)";
+
+const budgetEditingSelect =
+  "id, tutor_id, reference_month, reference_days, notes, vacuum_bag_small_qty, vacuum_bag_large_qty, labels_qty, non_woven_bag_qty, labor_hours_qty, cooking_hours_qty, calcium_qty, kefir_qty";
 
 export type BudgetEditingRow = {
   dogId: string;
@@ -74,6 +77,18 @@ const toBudgetEditingBudget = (value: unknown): BudgetEditingBudget | null => {
   };
 };
 
+const extractDogIdFromBudgetDogRelation = (value: unknown): string => {
+  if (!value) return "";
+
+  if (Array.isArray(value)) {
+    const first = value[0] as { dog_id?: unknown } | undefined;
+    return typeof first?.dog_id === "string" ? first.dog_id : "";
+  }
+
+  const relation = value as { dog_id?: unknown };
+  return typeof relation.dog_id === "string" ? relation.dog_id : "";
+};
+
 export const autoExpireSentBudgets = async (
   supabase: SupabaseClient,
 ): Promise<void> => {
@@ -94,7 +109,7 @@ export const loadBudgetList = async (params: {
 
   let query = supabase
     .from("budgets")
-    .select(budgetSelect, { count: "exact" })
+    .select(budgetListSelect, { count: "exact" })
     .order("created_at", { ascending: false });
 
   query = applyBudgetListFilters(query, filters);
@@ -126,7 +141,7 @@ export const loadEditingBudget = async (params: {
 
   const { data: editingBudgetData } = await supabase
     .from("budgets")
-    .select(budgetSelect)
+    .select(budgetEditingSelect)
     .eq("id", editingBudgetId)
     .single();
 
@@ -134,7 +149,7 @@ export const loadEditingBudget = async (params: {
     await supabase
       .from("budget_dog_recipes")
       .select(
-        "budget_dog_id, recipe_id, assigned_days, budget_dog:budget_dogs(dog_id)",
+        "budget_dog_id, recipe_id, assigned_days, budget_dog:budget_dogs!inner(budget_id, dog_id)",
       )
       .eq("budget_dog.budget_id", editingBudgetId)
       .order("created_at", { ascending: true });
@@ -142,7 +157,7 @@ export const loadEditingBudget = async (params: {
   if (budgetDogRecipesError) throw budgetDogRecipesError;
 
   const editingRows = (budgetDogRecipesData ?? []).map((row) => ({
-    dogId: (row.budget_dog as { dog_id?: string } | null)?.dog_id ?? "",
+    dogId: extractDogIdFromBudgetDogRelation(row.budget_dog),
     recipeId: row.recipe_id,
     assignedDays: String(row.assigned_days),
   }));
