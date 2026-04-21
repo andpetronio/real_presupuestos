@@ -2,6 +2,7 @@
   import { Button, Input, Label, Select } from 'flowbite-svelte';
   import type { CompositionRow } from '$lib/server/budgets/types';
   import type { DogOption, RecipeOption } from '$lib/server/budgets/queries';
+  import { syncRowOnDogChange } from '$lib/components/budgets/composition-editor.logic';
 
   type Props = {
     // tutorOptions intentionally omitted - tutor dropdown lives in parent page
@@ -53,7 +54,19 @@
   };
 
   const updateRow = (index: number, field: keyof CompositionRow, value: string) => {
-    rows = rows.map((row, rowIndex) => (rowIndex === index ? { ...row, [field]: value } : row));
+    rows = rows.map((row, rowIndex) => {
+      if (rowIndex !== index) return row;
+
+      if (field === 'dogId') {
+        return syncRowOnDogChange({
+          row,
+          nextDogId: value,
+          recipeOptions
+        });
+      }
+
+      return { ...row, [field]: value };
+    });
     onRowsChange?.(rows);
   };
 </script>

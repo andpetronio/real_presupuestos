@@ -29,7 +29,6 @@
     "eslint-config-prettier": "^10.1.8",
     "eslint-plugin-svelte": "^3.17.0",
     "flowbite": "^4.0.1",
-    "flowbite-svelte": "^1.33.1",
     "globals": "^17.5.0",
     "postcss": "^8.5.9",
     "prettier": "^3.8.3",
@@ -46,6 +45,7 @@
     "@supabase/ssr": "^0.10.2",
     "@supabase/supabase-js": "^2.103.0",
     "apexcharts": "^3.54.1",
+    "flowbite-svelte": "^1.33.1",
     "phosphor-svelte": "^3.1.0",
     "svelte-apexcharts": "^1.0.2",
     "sweetalert2": "^11.26.24"

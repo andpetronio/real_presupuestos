@@ -20,6 +20,8 @@ import {
   List,
   Dog,
   CalendarBlank,
+  Tag,
+  Rows,
 } from "phosphor-svelte";
 
 export {
@@ -44,4 +46,6 @@ export {
   List,
   Dog,
   CalendarBlank,
+  Tag,
+  Rows,
 };

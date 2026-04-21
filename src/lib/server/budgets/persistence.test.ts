@@ -91,111 +91,320 @@ describe("saveBudgetComposition", () => {
     },
   ];
 
-  it("happy path — deletes, inserts budget_dogs, inserts budget_dog_recipes → ok", async () => {
-    const insertBudgetDogRecipes = vi.fn().mockReturnValue({ error: null });
-    const mockSupabase = makeMockSupabase();
-    (mockSupabase.from as ReturnType<typeof vi.fn>).mockImplementation(
-      (table: string) => {
+  type InMemoryDb = {
+    budget_dogs: Array<{
+      id: string;
+      budget_id: string;
+      dog_id: string;
+      requested_days: number;
+      ingredient_total: number;
+      operational_total: number;
+      total_cost: number;
+      final_sale_price: number;
+    }>;
+    budget_dog_recipes: Array<{
+      budget_dog_id: string;
+      recipe_id: string;
+      assigned_days: number;
+    }>;
+  };
+
+  const makeInMemorySupabase = (params?: {
+    seed?: Partial<InMemoryDb>;
+    failInsertBudgetDogs?: boolean;
+    failInsertBudgetDogRecipes?: boolean;
+  }) => {
+    const seed = params?.seed ?? {};
+    const db: InMemoryDb = {
+      budget_dogs: [...(seed.budget_dogs ?? [])],
+      budget_dog_recipes: [...(seed.budget_dog_recipes ?? [])],
+    };
+    let newDogCounter = 1;
+    let failBudgetDogsInsert = params?.failInsertBudgetDogs ?? false;
+    let failBudgetDogRecipesInsert =
+      params?.failInsertBudgetDogRecipes ?? false;
+
+    const supabase = {
+      from: (table: string) => {
         if (table === "budget_dogs") {
           return {
-            delete: vi.fn().mockReturnValue({
-              eq: vi.fn().mockReturnValue({ error: null }),
+            select: () => ({
+              eq: (field: string, value: string) => {
+                if (field !== "budget_id") return { data: null, error: null };
+                return {
+                  data: db.budget_dogs
+                    .filter((row) => row.budget_id === value)
+                    .map((row) => ({ ...row })),
+                  error: null,
+                };
+              },
             }),
-            insert: vi.fn().mockReturnValue({
-              select: vi.fn().mockReturnValue({
-                data: [{ id: "bd-1", dog_id: "d-1" }],
+            delete: () => ({
+              eq: (field: string, value: string) => {
+                if (field === "budget_id") {
+                  const removedIds = db.budget_dogs
+                    .filter((row) => row.budget_id === value)
+                    .map((row) => row.id);
+                  db.budget_dogs = db.budget_dogs.filter(
+                    (row) => row.budget_id !== value,
+                  );
+                  db.budget_dog_recipes = db.budget_dog_recipes.filter(
+                    (row) => !removedIds.includes(row.budget_dog_id),
+                  );
+                  return { error: null };
+                }
+                if (field === "id") {
+                  db.budget_dogs = db.budget_dogs.filter(
+                    (row) => row.id !== value,
+                  );
+                  db.budget_dog_recipes = db.budget_dog_recipes.filter(
+                    (row) => row.budget_dog_id !== value,
+                  );
+                }
+                return { error: null };
+              },
+              in: (field: string, values: string[]) => {
+                if (field !== "id") return { error: null };
+                db.budget_dogs = db.budget_dogs.filter(
+                  (row) => !values.includes(row.id),
+                );
+                db.budget_dog_recipes = db.budget_dog_recipes.filter(
+                  (row) => !values.includes(row.budget_dog_id),
+                );
+                return { error: null };
+              },
+            }),
+            insert: (rows: Array<Record<string, unknown>>) => {
+              if (failBudgetDogsInsert) {
+                failBudgetDogsInsert = false;
+                return {
+                  error: { message: "insert failed" },
+                  select: () => ({
+                    data: null,
+                    error: { message: "insert failed" },
+                  }),
+                };
+              }
+
+              const inserted = rows.map((row) => {
+                const id =
+                  (row.id as string | undefined) ?? `bd-new-${newDogCounter++}`;
+                const parsed = {
+                  id,
+                  budget_id: row.budget_id as string,
+                  dog_id: row.dog_id as string,
+                  requested_days: Number(row.requested_days),
+                  ingredient_total: Number(row.ingredient_total),
+                  operational_total: Number(row.operational_total),
+                  total_cost: Number(row.total_cost),
+                  final_sale_price: Number(row.final_sale_price),
+                };
+                db.budget_dogs.push(parsed);
+                return parsed;
+              });
+
+              return {
                 error: null,
-              }),
-            }),
+                select: () => ({
+                  data: inserted.map(({ id, dog_id }) => ({ id, dog_id })),
+                  error: null,
+                }),
+              };
+            },
           };
         }
+
         if (table === "budget_dog_recipes") {
-          return { insert: insertBudgetDogRecipes };
+          return {
+            select: () => ({
+              in: (field: string, values: string[]) => {
+                if (field !== "budget_dog_id") return { data: [], error: null };
+                return {
+                  data: db.budget_dog_recipes
+                    .filter((row) => values.includes(row.budget_dog_id))
+                    .map((row) => ({ ...row })),
+                  error: null,
+                };
+              },
+            }),
+            insert: (rows: Array<Record<string, unknown>>) => {
+              if (failBudgetDogRecipesInsert) {
+                failBudgetDogRecipesInsert = false;
+                return { error: { message: "recipe insert failed" } };
+              }
+              db.budget_dog_recipes.push(
+                ...rows.map((row) => ({
+                  budget_dog_id: row.budget_dog_id as string,
+                  recipe_id: row.recipe_id as string,
+                  assigned_days: Number(row.assigned_days),
+                })),
+              );
+              return { error: null };
+            },
+          };
         }
+
         return {};
       },
-    );
+    } as unknown as SupabaseClient;
+
+    return { supabase, db };
+  };
+
+  it("sin composición previa (create-like): inserta budget_dogs y budget_dog_recipes", async () => {
+    const { supabase, db } = makeInMemorySupabase();
 
     const result = await saveBudgetComposition({
       budgetId: "b-1",
-      supabase: mockSupabase,
+      supabase,
       composition,
       dogTotals,
     });
 
     expect(result.ok).toBe(true);
-    expect(insertBudgetDogRecipes).toHaveBeenCalledWith(
-      expect.arrayContaining([
-        expect.objectContaining({
-          budget_dog_id: "bd-1",
-          recipe_id: "r-1",
-          assigned_days: 10,
-        }),
-      ]),
-    );
+    expect(db.budget_dogs).toHaveLength(1);
+    expect(db.budget_dogs[0]).toMatchObject({
+      budget_id: "b-1",
+      dog_id: "d-1",
+      requested_days: 10,
+    });
+    expect(db.budget_dog_recipes).toHaveLength(1);
+    expect(db.budget_dog_recipes[0]).toMatchObject({
+      recipe_id: "r-1",
+      assigned_days: 10,
+    });
   });
 
-  it("error path — insert budget_dogs fails → returns error", async () => {
-    const mockSupabase = makeMockSupabase();
-    (mockSupabase.from as ReturnType<typeof vi.fn>).mockImplementation(
-      (table: string) => {
-        if (table === "budget_dogs") {
-          return {
-            insert: vi.fn().mockReturnValue({
-              select: vi.fn().mockReturnValue({
-                data: null,
-                error: { message: "insert failed" },
-              }),
-            }),
-          };
-        }
-        return {};
+  it("update con composición previa: reemplaza composición anterior por la nueva", async () => {
+    const { supabase, db } = makeInMemorySupabase({
+      seed: {
+        budget_dogs: [
+          {
+            id: "bd-old-1",
+            budget_id: "b-1",
+            dog_id: "d-old",
+            requested_days: 20,
+            ingredient_total: 100,
+            operational_total: 20,
+            total_cost: 120,
+            final_sale_price: 150,
+          },
+        ],
+        budget_dog_recipes: [
+          {
+            budget_dog_id: "bd-old-1",
+            recipe_id: "r-old",
+            assigned_days: 20,
+          },
+        ],
       },
-    );
+    });
 
     const result = await saveBudgetComposition({
       budgetId: "b-1",
-      supabase: mockSupabase,
+      supabase,
+      composition,
+      dogTotals,
+    });
+
+    expect(result.ok).toBe(true);
+    expect(db.budget_dogs).toHaveLength(1);
+    expect(db.budget_dogs[0]).toMatchObject({
+      budget_id: "b-1",
+      dog_id: "d-1",
+      requested_days: 10,
+    });
+    expect(db.budget_dog_recipes).toHaveLength(1);
+    expect(db.budget_dog_recipes[0]).toMatchObject({
+      recipe_id: "r-1",
+      assigned_days: 10,
+    });
+  });
+
+  it("falla insert de budget_dogs después de delete: rollback restaura composición previa", async () => {
+    const { supabase, db } = makeInMemorySupabase({
+      seed: {
+        budget_dogs: [
+          {
+            id: "bd-old-1",
+            budget_id: "b-1",
+            dog_id: "d-old",
+            requested_days: 20,
+            ingredient_total: 100,
+            operational_total: 20,
+            total_cost: 120,
+            final_sale_price: 150,
+          },
+        ],
+        budget_dog_recipes: [
+          {
+            budget_dog_id: "bd-old-1",
+            recipe_id: "r-old",
+            assigned_days: 20,
+          },
+        ],
+      },
+      failInsertBudgetDogs: true,
+    });
+
+    const result = await saveBudgetComposition({
+      budgetId: "b-1",
+      supabase,
       composition,
       dogTotals,
     });
 
     expect(result.ok).toBe(false);
-    if (!result.ok)
-      expect(result.message).toContain("No pudimos guardar los perros");
+    expect(db.budget_dogs).toEqual([
+      {
+        id: "bd-old-1",
+        budget_id: "b-1",
+        dog_id: "d-old",
+        requested_days: 20,
+        ingredient_total: 100,
+        operational_total: 20,
+        total_cost: 120,
+        final_sale_price: 150,
+      },
+    ]);
+    expect(db.budget_dog_recipes).toEqual([
+      {
+        budget_dog_id: "bd-old-1",
+        recipe_id: "r-old",
+        assigned_days: 20,
+      },
+    ]);
   });
 
-  it("error path — insert budget_dog_recipes fails → returns error", async () => {
-    const mockSupabase = makeMockSupabase();
-    (mockSupabase.from as ReturnType<typeof vi.fn>).mockImplementation(
-      (table: string) => {
-        if (table === "budget_dogs") {
-          return {
-            delete: vi.fn().mockReturnValue({
-              in: vi.fn().mockReturnValue({ error: null }),
-            }),
-            insert: vi.fn().mockReturnValue({
-              select: vi.fn().mockReturnValue({
-                data: [{ id: "bd-1", dog_id: "d-1" }],
-                error: null,
-              }),
-            }),
-          };
-        }
-        if (table === "budget_dog_recipes") {
-          return {
-            insert: vi
-              .fn()
-              .mockReturnValue({ error: { message: "recipe insert failed" } }),
-          };
-        }
-        return {};
+  it("falla insert de budget_dog_recipes: rollback completo sin pérdida", async () => {
+    const { supabase, db } = makeInMemorySupabase({
+      seed: {
+        budget_dogs: [
+          {
+            id: "bd-old-1",
+            budget_id: "b-1",
+            dog_id: "d-old",
+            requested_days: 20,
+            ingredient_total: 100,
+            operational_total: 20,
+            total_cost: 120,
+            final_sale_price: 150,
+          },
+        ],
+        budget_dog_recipes: [
+          {
+            budget_dog_id: "bd-old-1",
+            recipe_id: "r-old",
+            assigned_days: 20,
+          },
+        ],
       },
-    );
+      failInsertBudgetDogRecipes: true,
+    });
 
     const result = await saveBudgetComposition({
       budgetId: "b-1",
-      supabase: mockSupabase,
+      supabase,
       composition,
       dogTotals,
     });
@@ -203,55 +412,42 @@ describe("saveBudgetComposition", () => {
     expect(result.ok).toBe(false);
     if (!result.ok)
       expect(result.message).toContain("No pudimos guardar las recetas");
+    expect(db.budget_dogs).toEqual([
+      {
+        id: "bd-old-1",
+        budget_id: "b-1",
+        dog_id: "d-old",
+        requested_days: 20,
+        ingredient_total: 100,
+        operational_total: 20,
+        total_cost: 120,
+        final_sale_price: 150,
+      },
+    ]);
+    expect(db.budget_dog_recipes).toEqual([
+      {
+        budget_dog_id: "bd-old-1",
+        recipe_id: "r-old",
+        assigned_days: 20,
+      },
+    ]);
   });
 
-  it("validation path — dogTotals includes dog not in composition mapping → returns error", async () => {
-    // dogTotals references d-orphan; composition references d-1.
-    // The insert returns only d-orphan → budgetDogIdByDogId maps only d-orphan.
-    // When composition row d-1 is looked up, budgetDogIdByDogId.get('d-1') is undefined → '' → triggers validation.
-    const mockSupabase = makeMockSupabase();
-    (mockSupabase.from as ReturnType<typeof vi.fn>).mockImplementation(
-      (table: string) => {
-        if (table === "budget_dogs") {
-          return {
-            delete: vi.fn().mockReturnValue({
-              in: vi.fn().mockReturnValue({ error: null }),
-            }),
-            insert: vi.fn().mockReturnValue({
-              select: vi.fn().mockReturnValue({
-                // Only d-orphan is returned — d-1 from composition is NOT in the result
-                data: [{ id: "bd-orphan", dog_id: "d-orphan" }],
-                error: null,
-              }),
-            }),
-          };
-        }
-        if (table === "budget_dog_recipes") {
-          return { insert: vi.fn().mockReturnValue({ error: null }) };
-        }
-        return {};
-      },
-    );
-
-    const orphanDogTotals = [
-      {
-        dogId: "d-orphan",
-        ingredientTotal: 100,
-        operationalTotal: 0,
-        totalCost: 100,
-        finalSalePrice: 125,
-      },
-    ];
+  it("error path — insert budget_dogs fails → returns error", async () => {
+    const { supabase } = makeInMemorySupabase({
+      failInsertBudgetDogs: true,
+    });
 
     const result = await saveBudgetComposition({
       budgetId: "b-1",
-      supabase: mockSupabase,
+      supabase,
       composition,
-      dogTotals: orphanDogTotals,
+      dogTotals,
     });
 
     expect(result.ok).toBe(false);
-    if (!result.ok) expect(result.message).toContain("No pudimos vincular");
+    if (!result.ok)
+      expect(result.message).toContain("No pudimos guardar los perros");
   });
 });
 

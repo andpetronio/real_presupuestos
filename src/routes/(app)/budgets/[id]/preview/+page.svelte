@@ -16,6 +16,7 @@
   import StatusBadge from '$lib/components/admin/StatusBadge.svelte';
   import type { BudgetStatus } from '$lib/types/budget';
   import { formatArs, formatQuantity } from '$lib/shared/currency';
+  import { calculateProfitFromCostAndMargin } from '$lib/shared/finance';
   import type { UIState } from '$lib/server/shared/ui-state';
   import { route } from '$lib/shared/navigation';
   import { closeBlockingLoader, presentActionFeedback, showBlockingLoader } from '$lib/shared/alerts';
@@ -107,6 +108,13 @@
           maximumFractionDigits: 1
         })
       : '0'
+  );
+
+  const profitAmount = $derived(
+    calculateProfitFromCostAndMargin(
+      data.budget?.total_cost ?? 0,
+      data.settings?.meal_plan_margin ?? 0
+    )
   );
 
   const canSendWhatsapp = $derived(data.budget?.status === 'draft' && !form?.waUrl);
@@ -273,7 +281,7 @@
           </div>
           <div class="flex items-center justify-between">
             <span>Ganancia ({displayMargin}%):</span>
-            <span class="tabular-nums">{formatArs(data.budget.total_cost * data.budget.applied_margin)}</span>
+            <span class="tabular-nums">{formatArs(profitAmount)}</span>
           </div>
         </div>
 

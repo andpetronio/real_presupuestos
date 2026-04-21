@@ -75,6 +75,14 @@ describe("loadBudgetFormData", () => {
         notes: "nota",
         reference_month: "2026-04-01",
         reference_days: 30,
+        vacuum_bag_small_qty: 1,
+        vacuum_bag_large_qty: 2,
+        labels_qty: 3,
+        non_woven_bag_qty: 4,
+        labor_hours_qty: 5,
+        cooking_hours_qty: 6,
+        calcium_qty: 7,
+        kefir_qty: 8,
       },
       editingRows: [{ dogId: "d-1", recipeId: "r-1", assignedDays: "30" }],
     });
@@ -85,6 +93,16 @@ describe("loadBudgetFormData", () => {
     });
 
     expect(result.editingBudget?.id).toBe("b-1");
+    expect(result.editingBudget).toMatchObject({
+      vacuum_bag_small_qty: 1,
+      vacuum_bag_large_qty: 2,
+      labels_qty: 3,
+      non_woven_bag_qty: 4,
+      labor_hours_qty: 5,
+      cooking_hours_qty: 6,
+      calcium_qty: 7,
+      kefir_qty: 8,
+    });
     expect(result.editingRows).toEqual([
       { dogId: "d-1", recipeId: "r-1", assignedDays: "30" },
     ]);

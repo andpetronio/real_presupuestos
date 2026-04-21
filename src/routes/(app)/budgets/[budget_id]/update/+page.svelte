@@ -7,6 +7,7 @@
   import type { TutorOption, DogOption, RecipeOption } from '$lib/server/budgets/queries';
   import type { CompositionRow } from '$lib/server/budgets/types';
   import CompositionEditor from '$lib/components/budgets/CompositionEditor.svelte';
+  import { didTutorChange, resetRowsForTutorChange } from '$lib/components/budgets/composition-editor.logic';
 
   type PageData = {
     tutorOptions: ReadonlyArray<TutorOption>;
@@ -133,9 +134,11 @@
       required
       value={tutorSelected}
       onchange={(event) => {
-        tutorSelected = (event.currentTarget as HTMLSelectElement).value;
-        // Clear dog and recipe selections when tutor changes
-        rows = rows.map((row) => ({ ...row, dogId: '', recipeId: '' }));
+        const nextTutorId = (event.currentTarget as HTMLSelectElement).value;
+        if (!didTutorChange(tutorSelected, nextTutorId)) return;
+
+        tutorSelected = nextTutorId;
+        rows = resetRowsForTutorChange(rows);
       }}
     >
       <option value="">Seleccionar tutor</option>
