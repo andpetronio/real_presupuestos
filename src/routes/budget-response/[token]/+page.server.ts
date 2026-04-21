@@ -36,34 +36,12 @@ type PublicBudgetMutationRpcRow = {
   rejection_reason?: string;
 };
 
-type BudgetDogRow = {
-  id: string;
-  dog_id: string;
-};
-
-type BudgetDogRecipeRow = {
-  budget_dog_id: string;
-  recipe_id: string;
-};
-
-type DogRow = {
-  id: string;
-  name: string;
-};
-
-type RecipeRow = {
-  id: string;
-  name: string;
-};
-
-type RecipeItemRow = {
-  recipe_id: string;
-  raw_material_id: string;
-};
-
-type RawMaterialRow = {
-  id: string;
-  name: string;
+type PublicBudgetDetailRpcRow = {
+  dog_id: string | null;
+  dog_name: string | null;
+  recipe_id: string | null;
+  recipe_name: string | null;
+  raw_material_name: string | null;
 };
 
 type DogRecipeRawMaterialsView = {
@@ -85,6 +63,91 @@ const fallbackError = {
 
 const parseText = (value: FormDataEntryValue | null): string =>
   typeof value === "string" ? value.trim() : "";
+
+const normalizeText = (value: string | null | undefined): string =>
+  typeof value === "string" ? value.trim() : "";
+
+const safeName = (
+  value: string | null | undefined,
+  fallback: string,
+): string => {
+  const normalized = normalizeText(value);
+  return normalized || fallback;
+};
+
+const toUniqueSortedStringArray = (values: ReadonlyArray<string>): string[] =>
+  Array.from(new Set(values.map((value) => value.trim()).filter(Boolean))).sort(
+    (a, b) => a.localeCompare(b, "es-AR"),
+  );
+
+const buildRecipeDetailsByDog = (
+  rows: ReadonlyArray<PublicBudgetDetailRpcRow>,
+): DogRecipeRawMaterialsView[] => {
+  const recipesByDogId = new Map<
+    string,
+    {
+      dogName: string;
+      recipesById: Map<string, { recipeName: string; rawMaterials: string[] }>;
+    }
+  >();
+
+  for (const row of rows) {
+    const dogId = normalizeText(row.dog_id);
+    const recipeId = normalizeText(row.recipe_id);
+
+    if (!dogId || !recipeId) continue;
+
+    const existingDog = recipesByDogId.get(dogId);
+    const dogEntry =
+      existingDog ??
+      {
+        dogName: safeName(row.dog_name, "Perro"),
+        recipesById: new Map<string, { recipeName: string; rawMaterials: string[] }>(),
+      };
+
+    if (!existingDog) {
+      recipesByDogId.set(dogId, dogEntry);
+    }
+
+    const existingRecipe = dogEntry.recipesById.get(recipeId);
+    const recipeEntry =
+      existingRecipe ??
+      {
+        recipeName: safeName(row.recipe_name, "Receta"),
+        rawMaterials: [],
+      };
+
+    if (!existingRecipe) {
+      dogEntry.recipesById.set(recipeId, recipeEntry);
+    }
+
+    const rawMaterialName = normalizeText(row.raw_material_name);
+    if (rawMaterialName) {
+      recipeEntry.rawMaterials.push(rawMaterialName);
+    }
+  }
+
+  return Array.from(recipesByDogId.entries())
+    .map(([dogId, dog]) => ({
+      dogId,
+      dogName: safeName(dog.dogName, "Perro"),
+      recipes: Array.from(dog.recipesById.entries())
+        .map(([recipeId, recipe]) => ({
+          recipeId,
+          recipeName: safeName(recipe.recipeName, "Receta"),
+          rawMaterials: toUniqueSortedStringArray(recipe.rawMaterials),
+        }))
+        .sort(
+          (a, b) =>
+            a.recipeName.localeCompare(b.recipeName, "es-AR") ||
+            a.recipeId.localeCompare(b.recipeId),
+        ),
+    }))
+    .sort(
+      (a, b) =>
+        a.dogName.localeCompare(b.dogName, "es-AR") || a.dogId.localeCompare(b.dogId),
+    );
+};
 
 const readBudgetByToken = async (
   locals: App.Locals,
@@ -110,6 +173,21 @@ const readBudgetByToken = async (
     tutorName: row.tutor_name ?? "Sin tutor",
     canRespond: row.can_respond,
   };
+};
+
+const readRecipeDetailsByToken = async (
+  locals: App.Locals,
+  token: string,
+): Promise<DogRecipeRawMaterialsView[]> => {
+  const result = await locals.supabase.rpc("public_get_budget_response_details", {
+    p_token: token,
+  });
+
+  if (result.error) {
+    throw result.error;
+  }
+
+  return buildRecipeDetailsByDog((result.data ?? []) as PublicBudgetDetailRpcRow[]);
 };
 
 const getBlockedResponseMessageFromCode = (code: string): string => {
@@ -166,9 +244,21 @@ export const load: PageServerLoad = async ({ params, locals }) => {
       };
     }
 
+    let recipeDetailsByDog: DogRecipeRawMaterialsView[] = [];
+    try {
+      recipeDetailsByDog = await readRecipeDetailsByToken(locals, token);
+    } catch (error) {
+      const detailErrorMessage =
+        error instanceof Error ? error.message : "error desconocido";
+      console.warn(
+        "[budget-response/load] No pudimos cargar el detalle de recetas para token público:",
+        detailErrorMessage,
+      );
+    }
+
     return {
       budget: mapPublicView(budget),
-      recipeDetailsByDog: [],
+      recipeDetailsByDog,
       pageState: "success" as const,
       pageMessage: null,
     };

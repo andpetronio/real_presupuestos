@@ -22,11 +22,21 @@ type RpcMutationRow = {
   rejection_reason?: string;
 };
 
+type RpcDetailRow = {
+  dog_id: string | null;
+  dog_name: string | null;
+  recipe_id: string | null;
+  recipe_name: string | null;
+  raw_material_name: string | null;
+};
+
 const createRpcSupabase = (params: {
   budgetRow?: RpcBudgetRow | null;
+  detailRows?: RpcDetailRow[];
   acceptRow?: RpcMutationRow;
   rejectRow?: RpcMutationRow;
   getError?: { message: string } | null;
+  detailsError?: { message: string } | null;
   acceptError?: { message: string } | null;
   rejectError?: { message: string } | null;
 }) => {
@@ -38,6 +48,13 @@ const createRpcSupabase = (params: {
         return {
           data: params.budgetRow ? [params.budgetRow] : [],
           error: params.getError ?? null,
+        };
+      }
+
+      if (fn === "public_get_budget_response_details") {
+        return {
+          data: params.detailRows ?? [],
+          error: params.detailsError ?? null,
         };
       }
 
@@ -143,6 +160,124 @@ describe("budget-response/[token] load", () => {
     expect(result.budget.status).toBe("expired");
     expect(result.budget.canRespond).toBe(false);
     expect(result.recipeDetailsByDog).toEqual([]);
+  });
+
+  it("retorna detalle agrupado por perro y receta en success", async () => {
+    const supabase = createRpcSupabase({
+      budgetRow: baseBudget,
+      detailRows: [
+        {
+          dog_id: "dog-b",
+          dog_name: "Muna",
+          recipe_id: "recipe-vaca",
+          recipe_name: "Vaca",
+          raw_material_name: "Calabaza",
+        },
+        {
+          dog_id: "dog-a",
+          dog_name: "Anita",
+          recipe_id: "recipe-pollo",
+          recipe_name: "Pollo",
+          raw_material_name: "Pollo",
+        },
+        {
+          dog_id: "dog-a",
+          dog_name: "Anita",
+          recipe_id: "recipe-pollo",
+          recipe_name: "Pollo",
+          raw_material_name: "Zanahoria",
+        },
+        {
+          dog_id: "dog-a",
+          dog_name: "Anita",
+          recipe_id: "recipe-pollo",
+          recipe_name: "Pollo",
+          raw_material_name: "Pollo",
+        },
+        {
+          dog_id: "dog-b",
+          dog_name: "Muna",
+          recipe_id: "recipe-pavo",
+          recipe_name: "Pavo",
+          raw_material_name: null,
+        },
+      ],
+    });
+
+    const result = (await load(
+      asLoadEvent<Parameters<typeof load>[0]>({
+        params: { token: "token-123" },
+        locals: { supabase: { rpc: supabase.rpc } },
+      }),
+    )) as {
+      pageState: string;
+      recipeDetailsByDog: Array<{
+        dogId: string;
+        dogName: string;
+        recipes: Array<{
+          recipeId: string;
+          recipeName: string;
+          rawMaterials: string[];
+        }>;
+      }>;
+    };
+
+    expect(result.pageState).toBe("success");
+    expect(result.recipeDetailsByDog).toEqual([
+      {
+        dogId: "dog-a",
+        dogName: "Anita",
+        recipes: [
+          {
+            recipeId: "recipe-pollo",
+            recipeName: "Pollo",
+            rawMaterials: ["Pollo", "Zanahoria"],
+          },
+        ],
+      },
+      {
+        dogId: "dog-b",
+        dogName: "Muna",
+        recipes: [
+          {
+            recipeId: "recipe-pavo",
+            recipeName: "Pavo",
+            rawMaterials: [],
+          },
+          {
+            recipeId: "recipe-vaca",
+            recipeName: "Vaca",
+            rawMaterials: ["Calabaza"],
+          },
+        ],
+      },
+    ]);
+  });
+
+  it("si falla RPC de detalle, no rompe load y devuelve []", async () => {
+    const supabase = createRpcSupabase({
+      budgetRow: baseBudget,
+      detailsError: { message: "detalle down" },
+    });
+    const warnSpy = vi.spyOn(console, "warn").mockImplementation(() => undefined);
+
+    const result = (await load(
+      asLoadEvent<Parameters<typeof load>[0]>({
+        params: { token: "token-123" },
+        locals: { supabase: { rpc: supabase.rpc } },
+      }),
+    )) as {
+      pageState: string;
+      budget: { id: string };
+      recipeDetailsByDog: unknown[];
+    };
+
+    expect(result.pageState).toBe("success");
+    expect(result.budget.id).toBe("b-1");
+    expect(result.recipeDetailsByDog).toEqual([]);
+    expect(warnSpy).toHaveBeenCalledTimes(1);
+
+    warnSpy.mockRestore();
   });
 
   it("load siempre retorna recipeDetailsByDog", async () => {
