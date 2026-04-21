@@ -81,6 +81,27 @@ const baseBudget: RpcBudgetRow = {
 };
 
 describe("budget-response/[token] load", () => {
+  it("retorna error con token inválido y shape estable", async () => {
+    const supabase = createRpcSupabase({ budgetRow: null });
+
+    const result = (await load(
+      asLoadEvent<Parameters<typeof load>[0]>({
+        params: { token: "   " },
+        locals: { supabase: { rpc: supabase.rpc } },
+      }),
+    )) as {
+      pageState: string;
+      budget: null;
+      recipeDetailsByDog: unknown[];
+      pageMessage: { title: string };
+    };
+
+    expect(result.pageState).toBe("error");
+    expect(result.budget).toBeNull();
+    expect(result.recipeDetailsByDog).toEqual([]);
+    expect(result.pageMessage.title).toContain("Enlace inválido");
+  });
+
   it("retorna error cuando el presupuesto no existe", async () => {
     const supabase = createRpcSupabase({ budgetRow: null });
 
@@ -89,10 +110,16 @@ describe("budget-response/[token] load", () => {
         params: { token: "nonexistent-token" },
         locals: { supabase: { rpc: supabase.rpc } },
       }),
-    )) as { pageState: string; budget: null; pageMessage: { title: string } };
+    )) as {
+      pageState: string;
+      budget: null;
+      recipeDetailsByDog: unknown[];
+      pageMessage: { title: string };
+    };
 
     expect(result.pageState).toBe("error");
     expect(result.budget).toBeNull();
+    expect(result.recipeDetailsByDog).toEqual([]);
     expect(result.pageMessage.title).toContain("no encontrado");
   });
 
@@ -109,11 +136,36 @@ describe("budget-response/[token] load", () => {
     )) as {
       pageState: string;
       budget: { status: string; canRespond: boolean };
+      recipeDetailsByDog: unknown[];
     };
 
     expect(result.pageState).toBe("success");
     expect(result.budget.status).toBe("expired");
     expect(result.budget.canRespond).toBe(false);
+    expect(result.recipeDetailsByDog).toEqual([]);
+  });
+
+  it("load siempre retorna recipeDetailsByDog", async () => {
+    const missingResult = (await load(
+      asLoadEvent<Parameters<typeof load>[0]>({
+        params: { token: "missing-token" },
+        locals: {
+          supabase: { rpc: createRpcSupabase({ budgetRow: null }).rpc },
+        },
+      }),
+    )) as { recipeDetailsByDog: unknown[] };
+
+    const successResult = (await load(
+      asLoadEvent<Parameters<typeof load>[0]>({
+        params: { token: "ok-token" },
+        locals: {
+          supabase: { rpc: createRpcSupabase({ budgetRow: baseBudget }).rpc },
+        },
+      }),
+    )) as { recipeDetailsByDog: unknown[] };
+
+    expect(Array.isArray(missingResult.recipeDetailsByDog)).toBe(true);
+    expect(Array.isArray(successResult.recipeDetailsByDog)).toBe(true);
   });
 });
 

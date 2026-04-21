@@ -52,6 +52,7 @@
   };
 
   const rejectionDraft = $derived(form?.rejectionReason ?? '');
+  const recipeDetailsByDog = $derived(data.recipeDetailsByDog ?? []);
 
   const enhanceWithFeedback = () => {
     return async () => {
@@ -99,11 +100,11 @@
 
         <div class="mt-4 space-y-3">
           <p class="text-xs uppercase tracking-wide text-gray-500">Detalle del presupuesto</p>
-          {#if data.recipeDetailsByDog.length === 0}
+          {#if recipeDetailsByDog.length === 0}
             <p class="text-sm text-gray-700">Este presupuesto no tiene recetas/materias primas para mostrar.</p>
           {:else}
             <div class="space-y-3">
-              {#each data.recipeDetailsByDog as dog (dog.dogId)}
+              {#each recipeDetailsByDog as dog (dog.dogId)}
                 <div class="rounded-lg border border-gray-200 bg-white p-3">
                   <p class="text-sm font-semibold text-gray-900">{dog.dogName}</p>
 

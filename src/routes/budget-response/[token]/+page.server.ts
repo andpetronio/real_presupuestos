@@ -142,6 +142,7 @@ export const load: PageServerLoad = async ({ params, locals }) => {
     if (!token) {
       return {
         budget: null,
+        recipeDetailsByDog: [],
         pageState: "error" as const,
         pageMessage: {
           kind: "error" as const,
@@ -155,6 +156,7 @@ export const load: PageServerLoad = async ({ params, locals }) => {
     if (!budget) {
       return {
         budget: null,
+        recipeDetailsByDog: [],
         pageState: "error" as const,
         pageMessage: {
           kind: "error" as const,
@@ -166,12 +168,14 @@ export const load: PageServerLoad = async ({ params, locals }) => {
 
     return {
       budget: mapPublicView(budget),
+      recipeDetailsByDog: [],
       pageState: "success" as const,
       pageMessage: null,
     };
   } catch {
     return {
       budget: null,
+      recipeDetailsByDog: [],
       pageState: "error" as const,
       pageMessage: fallbackError,
     };
