@@ -1,5 +1,6 @@
 <script lang="ts">
   import { Button, Card } from 'flowbite-svelte';
+  import ActiveStatusBadge from '$lib/components/admin/ActiveStatusBadge.svelte';
   import FeedbackBanner from '$lib/components/FeedbackBanner.svelte';
   import AssortmentFilterBar from '$lib/components/wholesale-assortment/AssortmentFilterBar.svelte';
   import AssortmentProductTable from '$lib/components/wholesale-assortment/AssortmentProductTable.svelte';
@@ -108,11 +109,11 @@
             </div>
 
             <div class="mt-3 flex items-center gap-2 text-sm">
-              <span
-                class={`inline-flex rounded-full px-2.5 py-1 text-xs font-medium ${product.is_active ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-600'}`}
-              >
-                {product.is_active ? 'Producto activo' : 'Producto inactivo'}
-              </span>
+              <ActiveStatusBadge
+                isActive={product.is_active}
+                activeLabel="Producto activo"
+                inactiveLabel="Producto inactivo"
+              />
             </div>
 
             <div class="mt-3">

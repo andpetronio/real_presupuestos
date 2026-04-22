@@ -1,5 +1,6 @@
 <script lang="ts">
-  import { Badge, Button, Table, TableBody, TableBodyCell, TableBodyRow, TableHead, TableHeadCell } from 'flowbite-svelte';
+  import { Button, Table, TableBody, TableBodyCell, TableBodyRow, TableHead, TableHeadCell } from 'flowbite-svelte';
+  import ActiveStatusBadge from '$lib/components/admin/ActiveStatusBadge.svelte';
   import { route } from '$lib/shared/navigation';
   import type { AssortmentWholesalerRow } from '$lib/types/view-models/wholesale-assortment';
 
@@ -23,7 +24,7 @@
         <TableBodyCell class="font-mono text-xs">{wholesaler.unique_random_code}</TableBodyCell>
         <TableBodyCell>{wholesaler.min_total_units}</TableBodyCell>
         <TableBodyCell>
-          <Badge color={wholesaler.is_active ? 'green' : 'gray'}>{wholesaler.is_active ? 'Activo' : 'Inactivo'}</Badge>
+          <ActiveStatusBadge isActive={wholesaler.is_active} />
         </TableBodyCell>
         <TableBodyCell>{wholesaler.enabledProductsCount}</TableBodyCell>
         <TableBodyCell>

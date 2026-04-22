@@ -1,8 +1,9 @@
 <script lang="ts">
   import { Badge, Button, Card } from 'flowbite-svelte';
-  import FeedbackBanner from '$lib/components/FeedbackBanner.svelte';
+  import StatusBadge from '$lib/components/admin/StatusBadge.svelte';
   import { formatArs } from '$lib/shared/currency';
   import { route } from '$lib/shared/navigation';
+  import type { BudgetStatus } from '$lib/types/budget';
 
   type RecipeSummary = {
     recipeName: string;
@@ -13,7 +14,7 @@
 
   type BudgetSummary = {
     budgetId: string;
-    status: string;
+    status: BudgetStatus;
     referenceMonth: string | null;
     acceptedAt: string | null;
     totalPrice: number;
@@ -60,28 +61,6 @@
     if (!year || !month) return value;
     const date = new Date(Number(year), Number(month) - 1);
     return date.toLocaleDateString('es-AR', { year: 'numeric', month: 'long' });
-  };
-
-  const statusLabel: Record<string, string> = {
-    draft: 'Borrador',
-    ready_to_send: 'Listo para enviar',
-    sent: 'Enviado',
-    accepted: 'Aceptado',
-    rejected: 'Rechazado',
-    expired: 'Expirado',
-    discarded: 'Descartado',
-    closed: 'Cerrado'
-  };
-
-  const statusColor: Record<string, 'primary' | 'gray' | 'green' | 'amber' | 'secondary'> = {
-    draft: 'gray',
-    ready_to_send: 'amber',
-    sent: 'primary',
-    accepted: 'green',
-    rejected: 'secondary',
-    expired: 'gray',
-    discarded: 'gray',
-    closed: 'gray'
   };
 </script>
 
@@ -131,9 +110,7 @@
                 <h3 class="text-lg font-semibold text-gray-900">
                   {formatMonth(budget.referenceMonth)}
                 </h3>
-                <Badge color={statusColor[budget.status] ?? 'gray'}>
-                  {statusLabel[budget.status] ?? budget.status}
-                </Badge>
+                <StatusBadge status={budget.status} />
               </div>
               <p class="mt-1 text-sm text-gray-500">
                 Aceptado: {formatDate(budget.acceptedAt)}

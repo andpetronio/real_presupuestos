@@ -3,6 +3,7 @@
   import { Button, Card } from 'flowbite-svelte';
   import FeedbackBanner from '$lib/components/FeedbackBanner.svelte';
   import GenericFilterBar from '$lib/components/admin/GenericFilterBar.svelte';
+  import ActiveStatusBadge from '$lib/components/admin/ActiveStatusBadge.svelte';
   import AssortmentWholesalerTable from '$lib/components/wholesale-assortment/AssortmentWholesalerTable.svelte';
   import type { AssortmentWholesalerRow } from '$lib/types/view-models/wholesale-assortment';
 
@@ -77,11 +78,7 @@
                 <p class="font-semibold text-gray-900">{wholesaler.name}</p>
                 <p class="font-mono text-xs text-gray-500">{wholesaler.unique_random_code}</p>
               </div>
-              <span
-                class={`inline-flex rounded-full px-2.5 py-1 text-xs font-medium ${wholesaler.is_active ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-600'}`}
-              >
-                {wholesaler.is_active ? 'Activo' : 'Inactivo'}
-              </span>
+              <ActiveStatusBadge isActive={wholesaler.is_active} />
             </div>
 
             <div class="mt-3 grid grid-cols-2 gap-3 text-sm">

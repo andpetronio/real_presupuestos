@@ -43,7 +43,9 @@
 </script>
 
 <div class="mb-4 flex justify-end">
-  <Button href={newBudgetPath} color="secondary">Nuevo presupuesto</Button>
+  <Button href={newBudgetPath} class="bg-secondary hover:bg-secondary-600 text-white">
+    Nuevo presupuesto
+  </Button>
 </div>
 
 {#if data.tableState === 'error'}

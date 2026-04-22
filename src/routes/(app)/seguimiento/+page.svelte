@@ -1,5 +1,6 @@
 <script lang="ts">
   import { Button, Card, Table, TableBody, TableBodyCell, TableBodyRow, TableHead, TableHeadCell, Badge, Select } from 'flowbite-svelte';
+  import StatusBadge from '$lib/components/admin/StatusBadge.svelte';
   import FeedbackBanner from '$lib/components/FeedbackBanner.svelte';
   import { goto } from '$app/navigation';
   import { route } from '$lib/shared/navigation';
@@ -129,7 +130,7 @@
                 <TableBodyCell>
                   <div class="flex items-center gap-2">
                     {#if budget.status === 'closed'}
-                      <Badge color="gray">Cerrado</Badge>
+                      <StatusBadge status="closed" />
                     {:else if !budget.viewedAt}
                       <span class="inline-block h-2 w-2 rounded-full bg-yellow-400" title="No visitado"></span>
                     {/if}
@@ -164,7 +165,7 @@
             <div class="flex items-start justify-between gap-3">
               <div class="flex items-center gap-2">
                 {#if budget.status === 'closed'}
-                  <Badge color="gray">Cerrado</Badge>
+                  <StatusBadge status="closed" />
                 {:else if !budget.viewedAt}
                   <span class="inline-block h-2 w-2 rounded-full bg-yellow-400" title="No visitado"></span>
                 {/if}

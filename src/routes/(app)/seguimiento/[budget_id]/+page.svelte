@@ -1,6 +1,7 @@
 <script lang="ts">
   import { applyAction, enhance } from '$app/forms';
   import { Badge, Button, Card, Input, Label, Select, Textarea } from 'flowbite-svelte';
+  import StatusBadge from '$lib/components/admin/StatusBadge.svelte';
   import { formatArs } from '$lib/shared/currency';
   import DeliveryAlertBanner from '$lib/components/delivery/DeliveryAlertBanner.svelte';
   import { closeBlockingLoader, confirmAlert, presentActionFeedback, showBlockingLoader } from '$lib/shared/alerts';
@@ -138,7 +139,7 @@
         <p class="text-sm text-gray-500">Aceptado: {formatDate(data.budget.acceptedAt)}</p>
       </div>
       {#if isClosed}
-        <Badge color="gray">Cerrado</Badge>
+        <StatusBadge status="closed" />
       {:else}
         <form method="POST" action="?/close" use:enhance={enhanceWithFeedback()}>
           <Button type="submit" color="secondary" size="xs">Cerrar presupuesto</Button>

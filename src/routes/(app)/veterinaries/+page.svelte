@@ -44,7 +44,9 @@
 </script>
 
 <div class="mb-4 flex justify-end">
-  <Button href={newVeterinaryPath} color="blue">Nueva veterinaria</Button>
+  <Button href={newVeterinaryPath} class="bg-secondary hover:bg-secondary-600 text-white">
+    Nueva veterinaria
+  </Button>
 </div>
 
 {#if data.tableState === 'error'}

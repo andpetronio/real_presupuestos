@@ -31,7 +31,9 @@
 </script>
 
 <div class="mb-4 flex justify-end">
-  <Button href={newDogPath} color="blue">Nuevo perro</Button>
+  <Button href={newDogPath} class="bg-secondary hover:bg-secondary-600 text-white">
+    Nuevo perro
+  </Button>
 </div>
 
 {#if feedbackMessage}

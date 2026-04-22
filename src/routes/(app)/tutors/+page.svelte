@@ -49,7 +49,9 @@
 </script>
 
 <div class="mb-4 flex justify-end">
-  <Button href={newTutorPath} color="blue">Nuevo tutor</Button>
+  <Button href={newTutorPath} class="bg-secondary hover:bg-secondary-600 text-white">
+    Nuevo tutor
+  </Button>
 </div>
 
 {#if data.tableState === 'error'}

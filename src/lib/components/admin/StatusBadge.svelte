@@ -2,8 +2,12 @@
   import { Badge } from 'flowbite-svelte';
   import type { BudgetStatus } from '$lib/types/budget';
 
-  type BadgeTone = 'neutral' | 'warning' | 'info' | 'success' | 'danger' | 'dark';
-  type BadgeColor = 'primary' | 'secondary' | 'amber' | 'green' | 'gray';
+  type BadgeColor = 'primary' | 'gray' | 'amber' | 'blue' | 'green' | 'red' | 'purple';
+  type StatusBadgeConfig = {
+    color: BadgeColor;
+    border?: boolean;
+    className?: string;
+  };
 
   type StatusBadgeProps = {
     status: BudgetStatus;
@@ -21,35 +25,32 @@
     closed: 'Cerrado'
   };
 
-  const STATUS_TONE: Record<BudgetStatus, BadgeTone> = {
-    draft: 'neutral',
-    ready_to_send: 'warning',
-    sent: 'info',
-    accepted: 'success',
-    rejected: 'danger',
-    expired: 'dark',
-    discarded: 'dark',
-    closed: 'dark'
+  const STATUS_CONFIG: Record<BudgetStatus, StatusBadgeConfig> = {
+    draft: { color: 'gray' },
+    ready_to_send: { color: 'amber' },
+    sent: { color: 'blue' },
+    accepted: { color: 'green' },
+    rejected: { color: 'red' },
+    expired: {
+      color: 'gray',
+      border: true,
+      className: 'border-gray-300 bg-white text-gray-700'
+    },
+    discarded: { color: 'gray' },
+    closed: { color: 'purple' }
   };
 
   let { status, label }: StatusBadgeProps = $props();
 
   const resolvedLabel = $derived(label ?? STATUS_COPY[status]);
-  const tone = $derived(STATUS_TONE[status]);
-  const badgeColor = $derived<BadgeColor>(
-    tone === 'success'
-      ? 'green'
-      : tone === 'danger'
-        ? 'secondary'
-        : tone === 'warning'
-          ? 'amber'
-          : tone === 'dark'
-            ? 'gray'
-            : 'primary'
-  );
-  const bordered = $derived(tone === 'neutral');
+  const badgeConfig = $derived(STATUS_CONFIG[status]);
 </script>
 
-<Badge color={badgeColor} border={bordered} rounded>
+<Badge
+  color={badgeConfig.color}
+  border={badgeConfig.border ?? false}
+  class={badgeConfig.className}
+  rounded
+>
   {resolvedLabel}
 </Badge>

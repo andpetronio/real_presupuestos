@@ -2,6 +2,7 @@
   import { applyAction, enhance } from '$app/forms';
   import { invalidateAll } from '$app/navigation';
   import { Badge, Button, Table, TableBody, TableBodyCell, TableBodyRow, TableHead, TableHeadCell } from 'flowbite-svelte';
+  import ActiveStatusBadge from '$lib/components/admin/ActiveStatusBadge.svelte';
   import { closeBlockingLoader, confirmAlert, presentActionFeedback, showBlockingLoader } from '$lib/shared/alerts';
   import type { AssortmentProductRow } from '$lib/types/view-models/wholesale-assortment';
 
@@ -49,7 +50,7 @@
       <TableBodyRow>
         <TableBodyCell class="font-medium">{product.name}</TableBodyCell>
         <TableBodyCell>{product.presentation}</TableBodyCell>
-        <TableBodyCell><Badge color={product.is_active ? 'green' : 'gray'}>{product.is_active ? 'Activo' : 'Inactivo'}</Badge></TableBodyCell>
+        <TableBodyCell><ActiveStatusBadge isActive={product.is_active} /></TableBodyCell>
         <TableBodyCell><Badge color={product.is_enabled ? 'green' : 'yellow'}>{product.is_enabled ? 'Habilitado' : 'No habilitado'}</Badge></TableBodyCell>
         <TableBodyCell>
           <form method="POST" action="?/toggleProduct" use:enhance={enhanceToggle(product.is_enabled)}>
