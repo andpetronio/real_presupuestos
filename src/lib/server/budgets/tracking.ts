@@ -186,6 +186,19 @@ export type DeliveryAlertEntry = {
 
 export type DeliveryAlert = DeliveryAlertEntry;
 
+const parseReferenceMonthStart = (value: string | null): Date | null => {
+  if (!value) return null;
+
+  const parsed = new Date(`${value}T00:00:00`);
+  if (Number.isNaN(parsed.getTime())) return null;
+
+  return new Date(parsed.getFullYear(), parsed.getMonth(), 1, 0, 0, 0, 0);
+};
+
+const isSameYearMonth = (left: Date, right: Date): boolean =>
+  left.getFullYear() === right.getFullYear() &&
+  left.getMonth() === right.getMonth();
+
 export const getDeliveryAlerts = async (
   supabase: BudgetTrackingSupabase,
   alertThresholdDays: number = 5,
@@ -193,18 +206,6 @@ export const getDeliveryAlerts = async (
 ): Promise<DeliveryAlert[]> => {
   const today = new Date();
   const todayOfMonth = today.getDate();
-
-  const currentMonthStart = new Date(today.getFullYear(), today.getMonth(), 1)
-    .toISOString()
-    .split("T")[0];
-  const currentMonthEnd = new Date(
-    today.getFullYear(),
-    today.getMonth() + 1,
-    0,
-    23,
-    59,
-    59,
-  ).toISOString();
 
   let budgetsQuery = supabase
     .from("budgets")
@@ -280,6 +281,23 @@ export const getDeliveryAlerts = async (
   const alerts: DeliveryAlert[] = [];
 
   for (const budget of budgets) {
+    const referenceMonthStart = parseReferenceMonthStart(
+      budget.reference_month,
+    );
+    if (!referenceMonthStart || !isSameYearMonth(referenceMonthStart, today)) {
+      continue;
+    }
+
+    const referenceMonthEnd = new Date(
+      referenceMonthStart.getFullYear(),
+      referenceMonthStart.getMonth() + 1,
+      0,
+      23,
+      59,
+      59,
+      999,
+    );
+
     for (const budgetDog of budget.budget_dogs ?? []) {
       const dogId = budgetDog.dog_id;
       const schedule = scheduleByDogId.get(dogId) ?? [];
@@ -297,8 +315,13 @@ export const getDeliveryAlerts = async (
         ).filter((d) => {
           const deliveredAt = d.delivered_at;
           if (!deliveredAt) return false;
+
+          const deliveredAtDate = new Date(deliveredAt);
+          if (Number.isNaN(deliveredAtDate.getTime())) return false;
+
           return (
-            deliveredAt >= currentMonthStart && deliveredAt <= currentMonthEnd
+            deliveredAtDate >= referenceMonthStart &&
+            deliveredAtDate <= referenceMonthEnd
           );
         });
 

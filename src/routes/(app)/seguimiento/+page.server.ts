@@ -109,7 +109,9 @@ export const load: PageServerLoad = async ({ locals, url }) => {
       budgetIds.length
         ? locals.supabase
             .from("budget_dog_recipes")
-            .select("id, assigned_days, budget_dog:budget_dogs(budget_id)")
+            .select(
+              "id, assigned_days, budget_dog:budget_dogs!inner(budget_id)",
+            )
             .in("budget_dog.budget_id", budgetIds)
         : Promise.resolve({ data: [], error: null }),
     ]);
@@ -117,7 +119,13 @@ export const load: PageServerLoad = async ({ locals, url }) => {
     if (paymentsResult.error || recipesResult.error)
       throw paymentsResult.error ?? recipesResult.error;
 
-    const recipeIds = (recipesResult.data ?? []).map((r) => r.id);
+    const allowedBudgetIds = new Set(budgetIds);
+    const safeRecipeRows = (recipesResult.data ?? []).filter((row) => {
+      const rowBudgetId = readBudgetId(row.budget_dog);
+      return rowBudgetId !== null && allowedBudgetIds.has(rowBudgetId);
+    });
+
+    const recipeIds = safeRecipeRows.map((r) => r.id);
 
     const [preparationsResult, deliveriesResult] = await Promise.all([
       recipeIds.length
@@ -145,7 +153,7 @@ export const load: PageServerLoad = async ({ locals, url }) => {
     const recipeToBudget: Map<string, string> = new Map();
     const recipeToAssigned: Map<string, number> = new Map();
     const assignedByBudget: Map<string, number> = new Map();
-    for (const row of recipesResult.data ?? []) {
+    for (const row of safeRecipeRows) {
       const bid = readBudgetId(row.budget_dog);
       if (!bid) continue;
       const assigned = Number(row.assigned_days ?? 0);

@@ -27,6 +27,18 @@ const parseDateToIso = (value: string): string | null => {
   return date.toISOString();
 };
 
+const readBudgetDogBudgetId = (value: unknown): string | null => {
+  if (!value) return null;
+
+  if (Array.isArray(value)) {
+    const first = value[0] as { budget_id?: unknown } | undefined;
+    return typeof first?.budget_id === "string" ? first.budget_id : null;
+  }
+
+  const relation = value as { budget_id?: unknown };
+  return typeof relation.budget_id === "string" ? relation.budget_id : null;
+};
+
 export const load: PageServerLoad = async ({ locals, params }) => {
   const budgetId = params.budget_id;
 
@@ -53,7 +65,7 @@ export const load: PageServerLoad = async ({ locals, params }) => {
   const { data: recipeRows, error: recipeError } = await locals.supabase
     .from("budget_dog_recipes")
     .select(
-      "id, assigned_days, recipe:recipes(name), budget_dog:budget_dogs(id, budget_id, dog:dogs(name))",
+      "id, assigned_days, recipe:recipes(name), budget_dog:budget_dogs!inner(id, budget_id, dog:dogs(name))",
     )
     .eq("budget_dog.budget_id", budgetId)
     .order("created_at", { ascending: true });
@@ -62,7 +74,23 @@ export const load: PageServerLoad = async ({ locals, params }) => {
     throw redirect(303, "/seguimiento");
   }
 
-  const budgetRecipeIds = (recipeRows ?? []).map((row) => row.id);
+  const safeRecipeRows = (recipeRows ?? []).filter(
+    (row) => readBudgetDogBudgetId(row.budget_dog) === budgetId,
+  );
+  const normalizedRecipeRows = safeRecipeRows.map((row) => {
+    const relation = Array.isArray(row.budget_dog)
+      ? (row.budget_dog[0] ?? null)
+      : row.budget_dog;
+
+    return {
+      ...row,
+      budget_dog: relation
+        ? { dog: relation.dog ?? null }
+        : ({ dog: null } as const),
+    };
+  });
+
+  const budgetRecipeIds = safeRecipeRows.map((row) => row.id);
 
   const [preparationsResult, deliveriesResult, paymentsResult] =
     await Promise.all([
@@ -99,7 +127,7 @@ export const load: PageServerLoad = async ({ locals, params }) => {
 
   const recipeTracking = buildRecipeTracking({
     recipeRows:
-      (recipeRows as Array<{
+      (normalizedRecipeRows as Array<{
         id: string;
         assigned_days: number;
         recipe: { name?: string | null } | null;

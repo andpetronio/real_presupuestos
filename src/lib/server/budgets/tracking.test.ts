@@ -123,6 +123,25 @@ describe("getDeliveryAlerts", () => {
     });
   });
 
+  it("omite alertas cuando el presupuesto no es del mes en curso", async () => {
+    vi.useFakeTimers();
+    vi.setSystemTime(new Date("2026-04-20T12:00:00.000Z"));
+
+    const nextMonthBudget: BudgetRow = {
+      ...baseBudget,
+      reference_month: "2026-05-01",
+    };
+
+    const supabase = createSupabaseMock({
+      budgets: [nextMonthBudget],
+      schedules: [{ dog_id: "dog-1", day_of_month: 14, pct: 50 }],
+    });
+
+    const alerts = await getDeliveryAlerts(supabase, 5);
+
+    expect(alerts).toEqual([]);
+  });
+
   it("omite alertas cuando la porcion ya fue entregada", async () => {
     vi.useFakeTimers();
     vi.setSystemTime(new Date("2026-04-20T12:00:00.000Z"));
