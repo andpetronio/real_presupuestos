@@ -1,8 +1,10 @@
 import { describe, expect, it } from "vitest";
 import {
   applyBudgetListFilters,
+  defaultBudgetSort,
   hasBudgetFilters,
   parseBudgetFilters,
+  parseBudgetSort,
   resolveBudgetTableMessage,
   type BudgetListFilters,
 } from "./list";
@@ -69,6 +71,34 @@ describe("parseBudgetFilters", () => {
     const result = parseBudgetFilters(url);
 
     expect(result.status).toBe("discarded");
+  });
+});
+
+describe("parseBudgetSort", () => {
+  it("usa default seguro cuando sort params faltan", () => {
+    const url = new URL("http://localhost/budgets");
+
+    expect(parseBudgetSort(url)).toEqual(defaultBudgetSort);
+  });
+
+  it("acepta sortBy/sortDir válidos", () => {
+    const url = new URL(
+      "http://localhost/budgets?sortBy=total_cost&sortDir=desc",
+    );
+
+    expect(parseBudgetSort(url)).toEqual({
+      sortBy: "total_cost",
+      sortDir: "desc",
+    });
+  });
+
+  it("si sortBy es inválido, cae al default", () => {
+    const url = new URL("http://localhost/budgets?sortBy=invalid&sortDir=desc");
+
+    expect(parseBudgetSort(url)).toEqual({
+      sortBy: "tutor",
+      sortDir: "desc",
+    });
   });
 });
 

@@ -1,6 +1,7 @@
 <script lang="ts">
   import { Button, Table, TableBody, TableBodyCell, TableBodyRow, TableHead, TableHeadCell } from 'flowbite-svelte';
   import ActiveStatusBadge from '$lib/components/admin/ActiveStatusBadge.svelte';
+  import SortableHeader from '$lib/components/admin/SortableHeader.svelte';
   import { formatArs } from '$lib/shared/currency';
   import { route } from '$lib/shared/navigation';
 
@@ -21,20 +22,53 @@
 
   type RawMaterialTableProps = {
     rawMaterials: ReadonlyArray<RawMaterialRow>;
+    sortBy: 'name' | 'base_unit' | 'cost_with_wastage' | 'is_active';
+    sortDir: 'asc' | 'desc';
+    buildSortHref: (
+      field: 'name' | 'base_unit' | 'cost_with_wastage' | 'is_active',
+    ) => string;
   };
 
-  let { rawMaterials }: RawMaterialTableProps = $props();
+  let { rawMaterials, sortBy, sortDir, buildSortHref }: RawMaterialTableProps = $props();
 </script>
 
 <Table hoverable striped aria-label="Tabla de materias primas">
   <TableHead>
-    <TableHeadCell>Nombre</TableHeadCell>
-    <TableHeadCell>Unidad base</TableHeadCell>
+    <TableHeadCell>
+      <SortableHeader
+        label="Nombre"
+        href={buildSortHref('name')}
+        active={sortBy === 'name'}
+        dir={sortDir}
+      />
+    </TableHeadCell>
+    <TableHeadCell>
+      <SortableHeader
+        label="Unidad base"
+        href={buildSortHref('base_unit')}
+        active={sortBy === 'base_unit'}
+        dir={sortDir}
+      />
+    </TableHeadCell>
     <TableHeadCell>Cantidad comprada</TableHeadCell>
     <TableHeadCell>Costo base</TableHeadCell>
     <TableHeadCell>% Merma</TableHeadCell>
-    <TableHeadCell>Costo con merma</TableHeadCell>
-    <TableHeadCell>Estado</TableHeadCell>
+    <TableHeadCell>
+      <SortableHeader
+        label="Costo con merma"
+        href={buildSortHref('cost_with_wastage')}
+        active={sortBy === 'cost_with_wastage'}
+        dir={sortDir}
+      />
+    </TableHeadCell>
+    <TableHeadCell>
+      <SortableHeader
+        label="Estado"
+        href={buildSortHref('is_active')}
+        active={sortBy === 'is_active'}
+        dir={sortDir}
+      />
+    </TableHeadCell>
     <TableHeadCell>Acciones</TableHeadCell>
   </TableHead>
   <TableBody>

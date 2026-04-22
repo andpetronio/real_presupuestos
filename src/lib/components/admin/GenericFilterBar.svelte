@@ -12,6 +12,8 @@
     filterOptions?: ReadonlyArray<FilterOption>;
     currentFilter?: string;
     showSubmitButton?: boolean;
+    currentSortBy?: string;
+    currentSortDir?: 'asc' | 'desc';
   };
 
   let {
@@ -22,7 +24,9 @@
     filterName = 'status',
     filterOptions = [],
     currentFilter = 'all',
-    showSubmitButton = false
+    showSubmitButton = false,
+    currentSortBy = '',
+    currentSortDir = 'asc'
   }: GenericFilterBarProps = $props();
 
   let searchValue = $state('');
@@ -40,6 +44,16 @@
   const hasActiveFilters = $derived(
     currentSearch !== '' || (currentFilter !== 'all' && currentFilter !== '')
   );
+
+  const clearHref = $derived.by(() => {
+    const parts: string[] = [];
+    if (currentSortBy) {
+      parts.push(`sortBy=${encodeURIComponent(currentSortBy)}`);
+      parts.push(`sortDir=${encodeURIComponent(currentSortDir)}`);
+    }
+    parts.push('page=1');
+    return `?${parts.join('&')}`;
+  });
 </script>
 
 <form method="GET" class="mb-4 flex flex-wrap items-end gap-3" bind:this={filterForm} novalidate>
@@ -73,7 +87,7 @@
       <Button type="submit" size="sm">Filtrar</Button>
     {/if}
     {#if hasActiveFilters}
-      <Button type="button" color="alternative" size="sm" href="?">
+      <Button type="button" color="alternative" size="sm" href={clearHref}>
         Limpiar
       </Button>
     {/if}
@@ -81,4 +95,8 @@
 
   <!-- Preserve page on filter submit -->
   <input type="hidden" name="page" value="1" />
+  {#if currentSortBy}
+    <input type="hidden" name="sortBy" value={currentSortBy} />
+    <input type="hidden" name="sortDir" value={currentSortDir} />
+  {/if}
 </form>

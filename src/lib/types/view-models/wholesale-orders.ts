@@ -1,4 +1,4 @@
-export type WholesaleOrderStatus = 'pending' | 'delivered' | 'paid';
+export type WholesaleOrderStatus = "pending" | "delivered" | "paid";
 
 export type WholesaleOrderItemView = {
   id: string;
@@ -29,8 +29,12 @@ export type WholesaleOrderDetailView = WholesaleOrderListRow & {
 
 export type WholesaleOrdersPageDataViewModel = {
   orders: ReadonlyArray<WholesaleOrderListRow>;
-  tableState: 'idle' | 'success' | 'error' | 'empty';
+  tableState: "idle" | "success" | "error" | "empty";
   tableMessage: { title: string; detail: string } | null;
   pagination: { page: number; totalPages: number; total: number };
   filters: { search: string; status: string };
+  sort: {
+    sortBy: "wholesaler" | "placed_at" | "status" | "total_units" | "total_ars";
+    sortDir: "asc" | "desc";
+  };
 };

@@ -5,6 +5,7 @@
   import WholesaleOrderMobileCards from '$lib/components/wholesale-orders/WholesaleOrderMobileCards.svelte';
   import WholesaleOrderPagination from '$lib/components/wholesale-orders/WholesaleOrderPagination.svelte';
   import WholesaleOrderTable from '$lib/components/wholesale-orders/WholesaleOrderTable.svelte';
+  import { buildSortHref } from '$lib/shared/sort-links';
   import type {
     WholesaleOrderListRow,
     WholesaleOrdersPageDataViewModel,
@@ -20,6 +21,20 @@
   };
 
   let { data, form }: { data: PageData; form: FormState | null } = $props();
+
+  const buildOrderSortHref = (
+    field: 'wholesaler' | 'placed_at' | 'status' | 'total_units' | 'total_ars',
+  ): string =>
+    buildSortHref({
+      basePath: '/mayorista-orders',
+      currentSortBy: data.sort.sortBy,
+      currentSortDir: data.sort.sortDir,
+      clickedField: field,
+      filters: {
+        q: data.filters.search,
+        status: data.filters.status
+      }
+    });
 </script>
 
 <div class="space-y-4">
@@ -53,6 +68,8 @@
       <WholesaleOrderFilterBar
         currentSearch={data.filters.search}
         currentStatus={data.filters.status}
+        currentSortBy={data.sort.sortBy}
+        currentSortDir={data.sort.sortDir}
       />
     </div>
 
@@ -62,7 +79,12 @@
       </div>
 
       <div class="hidden md:block">
-        <WholesaleOrderTable orders={data.orders} />
+        <WholesaleOrderTable
+          orders={data.orders}
+          sortBy={data.sort.sortBy}
+          sortDir={data.sort.sortDir}
+          buildSortHref={buildOrderSortHref}
+        />
       </div>
 
       <div class="px-4 pb-4">
@@ -72,6 +94,8 @@
           total={data.pagination.total}
           search={data.filters.search}
           status={data.filters.status}
+          sortBy={data.sort.sortBy}
+          sortDir={data.sort.sortDir}
         />
       </div>
     {/if}

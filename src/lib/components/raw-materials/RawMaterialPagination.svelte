@@ -8,6 +8,8 @@
     total: number;
     search: string;
     status: string;
+    sortBy: 'name' | 'base_unit' | 'cost_with_wastage' | 'is_active';
+    sortDir: 'asc' | 'desc';
   };
 
   let {
@@ -15,7 +17,9 @@
     totalPages,
     total,
     search,
-    status
+    status,
+    sortBy,
+    sortDir
   }: RawMaterialPaginationProps = $props();
 
   const hasPrev = $derived(page > 1);
@@ -31,7 +35,7 @@
     <div>
       {#if hasPrev}
         <Button
-          href={buildPaginationHref('/raw-materials', page - 1, { search, status })}
+          href={buildPaginationHref('/raw-materials', page - 1, { search, status, sortBy, sortDir })}
           size="sm"
           color="light"
           aria-label="Página anterior"
@@ -56,7 +60,7 @@
     <div>
       {#if hasNext}
         <Button
-          href={buildPaginationHref('/raw-materials', page + 1, { search, status })}
+          href={buildPaginationHref('/raw-materials', page + 1, { search, status, sortBy, sortDir })}
           size="sm"
           color="light"
           aria-label="Página siguiente"

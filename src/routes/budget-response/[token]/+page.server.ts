@@ -98,24 +98,23 @@ const buildRecipeDetailsByDog = (
     if (!dogId || !recipeId) continue;
 
     const existingDog = recipesByDogId.get(dogId);
-    const dogEntry =
-      existingDog ??
-      {
-        dogName: safeName(row.dog_name, "Perro"),
-        recipesById: new Map<string, { recipeName: string; rawMaterials: string[] }>(),
-      };
+    const dogEntry = existingDog ?? {
+      dogName: safeName(row.dog_name, "Perro"),
+      recipesById: new Map<
+        string,
+        { recipeName: string; rawMaterials: string[] }
+      >(),
+    };
 
     if (!existingDog) {
       recipesByDogId.set(dogId, dogEntry);
     }
 
     const existingRecipe = dogEntry.recipesById.get(recipeId);
-    const recipeEntry =
-      existingRecipe ??
-      {
-        recipeName: safeName(row.recipe_name, "Receta"),
-        rawMaterials: [],
-      };
+    const recipeEntry = existingRecipe ?? {
+      recipeName: safeName(row.recipe_name, "Receta"),
+      rawMaterials: [],
+    };
 
     if (!existingRecipe) {
       dogEntry.recipesById.set(recipeId, recipeEntry);
@@ -145,7 +144,8 @@ const buildRecipeDetailsByDog = (
     }))
     .sort(
       (a, b) =>
-        a.dogName.localeCompare(b.dogName, "es-AR") || a.dogId.localeCompare(b.dogId),
+        a.dogName.localeCompare(b.dogName, "es-AR") ||
+        a.dogId.localeCompare(b.dogId),
     );
 };
 
@@ -179,15 +179,20 @@ const readRecipeDetailsByToken = async (
   locals: App.Locals,
   token: string,
 ): Promise<DogRecipeRawMaterialsView[]> => {
-  const result = await locals.supabase.rpc("public_get_budget_response_details", {
-    p_token: token,
-  });
+  const result = await locals.supabase.rpc(
+    "public_get_budget_response_details",
+    {
+      p_token: token,
+    },
+  );
 
   if (result.error) {
     throw result.error;
   }
 
-  return buildRecipeDetailsByDog((result.data ?? []) as PublicBudgetDetailRpcRow[]);
+  return buildRecipeDetailsByDog(
+    (result.data ?? []) as PublicBudgetDetailRpcRow[],
+  );
 };
 
 const getBlockedResponseMessageFromCode = (code: string): string => {

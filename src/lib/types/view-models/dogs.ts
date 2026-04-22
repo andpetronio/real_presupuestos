@@ -17,6 +17,10 @@ export type DogsPageDataViewModel = {
     search: string;
     status: string;
   };
+  sort: {
+    sortBy: "name" | "diet_type" | "meals_per_day" | "is_active";
+    sortDir: "asc" | "desc";
+  };
 };
 
 export type DogsActionDataViewModel = {

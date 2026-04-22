@@ -39,7 +39,8 @@ export const actions: Actions = {
   loginByCode: async ({ request, locals, cookies }) => {
     const formData = await request.formData();
     const codeEntry = formData.get("code");
-    const code = typeof codeEntry === "string" ? codeEntry.trim().toUpperCase() : "";
+    const code =
+      typeof codeEntry === "string" ? codeEntry.trim().toUpperCase() : "";
 
     if (!code) {
       return fail(400, {

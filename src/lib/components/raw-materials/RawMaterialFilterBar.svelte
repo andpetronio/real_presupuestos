@@ -4,9 +4,11 @@
   type RawMaterialFilterBarProps = {
     currentSearch: string;
     currentStatus: string;
+    currentSortBy: 'name' | 'base_unit' | 'cost_with_wastage' | 'is_active';
+    currentSortDir: 'asc' | 'desc';
   };
 
-  let { currentSearch, currentStatus }: RawMaterialFilterBarProps = $props();
+  let { currentSearch, currentStatus, currentSortBy, currentSortDir }: RawMaterialFilterBarProps = $props();
 
   const statusOptions = [
     { value: 'all', label: 'Todas' },
@@ -23,4 +25,6 @@
   filterOptions={statusOptions}
   currentFilter={currentStatus}
   showSubmitButton={true}
+  currentSortBy={currentSortBy}
+  currentSortDir={currentSortDir}
 />

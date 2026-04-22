@@ -5,6 +5,7 @@
   import RawMaterialTable from '$lib/components/raw-materials/RawMaterialTable.svelte';
   import RawMaterialPagination from '$lib/components/raw-materials/RawMaterialPagination.svelte';
   import RawMaterialMobileCards from '$lib/components/raw-materials/RawMaterialMobileCards.svelte';
+  import { buildSortHref } from '$lib/shared/sort-links';
 
   const formatQuantity = (value: number): string => {
     return new Intl.NumberFormat('es-AR').format(value);
@@ -30,11 +31,29 @@
       search: string;
       status: string;
     };
+    sort: {
+      sortBy: 'name' | 'base_unit' | 'cost_with_wastage' | 'is_active';
+      sortDir: 'asc' | 'desc';
+    };
   };
 
   let { data }: { data: PageData } = $props();
 
   const newRawMaterialPath = '/raw-materials/new';
+
+  const buildRawMaterialSortHref = (
+    field: 'name' | 'base_unit' | 'cost_with_wastage' | 'is_active',
+  ): string =>
+    buildSortHref({
+      basePath: '/raw-materials',
+      currentSortBy: data.sort.sortBy,
+      currentSortDir: data.sort.sortDir,
+      clickedField: field,
+      filters: {
+        q: data.filters.search,
+        status: data.filters.status
+      }
+    });
 </script>
 
 <div class="mb-4 flex justify-end">
@@ -52,6 +71,8 @@
       <RawMaterialFilterBar
         currentSearch={data.filters.search}
         currentStatus={data.filters.status}
+        currentSortBy={data.sort.sortBy}
+        currentSortDir={data.sort.sortDir}
       />
     </div>
 
@@ -62,7 +83,12 @@
 
     <!-- Desktop table (hidden on < md) -->
     <div class="hidden md:block">
-      <RawMaterialTable rawMaterials={data.rawMaterials} />
+      <RawMaterialTable
+        rawMaterials={data.rawMaterials}
+        sortBy={data.sort.sortBy}
+        sortDir={data.sort.sortDir}
+        buildSortHref={buildRawMaterialSortHref}
+      />
     </div>
 
     <!-- Pagination -->
@@ -73,6 +99,8 @@
         total={data.pagination.total}
         search={data.filters.search}
         status={data.filters.status}
+        sortBy={data.sort.sortBy}
+        sortDir={data.sort.sortDir}
       />
     </div>
   </Card>

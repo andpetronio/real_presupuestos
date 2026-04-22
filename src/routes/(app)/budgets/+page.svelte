@@ -8,6 +8,7 @@
   import BudgetTable from '$lib/components/budgets/BudgetTable.svelte';
   import BudgetPagination from '$lib/components/budgets/BudgetPagination.svelte';
   import BudgetMobileCards from '$lib/components/budgets/BudgetMobileCards.svelte';
+  import { buildSortHref } from '$lib/shared/sort-links';
   import type {
     BudgetsActionDataViewModel as ActionData,
     BudgetsPageDataViewModel as PageData
@@ -23,6 +24,21 @@
     if (Number.isNaN(date.getTime())) return '—';
     return date.toLocaleDateString('es-AR');
   };
+
+  const buildBudgetSortHref = (
+    field: 'tutor' | 'status' | 'total_cost' | 'final_sale_price' | 'expires_at',
+  ): string =>
+    buildSortHref({
+      basePath: '/budgets',
+      currentSortBy: data.sort.sortBy,
+      currentSortDir: data.sort.sortDir,
+      clickedField: field,
+      filters: {
+        status: data.filters.status,
+        q: data.filters.search,
+        tutor: data.filters.tutorId
+      }
+    });
 
 </script>
 
@@ -43,6 +59,8 @@
         currentSearch={data.filters.search}
         tutors={data.tutors}
         currentTutorId={data.filters.tutorId}
+        currentSortBy={data.sort.sortBy}
+        currentSortDir={data.sort.sortDir}
       />
     </div>
 
@@ -59,6 +77,9 @@
       <BudgetTable
         budgets={data.budgets}
         {formatDate}
+        sortBy={data.sort.sortBy}
+        sortDir={data.sort.sortDir}
+        buildSortHref={buildBudgetSortHref}
       />
     </div>
 
@@ -71,6 +92,8 @@
         status={data.filters.status}
         search={data.filters.search}
         tutorId={data.filters.tutorId}
+        sortBy={data.sort.sortBy}
+        sortDir={data.sort.sortDir}
       />
     </div>
   </Card>

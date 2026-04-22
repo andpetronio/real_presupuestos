@@ -5,6 +5,7 @@
   import DogTable from '$lib/components/dogs/DogTable.svelte';
   import DogPagination from '$lib/components/dogs/DogPagination.svelte';
   import DogMobileCards from '$lib/components/dogs/DogMobileCards.svelte';
+  import { buildSortHref } from '$lib/shared/sort-links';
   import type {
     DogsActionDataViewModel as ActionData,
     DogsPageDataViewModel as PageData
@@ -15,6 +16,18 @@
   const newDogPath = '/dogs/new';
   const feedbackMessage = $derived(form?.operatorError ?? form?.operatorSuccess ?? '');
   const feedbackColor = $derived(form?.operatorError ? 'red' : 'green');
+
+  const buildDogSortHref = (field: 'name' | 'diet_type' | 'meals_per_day' | 'is_active'): string =>
+    buildSortHref({
+      basePath: '/dogs',
+      currentSortBy: data.sort.sortBy,
+      currentSortDir: data.sort.sortDir,
+      clickedField: field,
+      filters: {
+        q: data.filters.search,
+        status: data.filters.status
+      }
+    });
 </script>
 
 <div class="mb-4 flex justify-end">
@@ -36,6 +49,8 @@
       <DogFilterBar
         currentSearch={data.filters.search}
         currentStatus={data.filters.status}
+        currentSortBy={data.sort.sortBy}
+        currentSortDir={data.sort.sortDir}
       />
     </div>
 
@@ -46,7 +61,12 @@
 
     <!-- Desktop table (hidden on < md) -->
     <div class="hidden md:block">
-      <DogTable dogs={data.dogs} />
+      <DogTable
+        dogs={data.dogs}
+        sortBy={data.sort.sortBy}
+        sortDir={data.sort.sortDir}
+        buildSortHref={buildDogSortHref}
+      />
     </div>
 
     <!-- Pagination -->
@@ -57,6 +77,8 @@
         total={data.pagination.total}
         search={data.filters.search}
         status={data.filters.status}
+        sortBy={data.sort.sortBy}
+        sortDir={data.sort.sortDir}
       />
     </div>
   </Card>

@@ -3,6 +3,7 @@
   import { invalidateAll } from '$app/navigation';
   import { Button, Table, TableBody, TableBodyCell, TableBodyRow, TableHead, TableHeadCell } from 'flowbite-svelte';
   import ActiveStatusBadge from '$lib/components/admin/ActiveStatusBadge.svelte';
+  import SortableHeader from '$lib/components/admin/SortableHeader.svelte';
   import { route } from '$lib/shared/navigation';
   import { closeBlockingLoader, confirmAlert, presentActionFeedback, showBlockingLoader } from '$lib/shared/alerts';
 
@@ -17,9 +18,12 @@
 
   type TutorTableProps = {
     tutors: ReadonlyArray<TutorRow>;
+    sortBy: 'full_name' | 'whatsapp_number' | 'is_active';
+    sortDir: 'asc' | 'desc';
+    buildSortHref: (field: 'full_name' | 'whatsapp_number' | 'is_active') => string;
   };
 
-  let { tutors }: TutorTableProps = $props();
+  let { tutors, sortBy, sortDir, buildSortHref }: TutorTableProps = $props();
 
   const enhanceStatusAction = (params: {
     title: string;
@@ -49,10 +53,31 @@
 
 <Table hoverable striped aria-label="Tabla de tutores">
   <TableHead>
-    <TableHeadCell>Nombre</TableHeadCell>
-    <TableHeadCell>WhatsApp</TableHeadCell>
+    <TableHeadCell>
+      <SortableHeader
+        label="Nombre"
+        href={buildSortHref('full_name')}
+        active={sortBy === 'full_name'}
+        dir={sortDir}
+      />
+    </TableHeadCell>
+    <TableHeadCell>
+      <SortableHeader
+        label="WhatsApp"
+        href={buildSortHref('whatsapp_number')}
+        active={sortBy === 'whatsapp_number'}
+        dir={sortDir}
+      />
+    </TableHeadCell>
     <TableHeadCell>Notas</TableHeadCell>
-    <TableHeadCell>Estado</TableHeadCell>
+    <TableHeadCell>
+      <SortableHeader
+        label="Estado"
+        href={buildSortHref('is_active')}
+        active={sortBy === 'is_active'}
+        dir={sortDir}
+      />
+    </TableHeadCell>
     <TableHeadCell>Acciones</TableHeadCell>
   </TableHead>
   <TableBody>

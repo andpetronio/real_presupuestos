@@ -12,13 +12,22 @@
     currentSearch: string;
     tutors: ReadonlyArray<TutorOption>;
     currentTutorId: string | null;
+    currentSortBy:
+      | 'tutor'
+      | 'status'
+      | 'total_cost'
+      | 'final_sale_price'
+      | 'expires_at';
+    currentSortDir: 'asc' | 'desc';
   };
 
   let {
     currentStatus,
     currentSearch,
     tutors,
-    currentTutorId
+    currentTutorId,
+    currentSortBy,
+    currentSortDir
   }: BudgetFilterBarProps = $props();
 
   // "pending" is a virtual filter value (maps to draft + ready_to_send server-side)
@@ -63,6 +72,10 @@
   const hasActiveFilters = $derived(
     currentStatus !== 'all' || currentSearch !== '' || currentTutorId !== null
   );
+
+  const clearHref = $derived.by(() => {
+    return `?page=1&sortBy=${encodeURIComponent(currentSortBy)}&sortDir=${encodeURIComponent(currentSortDir)}`;
+  });
 </script>
 
 <form method="GET" class="mb-4 flex flex-wrap items-end gap-3" bind:this={filterForm} novalidate>
@@ -117,7 +130,7 @@
     <Button type="submit" size="sm">Filtrar</Button>
     {#if hasActiveFilters}
       <Button
-        href="?page=1"
+        href={clearHref}
         size="sm"
         color="light"
         aria-label="Limpiar filtros"
@@ -129,4 +142,6 @@
 
   <!-- Preserve page on filter submit -->
   <input type="hidden" name="page" value="1" />
+  <input type="hidden" name="sortBy" value={currentSortBy} />
+  <input type="hidden" name="sortDir" value={currentSortDir} />
 </form>

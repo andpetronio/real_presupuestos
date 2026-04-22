@@ -19,8 +19,15 @@ describe("(app)/dogs/+page.server load", () => {
       count: 1,
       error: null,
     });
-    const statusEq = vi.fn().mockReturnValue({ range });
-    const dogsOrder = vi.fn().mockReturnValue({ range, eq: statusEq });
+    const statusEq = vi.fn();
+    const dogsOrder = vi.fn();
+    const dogsQuery = {
+      order: dogsOrder,
+      eq: statusEq,
+      range,
+    };
+    statusEq.mockReturnValue(dogsQuery);
+    dogsOrder.mockReturnValue(dogsQuery);
 
     const from = vi.fn((table: string) => {
       if (table === "dogs")
@@ -40,8 +47,75 @@ describe("(app)/dogs/+page.server load", () => {
       dogs: ReadonlyArray<unknown>;
     };
 
+    expect(dogsOrder).toHaveBeenNthCalledWith(1, "name", { ascending: true });
+    expect(dogsOrder).toHaveBeenNthCalledWith(2, "created_at", {
+      ascending: false,
+    });
+    expect(dogsOrder).toHaveBeenNthCalledWith(3, "id", { ascending: true });
     expect(data.tableState).toBe("success");
     expect(data.dogs).toHaveLength(1);
+  });
+
+  it("aplica sorter por meals_per_day cuando viene en query", async () => {
+    const range = vi
+      .fn()
+      .mockResolvedValue({ data: [], count: 0, error: null });
+    const statusEq = vi.fn();
+    const dogsOrder = vi.fn();
+    const dogsQuery = {
+      order: dogsOrder,
+      eq: statusEq,
+      range,
+    };
+    statusEq.mockReturnValue(dogsQuery);
+    dogsOrder.mockReturnValue(dogsQuery);
+
+    const from = vi.fn((table: string) => {
+      if (table === "dogs")
+        return { select: vi.fn().mockReturnValue({ order: dogsOrder }) };
+      return { select: vi.fn() };
+    });
+
+    await load(
+      asLoadEvent<Parameters<typeof load>[0]>({
+        locals: { supabase: { from } },
+        url: new URL("http://localhost/dogs?sortBy=meals_per_day&sortDir=desc"),
+      }),
+    );
+
+    expect(dogsOrder).toHaveBeenNthCalledWith(1, "meals_per_day", {
+      ascending: false,
+    });
+  });
+
+  it("si sortBy es inválido usa name asc como fallback", async () => {
+    const range = vi
+      .fn()
+      .mockResolvedValue({ data: [], count: 0, error: null });
+    const statusEq = vi.fn();
+    const dogsOrder = vi.fn();
+    const dogsQuery = {
+      order: dogsOrder,
+      eq: statusEq,
+      range,
+    };
+    statusEq.mockReturnValue(dogsQuery);
+    dogsOrder.mockReturnValue(dogsQuery);
+
+    const from = vi.fn((table: string) => {
+      if (table === "dogs")
+        return { select: vi.fn().mockReturnValue({ order: dogsOrder }) };
+      return { select: vi.fn() };
+    });
+
+    await load(
+      asLoadEvent<Parameters<typeof load>[0]>({
+        locals: { supabase: { from } },
+        url: new URL("http://localhost/dogs?sortBy=invalid"),
+      }),
+    );
+
+    expect(dogsOrder).toHaveBeenNthCalledWith(1, "name", { ascending: true });
   });
 });
 

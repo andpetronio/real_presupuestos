@@ -5,6 +5,7 @@ import {
   getPagination,
   applyListFilters,
 } from "$lib/server/shared/list-helpers";
+import { parseSortState } from "$lib/server/shared/sorting";
 
 const EMPTY_LABELS = {
   title: "Todavía no hay veterinarias cargadas",
@@ -15,6 +16,11 @@ export const load: PageServerLoad = async ({ locals, url }) => {
   const { page, pageSize, offset } = getPagination(
     url.searchParams.get("page"),
   );
+  const sort = parseSortState({
+    searchParams: url.searchParams,
+    allowedSortBy: ["name"] as const,
+    defaultSort: { sortBy: "name", sortDir: "asc" },
+  });
   const filters = {
     search: url.searchParams.get("q")?.trim() ?? "",
   };
@@ -22,8 +28,12 @@ export const load: PageServerLoad = async ({ locals, url }) => {
   try {
     let query = locals.supabase
       .from("veterinaries")
-      .select("id, name, created_at", { count: "exact" })
-      .order("created_at", { ascending: false });
+      .select("id, name, created_at", { count: "exact" });
+
+    query = query.order("name", { ascending: sort.sortDir === "asc" });
+    query = query
+      .order("created_at", { ascending: false })
+      .order("id", { ascending: true });
 
     query = applyListFilters(query, filters, { searchColumn: "name" });
 
@@ -47,6 +57,7 @@ export const load: PageServerLoad = async ({ locals, url }) => {
     return {
       veterinaries,
       filters,
+      sort,
       pagination: { page, totalPages, total },
       tableState,
       tableMessage,
@@ -55,6 +66,7 @@ export const load: PageServerLoad = async ({ locals, url }) => {
     return {
       veterinaries: [],
       filters,
+      sort: { sortBy: "name", sortDir: "asc" as const },
       pagination: { page: 1, totalPages: 1, total: 0 },
       tableState: "error",
       tableMessage: buildFallbackError("veterinarias"),

@@ -19,6 +19,19 @@ describe("buildPaginationHref", () => {
 
     expect(href).toBe("/tutors?q=ana&page=2");
   });
+
+  it("preserva sorter en la URL de paginación", () => {
+    const href = buildPaginationHref("/tutors", 4, {
+      search: "ana",
+      status: "active",
+      sortBy: "whatsapp_number",
+      sortDir: "desc",
+    });
+
+    expect(href).toBe(
+      "/tutors?q=ana&status=active&sortBy=whatsapp_number&sortDir=desc&page=4",
+    );
+  });
 });
 
 describe("hasActiveFilters", () => {

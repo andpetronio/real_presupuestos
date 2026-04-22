@@ -89,7 +89,8 @@ describe("(app)/budgets/[budget_id]/update/+page.server actions.update", () => {
     const saveBudgetMock = vi.fn().mockResolvedValue(
       fail(400, {
         actionType: "update",
-        operatorError: "No pudimos guardar las recetas asignadas del presupuesto.",
+        operatorError:
+          "No pudimos guardar las recetas asignadas del presupuesto.",
         values: {
           budgetId: "b-1",
           tutorId: "t-1",
@@ -128,7 +129,8 @@ describe("(app)/budgets/[budget_id]/update/+page.server actions.update", () => {
       status: 400,
       data: {
         actionType: "update",
-        operatorError: "No pudimos guardar las recetas asignadas del presupuesto.",
+        operatorError:
+          "No pudimos guardar las recetas asignadas del presupuesto.",
         values: {
           rows: [{ dogId: "", recipeId: "", assignedDays: "15" }],
         },

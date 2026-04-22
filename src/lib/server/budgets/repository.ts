@@ -2,6 +2,8 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 import {
   applyBudgetListFilters,
   type BudgetListFilters,
+  type BudgetListSort,
+  defaultBudgetSort,
 } from "$lib/server/budgets/list";
 
 const budgetListSelect =
@@ -102,15 +104,39 @@ export const autoExpireSentBudgets = async (
 export const loadBudgetList = async (params: {
   supabase: SupabaseClient;
   filters: BudgetListFilters;
+  sort: BudgetListSort;
   offset: number;
   pageSize: number;
 }) => {
-  const { supabase, filters, offset, pageSize } = params;
+  const { supabase, filters, sort, offset, pageSize } = params;
 
   let query = supabase
     .from("budgets")
-    .select(budgetListSelect, { count: "exact" })
-    .order("created_at", { ascending: false });
+    .select(budgetListSelect, { count: "exact" });
+
+  if (sort.sortBy === "tutor") {
+    query = query.order("tutor(full_name)", {
+      ascending: sort.sortDir === "asc",
+    });
+  } else if (sort.sortBy === "status") {
+    query = query.order("status", { ascending: sort.sortDir === "asc" });
+  } else if (sort.sortBy === "total_cost") {
+    query = query.order("total_cost", { ascending: sort.sortDir === "asc" });
+  } else if (sort.sortBy === "final_sale_price") {
+    query = query.order("final_sale_price", {
+      ascending: sort.sortDir === "asc",
+    });
+  } else if (sort.sortBy === "expires_at") {
+    query = query.order("expires_at", { ascending: sort.sortDir === "asc" });
+  } else {
+    query = query.order("tutor(full_name)", {
+      ascending: defaultBudgetSort.sortDir === "asc",
+    });
+  }
+
+  query = query
+    .order("created_at", { ascending: false })
+    .order("id", { ascending: true });
 
   query = applyBudgetListFilters(query, filters);
 

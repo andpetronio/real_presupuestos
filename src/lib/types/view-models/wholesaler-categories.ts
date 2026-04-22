@@ -17,8 +17,12 @@ export type WholesalerCategoryFormState = {
 
 export type WholesalerCategoriesPageDataViewModel = {
   categories: ReadonlyArray<WholesalerCategoryListRow>;
-  tableState: 'idle' | 'success' | 'error' | 'empty';
+  tableState: "idle" | "success" | "error" | "empty";
   tableMessage: { title: string; detail: string } | null;
   pagination: { page: number; totalPages: number; total: number };
   filters: { search: string; status: string };
+  sort: {
+    sortBy: "name" | "is_active" | "created_at";
+    sortDir: "asc" | "desc";
+  };
 };

@@ -46,8 +46,12 @@ export type WholesalerFormState = {
 
 export type WholesalersPageDataViewModel = {
   wholesalers: ReadonlyArray<WholesalerListRow>;
-  tableState: 'idle' | 'success' | 'error' | 'empty';
+  tableState: "idle" | "success" | "error" | "empty";
   tableMessage: { title: string; detail: string } | null;
   pagination: { page: number; totalPages: number; total: number };
   filters: { search: string; status: string };
+  sort: {
+    sortBy: "name" | "contact_full_name" | "is_active";
+    sortDir: "asc" | "desc";
+  };
 };

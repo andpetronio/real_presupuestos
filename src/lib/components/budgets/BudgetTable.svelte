@@ -1,6 +1,7 @@
 <script lang="ts">
   import { Table, TableBody, TableBodyCell, TableBodyRow, TableHead, TableHeadCell } from 'flowbite-svelte';
   import StatusBadge from '$lib/components/admin/StatusBadge.svelte';
+  import SortableHeader from '$lib/components/admin/SortableHeader.svelte';
   import type { BudgetStatus } from '$lib/types/budget';
   import { formatArs } from '$lib/shared/currency';
   import BudgetActionsMenu from './BudgetActionsMenu.svelte';
@@ -19,21 +20,61 @@
   type BudgetTableProps = {
     budgets: ReadonlyArray<BudgetRow>;
     formatDate: (date: string | null) => string;
+    sortBy: 'tutor' | 'status' | 'total_cost' | 'final_sale_price' | 'expires_at';
+    sortDir: 'asc' | 'desc';
+    buildSortHref: (
+      field: 'tutor' | 'status' | 'total_cost' | 'final_sale_price' | 'expires_at',
+    ) => string;
   };
 
-  let { budgets, formatDate }: BudgetTableProps = $props();
+  let { budgets, formatDate, sortBy, sortDir, buildSortHref }: BudgetTableProps = $props();
 </script>
 
 <div class="hidden overflow-x-auto md:block" aria-label="Tabla de presupuestos">
   <Table hoverable striped>
     <TableHead>
-      <TableHeadCell>Tutor</TableHeadCell>
-      <TableHeadCell>Estado</TableHeadCell>
+      <TableHeadCell>
+        <SortableHeader
+          label="Tutor"
+          href={buildSortHref('tutor')}
+          active={sortBy === 'tutor'}
+          dir={sortDir}
+        />
+      </TableHeadCell>
+      <TableHeadCell>
+        <SortableHeader
+          label="Estado"
+          href={buildSortHref('status')}
+          active={sortBy === 'status'}
+          dir={sortDir}
+        />
+      </TableHeadCell>
       <TableHeadCell class="text-right">Ingredientes</TableHeadCell>
       <TableHeadCell class="text-right">Operativos</TableHeadCell>
-      <TableHeadCell class="text-right">Costo total</TableHeadCell>
-      <TableHeadCell class="text-right">Precio venta</TableHeadCell>
-      <TableHeadCell>Vence</TableHeadCell>
+      <TableHeadCell class="text-right">
+        <SortableHeader
+          label="Costo total"
+          href={buildSortHref('total_cost')}
+          active={sortBy === 'total_cost'}
+          dir={sortDir}
+        />
+      </TableHeadCell>
+      <TableHeadCell class="text-right">
+        <SortableHeader
+          label="Precio venta"
+          href={buildSortHref('final_sale_price')}
+          active={sortBy === 'final_sale_price'}
+          dir={sortDir}
+        />
+      </TableHeadCell>
+      <TableHeadCell>
+        <SortableHeader
+          label="Vence"
+          href={buildSortHref('expires_at')}
+          active={sortBy === 'expires_at'}
+          dir={sortDir}
+        />
+      </TableHeadCell>
       <TableHeadCell>Acciones</TableHeadCell>
     </TableHead>
     <TableBody>

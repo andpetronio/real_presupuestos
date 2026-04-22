@@ -8,10 +8,12 @@
 export const buildPaginationHref = (
   baseUrl: string,
   newPage: number,
-  filters: { search: string },
+  filters: { search: string; sortBy?: string; sortDir?: "asc" | "desc" },
 ): string => {
   const params = new URLSearchParams();
   if (filters.search) params.set("q", filters.search);
+  if (filters.sortBy) params.set("sortBy", filters.sortBy);
+  if (filters.sortDir) params.set("sortDir", filters.sortDir);
   params.set("page", String(newPage));
   const queryString = params.toString();
   return `${baseUrl}?${queryString}`;

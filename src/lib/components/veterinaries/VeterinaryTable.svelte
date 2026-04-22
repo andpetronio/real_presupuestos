@@ -1,5 +1,6 @@
 <script lang="ts">
   import { Button, Table, TableBody, TableBodyCell, TableBodyRow, TableHead, TableHeadCell } from 'flowbite-svelte';
+  import SortableHeader from '$lib/components/admin/SortableHeader.svelte';
   import { route } from '$lib/shared/navigation';
 
   type VeterinaryRow = {
@@ -10,14 +11,24 @@
 
   type VeterinaryTableProps = {
     veterinaries: ReadonlyArray<VeterinaryRow>;
+    sortBy: 'name';
+    sortDir: 'asc' | 'desc';
+    buildSortHref: (field: 'name') => string;
   };
 
-  let { veterinaries }: VeterinaryTableProps = $props();
+  let { veterinaries, sortBy, sortDir, buildSortHref }: VeterinaryTableProps = $props();
 </script>
 
 <Table hoverable striped aria-label="Tabla de veterinarias">
   <TableHead>
-    <TableHeadCell>Nombre</TableHeadCell>
+    <TableHeadCell>
+      <SortableHeader
+        label="Nombre"
+        href={buildSortHref('name')}
+        active={sortBy === 'name'}
+        dir={sortDir}
+      />
+    </TableHeadCell>
     <TableHeadCell>Acciones</TableHeadCell>
   </TableHead>
   <TableBody>

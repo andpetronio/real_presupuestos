@@ -11,6 +11,7 @@
     TableHeadCell,
   } from 'flowbite-svelte';
   import ActiveStatusBadge from '$lib/components/admin/ActiveStatusBadge.svelte';
+  import SortableHeader from '$lib/components/admin/SortableHeader.svelte';
   import { route } from '$lib/shared/navigation';
   import {
     closeBlockingLoader,
@@ -22,9 +23,12 @@
 
   type Props = {
     wholesalers: ReadonlyArray<WholesalerListRow>;
+    sortBy: 'name' | 'contact_full_name' | 'is_active';
+    sortDir: 'asc' | 'desc';
+    buildSortHref: (field: 'name' | 'contact_full_name' | 'is_active') => string;
   };
 
-  let { wholesalers }: Props = $props();
+  let { wholesalers, sortBy, sortDir, buildSortHref }: Props = $props();
 
   const enhanceStatusAction = (params: {
     title: string;
@@ -54,12 +58,33 @@
 
 <Table hoverable striped aria-label='Tabla de mayoristas'>
   <TableHead>
-    <TableHeadCell>Nombre</TableHeadCell>
+    <TableHeadCell>
+      <SortableHeader
+        label='Nombre'
+        href={buildSortHref('name')}
+        active={sortBy === 'name'}
+        dir={sortDir}
+      />
+    </TableHeadCell>
     <TableHeadCell>Categoría</TableHeadCell>
-    <TableHeadCell>Contacto</TableHeadCell>
+    <TableHeadCell>
+      <SortableHeader
+        label='Contacto'
+        href={buildSortHref('contact_full_name')}
+        active={sortBy === 'contact_full_name'}
+        dir={sortDir}
+      />
+    </TableHeadCell>
     <TableHeadCell>WhatsApp</TableHeadCell>
     <TableHeadCell>Email</TableHeadCell>
-    <TableHeadCell>Estado</TableHeadCell>
+    <TableHeadCell>
+      <SortableHeader
+        label='Estado'
+        href={buildSortHref('is_active')}
+        active={sortBy === 'is_active'}
+        dir={sortDir}
+      />
+    </TableHeadCell>
     <TableHeadCell>Acciones</TableHeadCell>
   </TableHead>
   <TableBody>

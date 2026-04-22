@@ -4,9 +4,11 @@
   type DogFilterBarProps = {
     currentSearch: string;
     currentStatus: string;
+    currentSortBy: 'name' | 'diet_type' | 'meals_per_day' | 'is_active';
+    currentSortDir: 'asc' | 'desc';
   };
 
-  let { currentSearch, currentStatus }: DogFilterBarProps = $props();
+  let { currentSearch, currentStatus, currentSortBy, currentSortDir }: DogFilterBarProps = $props();
 
   const statusOptions = [
     { value: 'all', label: 'Todos' },
@@ -23,4 +25,6 @@
   filterOptions={statusOptions}
   currentFilter={currentStatus}
   showSubmitButton={true}
+  currentSortBy={currentSortBy}
+  currentSortDir={currentSortDir}
 />

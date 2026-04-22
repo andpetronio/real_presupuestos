@@ -9,6 +9,8 @@ import {
 import {
   hasBudgetFilters,
   parseBudgetFilters,
+  parseBudgetSort,
+  defaultBudgetSort,
   resolveBudgetTableMessage,
 } from "$lib/server/budgets/list";
 import {
@@ -56,12 +58,14 @@ export const load: PageServerLoad = async ({ locals, url }) => {
     );
 
     const filters = parseBudgetFilters(url);
+    const sort = parseBudgetSort(url);
 
     const [{ budgets, total }, { editingBudget, editingRows }, tutors] =
       await Promise.all([
         loadBudgetList({
           supabase: locals.supabase,
           filters,
+          sort,
           offset,
           pageSize,
         }),
@@ -89,6 +93,7 @@ export const load: PageServerLoad = async ({ locals, url }) => {
       tableMessage,
       pagination: { page, totalPages, total },
       filters,
+      sort,
       tutors,
     };
   } catch (error) {
@@ -101,6 +106,7 @@ export const load: PageServerLoad = async ({ locals, url }) => {
       tableMessage: buildFallbackError("presupuestos"),
       pagination: { page: 1, totalPages: 1, total: 0 },
       filters: { status: "all" as const, search: "", tutorId: null },
+      sort: defaultBudgetSort,
       tutors: [],
     };
   }

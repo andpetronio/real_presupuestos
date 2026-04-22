@@ -9,13 +9,21 @@
 export const buildPaginationHref = (
   baseUrl: string,
   newPage: number,
-  filters: { status: string; search: string; tutorId: string | null },
+  filters: {
+    status: string;
+    search: string;
+    tutorId: string | null;
+    sortBy?: string;
+    sortDir?: "asc" | "desc";
+  },
 ): string => {
   const params = new URLSearchParams();
   if (filters.status && filters.status !== "all")
     params.set("status", filters.status);
   if (filters.search) params.set("q", filters.search);
   if (filters.tutorId) params.set("tutor", filters.tutorId);
+  if (filters.sortBy) params.set("sortBy", filters.sortBy);
+  if (filters.sortDir) params.set("sortDir", filters.sortDir);
   params.set("page", String(newPage));
   const queryString = params.toString();
   return `${baseUrl}?${queryString}`;
@@ -31,6 +39,8 @@ export const parseBudgetFilters = (
   status: string;
   search: string;
   tutorId: string | null;
+  sortBy: string;
+  sortDir: "asc" | "desc";
 } => {
   const page = parseInt(searchParams.get("page") ?? "1", 10);
   return {
@@ -38,6 +48,8 @@ export const parseBudgetFilters = (
     status: searchParams.get("status") ?? "all",
     search: searchParams.get("q") ?? "",
     tutorId: searchParams.get("tutor") || null,
+    sortBy: searchParams.get("sortBy") ?? "tutor",
+    sortDir: searchParams.get("sortDir") === "desc" ? "desc" : "asc",
   };
 };
 

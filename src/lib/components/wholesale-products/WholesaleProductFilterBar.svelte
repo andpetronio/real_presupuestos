@@ -1,8 +1,13 @@
 <script lang="ts">
   import GenericFilterBar from '$lib/components/admin/GenericFilterBar.svelte';
 
-  type Props = { currentSearch: string; currentStatus: string };
-  let { currentSearch, currentStatus }: Props = $props();
+  type Props = {
+    currentSearch: string;
+    currentStatus: string;
+    currentSortBy: 'name' | 'presentation' | 'price_ars' | 'is_active' | 'created_at';
+    currentSortDir: 'asc' | 'desc';
+  };
+  let { currentSearch, currentStatus, currentSortBy, currentSortDir }: Props = $props();
 
   const statusOptions = [
     { value: 'all', label: 'Todos' },
@@ -19,4 +24,6 @@
   filterOptions={statusOptions}
   currentFilter={currentStatus}
   showSubmitButton={true}
+  currentSortBy={currentSortBy}
+  currentSortDir={currentSortDir}
 />

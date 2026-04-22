@@ -3,6 +3,7 @@
   import { invalidateAll } from '$app/navigation';
   import { Button, Table, TableBody, TableBodyCell, TableBodyRow, TableHead, TableHeadCell } from 'flowbite-svelte';
   import ActiveStatusBadge from '$lib/components/admin/ActiveStatusBadge.svelte';
+  import SortableHeader from '$lib/components/admin/SortableHeader.svelte';
   import { formatArs } from '$lib/shared/currency';
   import { route } from '$lib/shared/navigation';
   import { closeBlockingLoader, confirmAlert, presentActionFeedback, showBlockingLoader } from '$lib/shared/alerts';
@@ -10,9 +11,14 @@
 
   type Props = {
     products: ReadonlyArray<WholesaleProductListRow>;
+    sortBy: 'name' | 'presentation' | 'price_ars' | 'is_active' | 'created_at';
+    sortDir: 'asc' | 'desc';
+    buildSortHref: (
+      field: 'name' | 'presentation' | 'price_ars' | 'is_active' | 'created_at',
+    ) => string;
   };
 
-  let { products }: Props = $props();
+  let { products, sortBy, sortDir, buildSortHref }: Props = $props();
   const firstImage = (product: WholesaleProductListRow) => product.images[0]?.public_url ?? '';
 
   const enhanceStatusAction = (params: { title: string; text: string; confirmButtonText: string }) => {
@@ -38,11 +44,46 @@
 
 <Table hoverable striped aria-label="Tabla de productos mayoristas">
   <TableHead>
-    <TableHeadCell>Producto</TableHeadCell>
-    <TableHeadCell>Presentación</TableHeadCell>
-    <TableHeadCell>Precio</TableHeadCell>
-    <TableHeadCell>Estado</TableHeadCell>
-    <TableHeadCell>Fecha alta</TableHeadCell>
+    <TableHeadCell>
+      <SortableHeader
+        label="Producto"
+        href={buildSortHref('name')}
+        active={sortBy === 'name'}
+        dir={sortDir}
+      />
+    </TableHeadCell>
+    <TableHeadCell>
+      <SortableHeader
+        label="Presentación"
+        href={buildSortHref('presentation')}
+        active={sortBy === 'presentation'}
+        dir={sortDir}
+      />
+    </TableHeadCell>
+    <TableHeadCell>
+      <SortableHeader
+        label="Precio"
+        href={buildSortHref('price_ars')}
+        active={sortBy === 'price_ars'}
+        dir={sortDir}
+      />
+    </TableHeadCell>
+    <TableHeadCell>
+      <SortableHeader
+        label="Estado"
+        href={buildSortHref('is_active')}
+        active={sortBy === 'is_active'}
+        dir={sortDir}
+      />
+    </TableHeadCell>
+    <TableHeadCell>
+      <SortableHeader
+        label="Fecha alta"
+        href={buildSortHref('created_at')}
+        active={sortBy === 'created_at'}
+        dir={sortDir}
+      />
+    </TableHeadCell>
     <TableHeadCell>Acciones</TableHeadCell>
   </TableHead>
   <TableBody>

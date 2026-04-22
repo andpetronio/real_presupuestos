@@ -18,9 +18,16 @@ describe("(app)/tutors/+page.server load", () => {
       count: 1,
       error: null,
     });
-    const statusEq = vi.fn().mockReturnValue({ range });
-    const order = vi.fn().mockReturnValue({ range, eq: statusEq });
-    const select = vi.fn().mockReturnValue({ order });
+    const statusEq = vi.fn();
+    const order = vi.fn();
+    const query = {
+      order,
+      eq: statusEq,
+      range,
+    };
+    statusEq.mockReturnValue(query);
+    order.mockReturnValue(query);
+    const select = vi.fn().mockReturnValue(query);
 
     const data = (await load(
       asLoadEvent<Parameters<typeof load>[0]>({
@@ -42,6 +49,11 @@ describe("(app)/tutors/+page.server load", () => {
       "id, full_name, whatsapp_number, notes, is_active, created_at",
       { count: "exact" },
     );
+    expect(order).toHaveBeenNthCalledWith(1, "full_name", { ascending: true });
+    expect(order).toHaveBeenNthCalledWith(2, "created_at", {
+      ascending: false,
+    });
+    expect(order).toHaveBeenNthCalledWith(3, "id", { ascending: true });
     expect(data.tableState).toBe("success");
     expect(data.tutors).toHaveLength(1);
   });
@@ -50,8 +62,15 @@ describe("(app)/tutors/+page.server load", () => {
     const range = vi
       .fn()
       .mockResolvedValue({ data: [], count: 0, error: null });
-    const statusEq = vi.fn().mockReturnValue({ range });
-    const order = vi.fn().mockReturnValue({ range, eq: statusEq });
+    const statusEq = vi.fn();
+    const order = vi.fn();
+    const query = {
+      order,
+      eq: statusEq,
+      range,
+    };
+    statusEq.mockReturnValue(query);
+    order.mockReturnValue(query);
 
     await load(
       asLoadEvent<Parameters<typeof load>[0]>({
@@ -69,12 +88,85 @@ describe("(app)/tutors/+page.server load", () => {
     expect(statusEq).toHaveBeenCalledWith("is_active", true);
   });
 
+  it("aplica sorter válido desde query params", async () => {
+    const range = vi
+      .fn()
+      .mockResolvedValue({ data: [], count: 0, error: null });
+    const statusEq = vi.fn();
+    const order = vi.fn();
+    const query = {
+      order,
+      eq: statusEq,
+      range,
+    };
+    statusEq.mockReturnValue(query);
+    order.mockReturnValue(query);
+
+    await load(
+      asLoadEvent<Parameters<typeof load>[0]>({
+        url: new URL(
+          "https://test.local/tutors?sortBy=whatsapp_number&sortDir=desc",
+        ),
+        locals: {
+          supabase: {
+            from: vi.fn().mockReturnValue({
+              select: vi.fn().mockReturnValue({ order }),
+            }),
+          },
+        },
+      }),
+    );
+
+    expect(order).toHaveBeenNthCalledWith(1, "whatsapp_number", {
+      ascending: false,
+    });
+  });
+
+  it("cuando sortBy es inválido cae al default seguro", async () => {
+    const range = vi
+      .fn()
+      .mockResolvedValue({ data: [], count: 0, error: null });
+    const statusEq = vi.fn();
+    const order = vi.fn();
+    const query = {
+      order,
+      eq: statusEq,
+      range,
+    };
+    statusEq.mockReturnValue(query);
+    order.mockReturnValue(query);
+
+    await load(
+      asLoadEvent<Parameters<typeof load>[0]>({
+        url: new URL("https://test.local/tutors?sortBy=DROP&sortDir=desc"),
+        locals: {
+          supabase: {
+            from: vi.fn().mockReturnValue({
+              select: vi.fn().mockReturnValue({ order }),
+            }),
+          },
+        },
+      }),
+    );
+
+    expect(order).toHaveBeenNthCalledWith(1, "full_name", {
+      ascending: false,
+    });
+  });
+
   it("aplica filtro status=inactive usando is_active=false", async () => {
     const range = vi
       .fn()
       .mockResolvedValue({ data: [], count: 0, error: null });
-    const statusEq = vi.fn().mockReturnValue({ range });
-    const order = vi.fn().mockReturnValue({ range, eq: statusEq });
+    const statusEq = vi.fn();
+    const order = vi.fn();
+    const query = {
+      order,
+      eq: statusEq,
+      range,
+    };
+    statusEq.mockReturnValue(query);
+    order.mockReturnValue(query);
 
     await load(
       asLoadEvent<Parameters<typeof load>[0]>({
@@ -96,8 +188,15 @@ describe("(app)/tutors/+page.server load", () => {
     const range = vi
       .fn()
       .mockResolvedValue({ data: [], count: 0, error: null });
-    const statusEq = vi.fn().mockReturnValue({ range });
-    const order = vi.fn().mockReturnValue({ range, eq: statusEq });
+    const statusEq = vi.fn();
+    const order = vi.fn();
+    const query = {
+      order,
+      eq: statusEq,
+      range,
+    };
+    statusEq.mockReturnValue(query);
+    order.mockReturnValue(query);
 
     await load(
       asLoadEvent<Parameters<typeof load>[0]>({

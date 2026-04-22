@@ -42,9 +42,11 @@
     </div>
 
     {#if iconSnippet}
-      <div class="flex-shrink-0">
+      <div class="shrink-0">
         {@render iconSnippet()}
       </div>
     {/if}
   </div>
+
+    <p class="text-xs text-gray-400">en el período</p>
 </div>

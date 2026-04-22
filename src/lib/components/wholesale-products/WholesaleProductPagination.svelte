@@ -8,9 +8,11 @@
     total: number;
     search: string;
     status: string;
+    sortBy: 'name' | 'presentation' | 'price_ars' | 'is_active' | 'created_at';
+    sortDir: 'asc' | 'desc';
   };
 
-  let { page, totalPages, total, search, status }: Props = $props();
+  let { page, totalPages, total, search, status, sortBy, sortDir }: Props = $props();
   const hasPrev = $derived(page > 1);
   const hasNext = $derived(page < totalPages);
 </script>
@@ -19,7 +21,7 @@
   <nav class="mt-4 flex items-center justify-between" aria-label="Paginación de productos mayoristas">
     <div>
       {#if hasPrev}
-        <Button href={buildPaginationHref('/mayorista-products', page - 1, { search, status })} size="sm" color="light">Anterior</Button>
+        <Button href={buildPaginationHref('/mayorista-products', page - 1, { search, status, sortBy, sortDir })} size="sm" color="light">Anterior</Button>
       {:else}
         <Button size="sm" color="light" disabled>Anterior</Button>
       {/if}
@@ -33,7 +35,7 @@
 
     <div>
       {#if hasNext}
-        <Button href={buildPaginationHref('/mayorista-products', page + 1, { search, status })} size="sm" color="light">Siguiente</Button>
+        <Button href={buildPaginationHref('/mayorista-products', page + 1, { search, status, sortBy, sortDir })} size="sm" color="light">Siguiente</Button>
       {:else}
         <Button size="sm" color="light" disabled>Siguiente</Button>
       {/if}

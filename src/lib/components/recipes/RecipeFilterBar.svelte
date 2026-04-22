@@ -4,9 +4,11 @@
   type RecipeFilterBarProps = {
     currentSearch: string;
     currentStatus: string;
+    currentSortBy: 'name' | 'is_active';
+    currentSortDir: 'asc' | 'desc';
   };
 
-  let { currentSearch, currentStatus }: RecipeFilterBarProps = $props();
+  let { currentSearch, currentStatus, currentSortBy, currentSortDir }: RecipeFilterBarProps = $props();
 
   const statusOptions = [
     { value: 'all', label: 'Todas' },
@@ -23,4 +25,6 @@
   filterOptions={statusOptions}
   currentFilter={currentStatus}
   showSubmitButton={true}
+  currentSortBy={currentSortBy}
+  currentSortDir={currentSortDir}
 />

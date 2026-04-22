@@ -1,34 +1,46 @@
-import { fail } from '@sveltejs/kit';
-import type { Actions, PageServerLoad } from './$types';
+import { fail } from "@sveltejs/kit";
+import type { Actions, PageServerLoad } from "./$types";
 import {
   applyListFilters,
   buildFallbackError,
   getPagination,
   getTableState,
-} from '$lib/server/shared/list-helpers';
-import { parseText } from '$lib/server/wholesale-backoffice/wholesalers';
-import type { WholesalerListRow } from '$lib/types/view-models/wholesalers';
+} from "$lib/server/shared/list-helpers";
+import { parseSortState } from "$lib/server/shared/sorting";
+import { parseText } from "$lib/server/wholesale-backoffice/wholesalers";
+import type { WholesalerListRow } from "$lib/types/view-models/wholesalers";
 
 const EMPTY_LABELS = {
-  title: 'Todavía no hay mayoristas cargados',
-  detail: 'Creá el primero para habilitar el marketplace.',
+  title: "Todavía no hay mayoristas cargados",
+  detail: "Creá el primero para habilitar el marketplace.",
 };
 
 export const load: PageServerLoad = async ({ locals, url }) => {
-  const { page, pageSize, offset } = getPagination(url.searchParams.get('page'));
+  const { page, pageSize, offset } = getPagination(
+    url.searchParams.get("page"),
+  );
+  const sort = parseSortState({
+    searchParams: url.searchParams,
+    allowedSortBy: ["name", "contact_full_name", "is_active"] as const,
+    defaultSort: { sortBy: "name", sortDir: "asc" },
+  });
   const filters = {
-    search: url.searchParams.get('q')?.trim() ?? '',
-    status: url.searchParams.get('status')?.trim() ?? 'active',
+    search: url.searchParams.get("q")?.trim() ?? "",
+    status: url.searchParams.get("status")?.trim() ?? "active",
   };
 
   try {
     let query = locals.supabase
-      .from('wholesalers')
+      .from("wholesalers")
       .select(
-        'id, name, unique_random_code, min_total_units, is_active, notes, created_at, category_id, tax_id, contact_full_name, contact_whatsapp, contact_email, address, delivery_preference, payment_preference, category:wholesaler_categories(id, name, is_active)',
-        { count: 'exact' },
-      )
-      .order('created_at', { ascending: false });
+        "id, name, unique_random_code, min_total_units, is_active, notes, created_at, category_id, tax_id, contact_full_name, contact_whatsapp, contact_email, address, delivery_preference, payment_preference, category:wholesaler_categories(id, name, is_active)",
+        { count: "exact" },
+      );
+
+    query = query.order(sort.sortBy, { ascending: sort.sortDir === "asc" });
+    query = query
+      .order("created_at", { ascending: false })
+      .order("id", { ascending: true });
 
     if (filters.search) {
       query = query.or(
@@ -41,7 +53,10 @@ export const load: PageServerLoad = async ({ locals, url }) => {
       hasStatusFilter: true,
     });
 
-    const { data, count, error } = await query.range(offset, offset + pageSize - 1);
+    const { data, count, error } = await query.range(
+      offset,
+      offset + pageSize - 1,
+    );
     if (error) throw error;
 
     const wholesalers: WholesalerListRow[] = (data ?? []).map((row) => ({
@@ -64,11 +79,16 @@ export const load: PageServerLoad = async ({ locals, url }) => {
     }));
 
     const total = count ?? 0;
-    const { tableState, tableMessage } = getTableState(total, filters, EMPTY_LABELS);
+    const { tableState, tableMessage } = getTableState(
+      total,
+      filters,
+      EMPTY_LABELS,
+    );
 
     return {
       wholesalers,
       filters,
+      sort,
       pagination: {
         page,
         totalPages: Math.max(1, Math.ceil(total / pageSize)),
@@ -81,9 +101,10 @@ export const load: PageServerLoad = async ({ locals, url }) => {
     return {
       wholesalers: [] as WholesalerListRow[],
       filters,
+      sort: { sortBy: "name", sortDir: "asc" as const },
       pagination: { page: 1, totalPages: 1, total: 0 },
-      tableState: 'error' as const,
-      tableMessage: buildFallbackError('mayoristas'),
+      tableState: "error" as const,
+      tableMessage: buildFallbackError("mayoristas"),
     };
   }
 };
@@ -91,23 +112,27 @@ export const load: PageServerLoad = async ({ locals, url }) => {
 export const actions: Actions = {
   toggleActive: async ({ request, locals }) => {
     const formData = await request.formData();
-    const id = parseText(formData.get('id'));
-    const shouldActivate = parseText(formData.get('activate')) === 'true';
+    const id = parseText(formData.get("id"));
+    const shouldActivate = parseText(formData.get("activate")) === "true";
 
     if (!id) {
-      return fail(400, { operatorError: 'No encontramos el mayorista.' });
+      return fail(400, { operatorError: "No encontramos el mayorista." });
     }
 
     const { error } = await locals.supabase
-      .from('wholesalers')
+      .from("wholesalers")
       .update({ is_active: shouldActivate })
-      .eq('id', id);
+      .eq("id", id);
     if (error) {
-      return fail(400, { operatorError: 'No pudimos actualizar el estado del mayorista.' });
+      return fail(400, {
+        operatorError: "No pudimos actualizar el estado del mayorista.",
+      });
     }
 
     return {
-      operatorSuccess: shouldActivate ? 'Mayorista restaurado.' : 'Mayorista desactivado.',
+      operatorSuccess: shouldActivate
+        ? "Mayorista restaurado."
+        : "Mayorista desactivado.",
     };
   },
 };

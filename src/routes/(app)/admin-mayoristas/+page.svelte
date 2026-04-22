@@ -5,6 +5,7 @@
   import WholesalerTable from '$lib/components/wholesalers/WholesalerTable.svelte';
   import WholesalerMobileCards from '$lib/components/wholesalers/WholesalerMobileCards.svelte';
   import WholesalerPagination from '$lib/components/wholesalers/WholesalerPagination.svelte';
+  import { buildSortHref } from '$lib/shared/sort-links';
   import type { WholesalerFormState, WholesalersPageDataViewModel } from '$lib/types/view-models/wholesalers';
 
   let { data, form }: { data: WholesalersPageDataViewModel; form: WholesalerFormState | null } = $props();
@@ -12,6 +13,18 @@
   const newWholesalerPath = '/admin-mayoristas/new';
   const feedbackMessage = $derived(form?.operatorError ?? form?.operatorSuccess ?? '');
   const feedbackColor = $derived(form?.operatorError ? 'red' : 'green');
+
+  const buildWholesalerSortHref = (field: 'name' | 'contact_full_name' | 'is_active'): string =>
+    buildSortHref({
+      basePath: '/admin-mayoristas',
+      currentSortBy: data.sort.sortBy,
+      currentSortDir: data.sort.sortDir,
+      clickedField: field,
+      filters: {
+        q: data.filters.search,
+        status: data.filters.status
+      }
+    });
 </script>
 
 <div class="mb-4 flex justify-end">
@@ -29,7 +42,12 @@
 {:else}
   <Card size="xl" class="w-full shadow-sm p-0">
     <div class="p-4">
-      <WholesalerFilterBar currentSearch={data.filters.search} currentStatus={data.filters.status} />
+      <WholesalerFilterBar
+        currentSearch={data.filters.search}
+        currentStatus={data.filters.status}
+        currentSortBy={data.sort.sortBy}
+        currentSortDir={data.sort.sortDir}
+      />
     </div>
 
     <div class="px-4 pb-4">
@@ -37,7 +55,12 @@
     </div>
 
     <div class="hidden md:block">
-      <WholesalerTable wholesalers={data.wholesalers} />
+      <WholesalerTable
+        wholesalers={data.wholesalers}
+        sortBy={data.sort.sortBy}
+        sortDir={data.sort.sortDir}
+        buildSortHref={buildWholesalerSortHref}
+      />
     </div>
 
     <div class="px-4 pb-4">
@@ -47,6 +70,8 @@
         total={data.pagination.total}
         search={data.filters.search}
         status={data.filters.status}
+        sortBy={data.sort.sortBy}
+        sortDir={data.sort.sortDir}
       />
     </div>
   </Card>

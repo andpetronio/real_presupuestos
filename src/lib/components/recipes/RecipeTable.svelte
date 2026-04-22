@@ -3,6 +3,7 @@
   import { invalidateAll } from '$app/navigation';
   import { Button, Table, TableBody, TableBodyCell, TableBodyRow, TableHead, TableHeadCell } from 'flowbite-svelte';
   import ActiveStatusBadge from '$lib/components/admin/ActiveStatusBadge.svelte';
+  import SortableHeader from '$lib/components/admin/SortableHeader.svelte';
   import { route } from '$lib/shared/navigation';
   import { closeBlockingLoader, confirmAlert, presentActionFeedback, showBlockingLoader } from '$lib/shared/alerts';
 
@@ -17,9 +18,12 @@
 
   type RecipeTableProps = {
     recipes: ReadonlyArray<RecipeRow>;
+    sortBy: 'name' | 'is_active';
+    sortDir: 'asc' | 'desc';
+    buildSortHref: (field: 'name' | 'is_active') => string;
   };
 
-  let { recipes }: RecipeTableProps = $props();
+  let { recipes, sortBy, sortDir, buildSortHref }: RecipeTableProps = $props();
 
   const enhanceDelete = () => {
     return async ({ cancel }: { cancel: () => void }) => {
@@ -50,10 +54,24 @@
 
 <Table hoverable striped aria-label="Tabla de recetas">
   <TableHead>
-    <TableHeadCell>Receta</TableHeadCell>
+    <TableHeadCell>
+      <SortableHeader
+        label="Receta"
+        href={buildSortHref('name')}
+        active={sortBy === 'name'}
+        dir={sortDir}
+      />
+    </TableHeadCell>
     <TableHeadCell>Perro</TableHeadCell>
     <TableHeadCell>Notas</TableHeadCell>
-    <TableHeadCell>Estado</TableHeadCell>
+    <TableHeadCell>
+      <SortableHeader
+        label="Estado"
+        href={buildSortHref('is_active')}
+        active={sortBy === 'is_active'}
+        dir={sortDir}
+      />
+    </TableHeadCell>
     <TableHeadCell>Acciones</TableHeadCell>
   </TableHead>
   <TableBody>

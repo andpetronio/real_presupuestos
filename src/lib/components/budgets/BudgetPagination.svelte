@@ -9,6 +9,8 @@
     status: string;
     search: string;
     tutorId: string | null;
+    sortBy: 'tutor' | 'status' | 'total_cost' | 'final_sale_price' | 'expires_at';
+    sortDir: 'asc' | 'desc';
   };
 
   let {
@@ -17,7 +19,9 @@
     total,
     status,
     search,
-    tutorId
+    tutorId,
+    sortBy,
+    sortDir
   }: BudgetPaginationProps = $props();
 
   const hasPrev = $derived(page > 1);
@@ -33,7 +37,7 @@
     <div>
       {#if hasPrev}
         <Button
-          href={buildPaginationHref('/budgets', page - 1, { status, search, tutorId })}
+          href={buildPaginationHref('/budgets', page - 1, { status, search, tutorId, sortBy, sortDir })}
           size="sm"
           color="light"
           aria-label="Página anterior"
@@ -58,7 +62,7 @@
     <div>
       {#if hasNext}
         <Button
-          href={buildPaginationHref('/budgets', page + 1, { status, search, tutorId })}
+          href={buildPaginationHref('/budgets', page + 1, { status, search, tutorId, sortBy, sortDir })}
           size="sm"
           color="light"
           aria-label="Página siguiente"

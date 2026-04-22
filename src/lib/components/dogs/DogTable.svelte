@@ -3,6 +3,7 @@
   import { invalidateAll } from '$app/navigation';
   import { Button, Table, TableBody, TableBodyCell, TableBodyRow, TableHead, TableHeadCell } from 'flowbite-svelte';
   import ActiveStatusBadge from '$lib/components/admin/ActiveStatusBadge.svelte';
+  import SortableHeader from '$lib/components/admin/SortableHeader.svelte';
   import { route } from '$lib/shared/navigation';
   import { closeBlockingLoader, confirmAlert, presentActionFeedback, showBlockingLoader } from '$lib/shared/alerts';
 
@@ -18,9 +19,12 @@
 
   type DogTableProps = {
     dogs: ReadonlyArray<DogRow>;
+    sortBy: 'name' | 'diet_type' | 'meals_per_day' | 'is_active';
+    sortDir: 'asc' | 'desc';
+    buildSortHref: (field: 'name' | 'diet_type' | 'meals_per_day' | 'is_active') => string;
   };
 
-  let { dogs }: DogTableProps = $props();
+  let { dogs, sortBy, sortDir, buildSortHref }: DogTableProps = $props();
 
   const enhanceDelete = () => {
     return async ({ cancel }: { cancel: () => void }) => {
@@ -51,12 +55,40 @@
 
 <Table hoverable striped aria-label="Tabla de perros">
   <TableHead>
-    <TableHeadCell>Nombre</TableHeadCell>
+    <TableHeadCell>
+      <SortableHeader
+        label="Nombre"
+        href={buildSortHref('name')}
+        active={sortBy === 'name'}
+        dir={sortDir}
+      />
+    </TableHeadCell>
     <TableHeadCell>Tutor</TableHeadCell>
     <TableHeadCell>Veterinaria</TableHeadCell>
-    <TableHeadCell>Tipo dieta</TableHeadCell>
-    <TableHeadCell>Comidas/día</TableHeadCell>
-    <TableHeadCell>Estado</TableHeadCell>
+    <TableHeadCell>
+      <SortableHeader
+        label="Tipo dieta"
+        href={buildSortHref('diet_type')}
+        active={sortBy === 'diet_type'}
+        dir={sortDir}
+      />
+    </TableHeadCell>
+    <TableHeadCell>
+      <SortableHeader
+        label="Comidas/día"
+        href={buildSortHref('meals_per_day')}
+        active={sortBy === 'meals_per_day'}
+        dir={sortDir}
+      />
+    </TableHeadCell>
+    <TableHeadCell>
+      <SortableHeader
+        label="Estado"
+        href={buildSortHref('is_active')}
+        active={sortBy === 'is_active'}
+        dir={sortDir}
+      />
+    </TableHeadCell>
     <TableHeadCell>Acciones</TableHeadCell>
   </TableHead>
   <TableBody>

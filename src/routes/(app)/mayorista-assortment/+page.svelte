@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { SvelteURLSearchParams } from 'svelte/reactivity';
   import { Button, Card } from 'flowbite-svelte';
   import FeedbackBanner from '$lib/components/FeedbackBanner.svelte';
   import GenericFilterBar from '$lib/components/admin/GenericFilterBar.svelte';
@@ -22,7 +23,7 @@
   ];
 
   const buildPaginationHref = (page: number) => {
-    const params = new URLSearchParams();
+    const params = new SvelteURLSearchParams();
     if (data.filters.search) params.set('q', data.filters.search);
     if (data.filters.status && data.filters.status !== 'all') {
       params.set('status', data.filters.status);

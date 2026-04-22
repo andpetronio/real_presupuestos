@@ -259,7 +259,9 @@ describe("budget-response/[token] load", () => {
       budgetRow: baseBudget,
       detailsError: { message: "detalle down" },
     });
-    const warnSpy = vi.spyOn(console, "warn").mockImplementation(() => undefined);
+    const warnSpy = vi
+      .spyOn(console, "warn")
+      .mockImplementation(() => undefined);
 
     const result = (await load(
       asLoadEvent<Parameters<typeof load>[0]>({

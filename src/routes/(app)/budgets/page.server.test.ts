@@ -4,31 +4,37 @@ import { asActionEvent, asLoadEvent } from "$lib/test-helpers/sveltekit-events";
 
 describe("(app)/budgets/+page.server load", () => {
   it("retorna success cuando hay datos base para formular presupuesto", async () => {
+    const budgetsRange = vi.fn().mockResolvedValue({
+      data: [
+        {
+          id: "b-1",
+          status: "draft",
+          tutor_id: "t-1",
+          notes: null,
+          final_sale_price: 1000,
+          total_cost: 900,
+          ingredient_total_global: 600,
+          operational_total_global: 300,
+          created_at: "2026-01-01",
+          expires_at: null,
+          tutor: { full_name: "Ana" },
+        },
+      ],
+      count: 1,
+      error: null,
+    });
+    const budgetsOrder = vi.fn();
+    const budgetsQuery = {
+      order: budgetsOrder,
+      range: budgetsRange,
+    };
+    budgetsOrder.mockReturnValue(budgetsQuery);
+
     const from = vi.fn((table: string) => {
       if (table === "budgets") {
         return {
           select: vi.fn().mockReturnValue({
-            order: vi.fn().mockReturnValue({
-              range: vi.fn().mockResolvedValue({
-                data: [
-                  {
-                    id: "b-1",
-                    status: "draft",
-                    tutor_id: "t-1",
-                    notes: null,
-                    final_sale_price: 1000,
-                    total_cost: 900,
-                    ingredient_total_global: 600,
-                    operational_total_global: 300,
-                    created_at: "2026-01-01",
-                    expires_at: null,
-                    tutor: { full_name: "Ana" },
-                  },
-                ],
-                count: 1,
-                error: null,
-              }),
-            }),
+            order: budgetsOrder,
           }),
         };
       }
@@ -67,6 +73,13 @@ describe("(app)/budgets/+page.server load", () => {
     expect(data.budgets).toHaveLength(1);
     expect(data.pagination.total).toBe(1);
     expect(data.tutors).toEqual([]);
+    expect(budgetsOrder).toHaveBeenNthCalledWith(1, "tutor(full_name)", {
+      ascending: true,
+    });
+    expect(budgetsOrder).toHaveBeenNthCalledWith(2, "created_at", {
+      ascending: false,
+    });
+    expect(budgetsOrder).toHaveBeenNthCalledWith(3, "id", { ascending: true });
   });
 
   it("carga filas de edicion desde budget_dogs y recetas anidadas", async () => {
@@ -93,22 +106,25 @@ describe("(app)/budgets/+page.server load", () => {
           expires_at: null,
           tutor: { full_name: "Ana" },
         };
+        const budgetsRange = vi.fn().mockResolvedValue({
+          data: [baseBudget],
+          count: 1,
+          error: null,
+        });
+        const budgetsOrder = vi.fn();
+        const budgetsQuery = {
+          order: budgetsOrder,
+          range: budgetsRange,
+          eq: vi.fn().mockReturnValue({
+            single: vi
+              .fn()
+              .mockResolvedValue({ data: baseBudget, error: null }),
+          }),
+        };
+        budgetsOrder.mockReturnValue(budgetsQuery);
 
         return {
-          select: vi.fn(() => ({
-            order: vi.fn(() => ({
-              range: vi.fn().mockResolvedValue({
-                data: [baseBudget],
-                count: 1,
-                error: null,
-              }),
-            })),
-            eq: vi.fn().mockReturnValue({
-              single: vi
-                .fn()
-                .mockResolvedValue({ data: baseBudget, error: null }),
-            }),
-          })),
+          select: vi.fn(() => budgetsQuery),
         };
       }
 
@@ -223,6 +239,13 @@ describe("(app)/budgets/+page.server actions.create", () => {
 
     const budgetDogsEq = vi.fn().mockResolvedValue({ error: null });
     const budgetDogsDelete = vi.fn().mockReturnValue({ eq: budgetDogsEq });
+    const budgetDogsExistingEq = vi.fn().mockResolvedValue({
+      data: [],
+      error: null,
+    });
+    const budgetDogsExistingSelect = vi.fn().mockReturnValue({
+      eq: budgetDogsExistingEq,
+    });
     const budgetDogsSelect = vi.fn().mockResolvedValue({
       data: [{ id: "bd-1", dog_id: "d-1" }],
       error: null,
@@ -317,6 +340,7 @@ describe("(app)/budgets/+page.server actions.create", () => {
 
       if (table === "budget_dogs") {
         return {
+          select: budgetDogsExistingSelect,
           delete: budgetDogsDelete,
           insert: budgetDogsInsert,
         };

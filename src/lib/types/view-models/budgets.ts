@@ -26,6 +26,15 @@ export type BudgetsPageDataViewModel = {
     search: string;
     tutorId: string | null;
   };
+  sort: {
+    sortBy:
+      | "tutor"
+      | "status"
+      | "total_cost"
+      | "final_sale_price"
+      | "expires_at";
+    sortDir: "asc" | "desc";
+  };
   tutors: ReadonlyArray<BudgetTutorOptionViewModel>;
 };
 

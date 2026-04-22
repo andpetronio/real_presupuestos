@@ -5,6 +5,7 @@
   import TutorTable from '$lib/components/tutors/TutorTable.svelte';
   import TutorPagination from '$lib/components/tutors/TutorPagination.svelte';
   import TutorMobileCards from '$lib/components/tutors/TutorMobileCards.svelte';
+  import { buildSortHref } from '$lib/shared/sort-links';
 
   type TutorRow = {
     id: string;
@@ -24,11 +25,27 @@
       search: string;
       status: string;
     };
+    sort: {
+      sortBy: 'full_name' | 'whatsapp_number' | 'is_active';
+      sortDir: 'asc' | 'desc';
+    };
   };
 
   let { data }: { data: PageData } = $props();
 
   const newTutorPath = '/tutors/new';
+
+  const buildTutorSortHref = (field: 'full_name' | 'whatsapp_number' | 'is_active'): string =>
+    buildSortHref({
+      basePath: '/tutors',
+      currentSortBy: data.sort.sortBy,
+      currentSortDir: data.sort.sortDir,
+      clickedField: field,
+      filters: {
+        q: data.filters.search,
+        status: data.filters.status
+      }
+    });
 </script>
 
 <div class="mb-4 flex justify-end">
@@ -46,6 +63,8 @@
       <TutorFilterBar
         currentSearch={data.filters.search}
         currentStatus={data.filters.status}
+        currentSortBy={data.sort.sortBy}
+        currentSortDir={data.sort.sortDir}
       />
     </div>
 
@@ -56,7 +75,12 @@
 
     <!-- Desktop table (hidden on < md) -->
     <div class="hidden md:block">
-      <TutorTable tutors={data.tutors} />
+      <TutorTable
+        tutors={data.tutors}
+        sortBy={data.sort.sortBy}
+        sortDir={data.sort.sortDir}
+        buildSortHref={buildTutorSortHref}
+      />
     </div>
 
     <!-- Pagination -->
@@ -67,6 +91,8 @@
         total={data.pagination.total}
         search={data.filters.search}
         status={data.filters.status}
+        sortBy={data.sort.sortBy}
+        sortDir={data.sort.sortDir}
       />
     </div>
   </Card>

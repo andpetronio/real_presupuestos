@@ -1,5 +1,6 @@
 import type { PostgrestFilterBuilder } from "@supabase/supabase-js";
 import type { BudgetStatus } from "$lib/types/budget";
+import { parseSortState, type SortState } from "$lib/server/shared/sorting";
 
 export type BudgetListStatusFilter = BudgetStatus | "pending" | "all";
 
@@ -22,6 +23,20 @@ export type BudgetListFilters = {
   tutorId: string | null;
 };
 
+export type BudgetListSortBy =
+  | "tutor"
+  | "status"
+  | "total_cost"
+  | "final_sale_price"
+  | "expires_at";
+
+export type BudgetListSort = SortState<BudgetListSortBy>;
+
+export const defaultBudgetSort: BudgetListSort = {
+  sortBy: "tutor",
+  sortDir: "asc",
+};
+
 export type BudgetTableMessage = {
   kind: "empty";
   title: string;
@@ -42,6 +57,19 @@ export const parseBudgetFilters = (url: URL): BudgetListFilters => {
     tutorId: url.searchParams.get("tutor"),
   };
 };
+
+export const parseBudgetSort = (url: URL): BudgetListSort =>
+  parseSortState({
+    searchParams: url.searchParams,
+    allowedSortBy: [
+      "tutor",
+      "status",
+      "total_cost",
+      "final_sale_price",
+      "expires_at",
+    ] as const,
+    defaultSort: defaultBudgetSort,
+  });
 
 export function applyBudgetListFilters<
   T extends PostgrestFilterBuilder<any, any, any, any[], string, unknown>,

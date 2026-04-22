@@ -4,9 +4,11 @@
   type TutorFilterBarProps = {
     currentSearch: string;
     currentStatus: string;
+    currentSortBy: 'full_name' | 'whatsapp_number' | 'is_active';
+    currentSortDir: 'asc' | 'desc';
   };
 
-  let { currentSearch, currentStatus }: TutorFilterBarProps = $props();
+  let { currentSearch, currentStatus, currentSortBy, currentSortDir }: TutorFilterBarProps = $props();
 
   const statusOptions = [
     { value: 'all', label: 'Todos' },
@@ -23,4 +25,6 @@
   filterOptions={statusOptions}
   currentFilter={currentStatus}
   showSubmitButton={true}
+  currentSortBy={currentSortBy}
+  currentSortDir={currentSortDir}
 />

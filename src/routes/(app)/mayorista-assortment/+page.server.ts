@@ -1,31 +1,34 @@
-import type { PageServerLoad } from './$types';
+import type { PageServerLoad } from "./$types";
 import {
   applyListFilters,
   buildFallbackError,
   getPagination,
   getTableState,
-} from '$lib/server/shared/list-helpers';
-import type { AssortmentWholesalerRow } from '$lib/types/view-models/wholesale-assortment';
+} from "$lib/server/shared/list-helpers";
+import type { AssortmentWholesalerRow } from "$lib/types/view-models/wholesale-assortment";
 
 const EMPTY_LABELS = {
-  title: 'Todavía no hay mayoristas para surtido',
-  detail: 'Cuando cargues mayoristas, vas a poder gestionar su surtido desde acá.',
+  title: "Todavía no hay mayoristas para surtido",
+  detail:
+    "Cuando cargues mayoristas, vas a poder gestionar su surtido desde acá.",
 };
 
 export const load: PageServerLoad = async ({ locals, url }) => {
-  const { page, pageSize, offset } = getPagination(url.searchParams.get('page'));
+  const { page, pageSize, offset } = getPagination(
+    url.searchParams.get("page"),
+  );
   const filters = {
-    search: url.searchParams.get('q')?.trim() ?? '',
-    status: url.searchParams.get('status')?.trim() ?? 'active',
+    search: url.searchParams.get("q")?.trim() ?? "",
+    status: url.searchParams.get("status")?.trim() ?? "active",
   };
 
   try {
     let query = locals.supabase
-      .from('wholesalers')
-      .select('id, name, unique_random_code, min_total_units, is_active', {
-        count: 'exact',
+      .from("wholesalers")
+      .select("id, name, unique_random_code, min_total_units, is_active", {
+        count: "exact",
       })
-      .order('name', { ascending: true });
+      .order("name", { ascending: true });
 
     if (filters.search) {
       query = query.or(
@@ -38,7 +41,10 @@ export const load: PageServerLoad = async ({ locals, url }) => {
       hasStatusFilter: true,
     });
 
-    const { data, count, error } = await query.range(offset, offset + pageSize - 1);
+    const { data, count, error } = await query.range(
+      offset,
+      offset + pageSize - 1,
+    );
     if (error) {
       throw error;
     }
@@ -47,10 +53,10 @@ export const load: PageServerLoad = async ({ locals, url }) => {
 
     const enabledProductsResult = wholesalerIds.length
       ? await locals.supabase
-          .from('wholesaler_products')
-          .select('wholesaler_id')
-          .eq('is_enabled', true)
-          .in('wholesaler_id', wholesalerIds)
+          .from("wholesaler_products")
+          .select("wholesaler_id")
+          .eq("is_enabled", true)
+          .in("wholesaler_id", wholesalerIds)
       : { data: [], error: null };
 
     if (enabledProductsResult.error) {
@@ -65,14 +71,20 @@ export const load: PageServerLoad = async ({ locals, url }) => {
       );
     }
 
-    const wholesalers: AssortmentWholesalerRow[] = (data ?? []).map((wholesaler) => ({
-      ...wholesaler,
-      enabledProductsCount:
-        enabledProductsCountByWholesalerId.get(wholesaler.id) ?? 0,
-    }));
+    const wholesalers: AssortmentWholesalerRow[] = (data ?? []).map(
+      (wholesaler) => ({
+        ...wholesaler,
+        enabledProductsCount:
+          enabledProductsCountByWholesalerId.get(wholesaler.id) ?? 0,
+      }),
+    );
 
     const total = count ?? 0;
-    const { tableState, tableMessage } = getTableState(total, filters, EMPTY_LABELS);
+    const { tableState, tableMessage } = getTableState(
+      total,
+      filters,
+      EMPTY_LABELS,
+    );
 
     return {
       wholesalers,
@@ -90,8 +102,8 @@ export const load: PageServerLoad = async ({ locals, url }) => {
       wholesalers: [] as AssortmentWholesalerRow[],
       filters,
       pagination: { page: 1, totalPages: 1, total: 0 },
-      tableState: 'error' as const,
-      tableMessage: buildFallbackError('surtidos mayoristas'),
+      tableState: "error" as const,
+      tableMessage: buildFallbackError("surtidos mayoristas"),
     };
   }
 };

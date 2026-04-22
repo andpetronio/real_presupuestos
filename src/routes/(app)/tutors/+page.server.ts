@@ -7,6 +7,7 @@ import {
   getPagination,
   applyListFilters,
 } from "$lib/server/shared/list-helpers";
+import { parseSortState } from "$lib/server/shared/sorting";
 
 const EMPTY_LABELS = {
   title: "Todavía no hay tutores cargados",
@@ -17,6 +18,11 @@ export const load: PageServerLoad = async ({ locals, url }) => {
   const { page, pageSize, offset } = getPagination(
     url.searchParams.get("page"),
   );
+  const sort = parseSortState({
+    searchParams: url.searchParams,
+    allowedSortBy: ["full_name", "whatsapp_number", "is_active"] as const,
+    defaultSort: { sortBy: "full_name", sortDir: "asc" },
+  });
   const filters = {
     search: url.searchParams.get("q")?.trim() ?? "",
     status: url.searchParams.get("status")?.trim() ?? "active",
@@ -27,8 +33,12 @@ export const load: PageServerLoad = async ({ locals, url }) => {
       .from("tutors")
       .select("id, full_name, whatsapp_number, notes, is_active, created_at", {
         count: "exact",
-      })
-      .order("created_at", { ascending: false });
+      });
+
+    query = query.order(sort.sortBy, { ascending: sort.sortDir === "asc" });
+    query = query
+      .order("created_at", { ascending: false })
+      .order("id", { ascending: true });
 
     query = applyListFilters(query, filters, {
       searchColumn: "full_name",
@@ -55,6 +65,7 @@ export const load: PageServerLoad = async ({ locals, url }) => {
     return {
       tutors,
       filters,
+      sort,
       pagination: { page, totalPages, total },
       tableState,
       tableMessage,
@@ -63,6 +74,7 @@ export const load: PageServerLoad = async ({ locals, url }) => {
     return {
       tutors: [],
       filters,
+      sort: { sortBy: "full_name", sortDir: "asc" as const },
       pagination: { page: 1, totalPages: 1, total: 0 },
       tableState: "error",
       tableMessage: buildFallbackError("tutores"),

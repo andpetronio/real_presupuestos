@@ -149,10 +149,13 @@ export const resolveActionFeedback = (
 };
 
 export const presentActionFeedbackAny = async (result: unknown) => {
-  if (!result || typeof result !== 'object') return;
+  if (!result || typeof result !== "object") return;
   const data = result as { type?: string; data?: unknown };
-  if (data.type === 'redirect') return;
-  await presentActionFeedback({ type: data.type || 'error', data: data.data } as ActionResult);
+  if (data.type === "redirect") return;
+  await presentActionFeedback({
+    type: data.type || "error",
+    data: data.data,
+  } as ActionResult);
 };
 
 export const presentActionFeedback = async (result: ActionResult) => {

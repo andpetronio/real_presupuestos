@@ -1,11 +1,11 @@
-import type { SupabaseClient } from '@supabase/supabase-js';
+import type { SupabaseClient } from "@supabase/supabase-js";
 import type {
   WholesalerCategoryOption,
   WholesalerFormValues,
-} from '$lib/types/view-models/wholesalers';
+} from "$lib/types/view-models/wholesalers";
 
 export const parseText = (value: FormDataEntryValue | null): string =>
-  typeof value === 'string' ? value.trim() : '';
+  typeof value === "string" ? value.trim() : "";
 
 export const normalizeOptionalText = (
   value: FormDataEntryValue | null,
@@ -18,7 +18,7 @@ export const normalizeCode = (value: FormDataEntryValue | null): string =>
   parseText(value).toUpperCase();
 
 export const parseInteger = (value: FormDataEntryValue | null): number => {
-  const parsed = Math.floor(Number(typeof value === 'string' ? value : '0'));
+  const parsed = Math.floor(Number(typeof value === "string" ? value : "0"));
   if (!Number.isFinite(parsed)) return 1;
   return Math.max(1, parsed);
 };
@@ -51,25 +51,28 @@ export const getWholesalerFormValues = (params: {
   fallbackCode?: string;
   fallbackMinTotalUnits?: string;
 }): WholesalerFormValues => ({
-  name: parseText(params.formData.get('name')),
-  categoryId: parseText(params.formData.get('categoryId')),
+  name: parseText(params.formData.get("name")),
+  categoryId: parseText(params.formData.get("categoryId")),
   code:
-    normalizeCode(params.formData.get('code')) || (params.fallbackCode ?? ''),
+    normalizeCode(params.formData.get("code")) || (params.fallbackCode ?? ""),
   minTotalUnits:
-    parseText(params.formData.get('minTotalUnits')) ||
-    (params.fallbackMinTotalUnits ?? '1'),
-  taxId: parseText(params.formData.get('taxId')).slice(0, 13),
-  contactFullName: parseText(params.formData.get('contactFullName')),
-  contactWhatsapp: parseText(params.formData.get('contactWhatsapp')),
-  contactEmail: parseText(params.formData.get('contactEmail')).toLowerCase(),
-  address: parseText(params.formData.get('address')),
-  deliveryPreference: parseText(params.formData.get('deliveryPreference')),
-  paymentPreference: parseText(params.formData.get('paymentPreference')),
-  notes: parseText(params.formData.get('notes')),
+    parseText(params.formData.get("minTotalUnits")) ||
+    (params.fallbackMinTotalUnits ?? "1"),
+  taxId: parseText(params.formData.get("taxId")).slice(0, 13),
+  contactFullName: parseText(params.formData.get("contactFullName")),
+  contactWhatsapp: parseText(params.formData.get("contactWhatsapp")),
+  contactEmail: parseText(params.formData.get("contactEmail")).toLowerCase(),
+  address: parseText(params.formData.get("address")),
+  deliveryPreference: parseText(params.formData.get("deliveryPreference")),
+  paymentPreference: parseText(params.formData.get("paymentPreference")),
+  notes: parseText(params.formData.get("notes")),
 });
 
 export const mapWholesalerCategoryOptions = (
-  categories: Array<{ id: string; name: string; is_active: boolean }> | null | undefined,
+  categories:
+    | Array<{ id: string; name: string; is_active: boolean }>
+    | null
+    | undefined,
 ): WholesalerCategoryOption[] =>
   (categories ?? []).map((category) => ({
     id: category.id,
@@ -78,31 +81,33 @@ export const mapWholesalerCategoryOptions = (
   }));
 
 export const getWholesalerError = (
-  action: 'create' | 'update',
+  action: "create" | "update",
   errorMessage: string | undefined,
 ): string => {
   if (!errorMessage) {
-    return action === 'create'
-      ? 'No pudimos crear el mayorista. Reintentá en unos segundos.'
-      : 'No pudimos guardar los cambios del mayorista. Reintentá en unos segundos.';
+    return action === "create"
+      ? "No pudimos crear el mayorista. Reintentá en unos segundos."
+      : "No pudimos guardar los cambios del mayorista. Reintentá en unos segundos.";
   }
 
   const normalized = errorMessage.toLowerCase();
-  if (normalized.includes('wholesalers_unique_random_code_unique')) {
-    return 'Ya existe un mayorista con ese código.';
+  if (normalized.includes("wholesalers_unique_random_code_unique")) {
+    return "Ya existe un mayorista con ese código.";
   }
-  if (normalized.includes('wholesalers_tax_id_unique')) {
-    return 'Ya existe un mayorista con ese CUIT/DNI.';
+  if (normalized.includes("wholesalers_tax_id_unique")) {
+    return "Ya existe un mayorista con ese CUIT/DNI.";
   }
 
-  return action === 'create'
-    ? 'No pudimos crear el mayorista. Reintentá en unos segundos.'
-    : 'No pudimos guardar los cambios del mayorista. Reintentá en unos segundos.';
+  return action === "create"
+    ? "No pudimos crear el mayorista. Reintentá en unos segundos."
+    : "No pudimos guardar los cambios del mayorista. Reintentá en unos segundos.";
 };
 
 export const generateWholesalerCode = async (
   supabase: SupabaseClient,
 ): Promise<string> => {
-  const result = await supabase.rpc('generate_wholesaler_code', { p_length: 10 });
-  return typeof result.data === 'string' ? result.data : '';
+  const result = await supabase.rpc("generate_wholesaler_code", {
+    p_length: 10,
+  });
+  return typeof result.data === "string" ? result.data : "";
 };

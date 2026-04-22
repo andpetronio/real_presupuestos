@@ -31,8 +31,12 @@ export type WholesaleProductFormState = {
 
 export type WholesaleProductsPageDataViewModel = {
   products: ReadonlyArray<WholesaleProductListRow>;
-  tableState: 'idle' | 'success' | 'error' | 'empty';
+  tableState: "idle" | "success" | "error" | "empty";
   tableMessage: { title: string; detail: string } | null;
   pagination: { page: number; totalPages: number; total: number };
   filters: { search: string; status: string };
+  sort: {
+    sortBy: "name" | "presentation" | "price_ars" | "is_active" | "created_at";
+    sortDir: "asc" | "desc";
+  };
 };

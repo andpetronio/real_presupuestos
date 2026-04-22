@@ -67,6 +67,18 @@ describe("buildPaginationHref", () => {
     expect(result).toContain("tutor=t-99");
     expect(result).toContain("page=5");
   });
+
+  it("preserves sortBy/sortDir", () => {
+    const result = buildPaginationHref("/budgets", 2, {
+      status: "all",
+      search: "",
+      tutorId: null,
+      sortBy: "total_cost",
+      sortDir: "desc",
+    });
+
+    expect(result).toBe("/budgets?sortBy=total_cost&sortDir=desc&page=2");
+  });
 });
 
 describe("parseBudgetFilters", () => {
@@ -121,6 +133,18 @@ describe("parseBudgetFilters", () => {
   it("parses tutor param", () => {
     const result = parseBudgetFilters(makeParams([["tutor", "tutor-abc"]]));
     expect(result.tutorId).toBe("tutor-abc");
+  });
+
+  it("parsea sort con defaults seguros", () => {
+    const result = parseBudgetFilters(
+      makeParams([
+        ["sortBy", "final_sale_price"],
+        ["sortDir", "desc"],
+      ]),
+    );
+
+    expect(result.sortBy).toBe("final_sale_price");
+    expect(result.sortDir).toBe("desc");
   });
 });
 

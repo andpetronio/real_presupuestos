@@ -5,6 +5,7 @@
   import VeterinaryTable from '$lib/components/veterinaries/VeterinaryTable.svelte';
   import VeterinaryPagination from '$lib/components/veterinaries/VeterinaryPagination.svelte';
   import VeterinaryMobileCards from '$lib/components/veterinaries/VeterinaryMobileCards.svelte';
+  import { buildSortHref } from '$lib/shared/sort-links';
 
   type VeterinaryRow = {
     id: string;
@@ -20,11 +21,26 @@
     filters: {
       search: string;
     };
+    sort: {
+      sortBy: 'name';
+      sortDir: 'asc' | 'desc';
+    };
   };
 
   let { data }: { data: PageData } = $props();
 
   const newVeterinaryPath = '/veterinaries/new';
+
+  const buildVeterinarySortHref = (field: 'name'): string =>
+    buildSortHref({
+      basePath: '/veterinaries',
+      currentSortBy: data.sort.sortBy,
+      currentSortDir: data.sort.sortDir,
+      clickedField: field,
+      filters: {
+        q: data.filters.search
+      }
+    });
 </script>
 
 <div class="mb-4 flex justify-end">
@@ -41,6 +57,8 @@
     <div class="p-4">
       <VeterinaryFilterBar
         currentSearch={data.filters.search}
+        currentSortBy={data.sort.sortBy}
+        currentSortDir={data.sort.sortDir}
       />
     </div>
 
@@ -51,7 +69,12 @@
 
     <!-- Desktop table (hidden on < md) -->
     <div class="hidden md:block">
-      <VeterinaryTable veterinaries={data.veterinaries} />
+      <VeterinaryTable
+        veterinaries={data.veterinaries}
+        sortBy={data.sort.sortBy}
+        sortDir={data.sort.sortDir}
+        buildSortHref={buildVeterinarySortHref}
+      />
     </div>
 
     <!-- Pagination -->
@@ -61,6 +84,8 @@
         totalPages={data.pagination.totalPages}
         total={data.pagination.total}
         search={data.filters.search}
+        sortBy={data.sort.sortBy}
+        sortDir={data.sort.sortDir}
       />
     </div>
   </Card>

@@ -7,13 +7,17 @@
     totalPages: number;
     total: number;
     search: string;
+    sortBy: 'name';
+    sortDir: 'asc' | 'desc';
   };
 
   let {
     page,
     totalPages,
     total,
-    search
+    search,
+    sortBy,
+    sortDir
   }: VeterinaryPaginationProps = $props();
 
   const hasPrev = $derived(page > 1);
@@ -29,7 +33,7 @@
     <div>
       {#if hasPrev}
         <Button
-          href={buildPaginationHref('/veterinaries', page - 1, { search })}
+          href={buildPaginationHref('/veterinaries', page - 1, { search, sortBy, sortDir })}
           size="sm"
           color="light"
           aria-label="Página anterior"
@@ -54,7 +58,7 @@
     <div>
       {#if hasNext}
         <Button
-          href={buildPaginationHref('/veterinaries', page + 1, { search })}
+          href={buildPaginationHref('/veterinaries', page + 1, { search, sortBy, sortDir })}
           size="sm"
           color="light"
           aria-label="Página siguiente"

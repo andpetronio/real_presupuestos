@@ -2,31 +2,42 @@ import { describe, expect, it, vi } from "vitest";
 import { load } from "./+page.server";
 import { asLoadEvent } from "$lib/test-helpers/sveltekit-events";
 
-describe("(app)/veterinaries/+page.server load", () => {
-  it("retorna success cuando Supabase devuelve veterinarias", async () => {
+describe("(app)/mayorista-categories/+page.server load", () => {
+  it("ordena categorías alfabéticamente por nombre con desempates", async () => {
     const range = vi.fn().mockResolvedValue({
-      data: [{ id: "v-1", name: "Vet Norte", created_at: "2026-01-01" }],
+      data: [
+        {
+          id: "c-1",
+          name: "Carnes",
+          is_active: true,
+          created_at: "2026-01-01",
+        },
+      ],
       count: 1,
       error: null,
     });
     const order = vi.fn();
-    const query = { order, range };
+    const eq = vi.fn();
+    const ilike = vi.fn();
+    const query = { order, eq, ilike, range };
     order.mockReturnValue(query);
+    eq.mockReturnValue(query);
+    ilike.mockReturnValue(query);
 
     const data = (await load(
       asLoadEvent<Parameters<typeof load>[0]>({
-        url: new URL("https://test.local/veterinaries"),
+        url: new URL("https://test.local/mayorista-categories"),
         locals: {
           supabase: {
             from: vi.fn().mockReturnValue({
-              select: vi.fn().mockReturnValue({ order }),
+              select: vi.fn().mockReturnValue(query),
             }),
           },
         },
       }),
     )) as {
       tableState: string;
-      veterinaries: ReadonlyArray<unknown>;
+      categories: ReadonlyArray<unknown>;
     };
 
     expect(order).toHaveBeenNthCalledWith(1, "name", { ascending: true });
@@ -34,51 +45,62 @@ describe("(app)/veterinaries/+page.server load", () => {
       ascending: false,
     });
     expect(order).toHaveBeenNthCalledWith(3, "id", { ascending: true });
+    expect(eq).toHaveBeenCalledWith("is_active", true);
     expect(data.tableState).toBe("success");
-    expect(data.veterinaries).toHaveLength(1);
+    expect(data.categories).toHaveLength(1);
   });
 
-  it("permite invertir dirección con sorter válido", async () => {
+  it("aplica sorter por created_at cuando viene en query", async () => {
     const range = vi
       .fn()
       .mockResolvedValue({ data: [], count: 0, error: null });
     const order = vi.fn();
-    const query = { order, range };
+    const eq = vi.fn();
+    const ilike = vi.fn();
+    const query = { order, eq, ilike, range };
     order.mockReturnValue(query);
+    eq.mockReturnValue(query);
+    ilike.mockReturnValue(query);
 
     await load(
       asLoadEvent<Parameters<typeof load>[0]>({
         url: new URL(
-          "https://test.local/veterinaries?sortBy=name&sortDir=desc",
+          "https://test.local/mayorista-categories?sortBy=created_at&sortDir=desc",
         ),
         locals: {
           supabase: {
             from: vi.fn().mockReturnValue({
-              select: vi.fn().mockReturnValue({ order }),
+              select: vi.fn().mockReturnValue(query),
             }),
           },
         },
       }),
     );
 
-    expect(order).toHaveBeenNthCalledWith(1, "name", { ascending: false });
+    expect(order).toHaveBeenNthCalledWith(1, "created_at", {
+      ascending: false,
+    });
   });
 
-  it("si sortBy es inválido usa default", async () => {
+  it("si sortBy es inválido usa default por name", async () => {
     const range = vi
       .fn()
       .mockResolvedValue({ data: [], count: 0, error: null });
     const order = vi.fn();
-    const query = { order, range };
+    const eq = vi.fn();
+    const ilike = vi.fn();
+    const query = { order, eq, ilike, range };
     order.mockReturnValue(query);
+    eq.mockReturnValue(query);
+    ilike.mockReturnValue(query);
 
     await load(
       asLoadEvent<Parameters<typeof load>[0]>({
-        url: new URL("https://test.local/veterinaries?sortBy=invalid"),
+        url: new URL("https://test.local/mayorista-categories?sortBy=invalid"),
         locals: {
           supabase: {
             from: vi.fn().mockReturnValue({
-              select: vi.fn().mockReturnValue({ order }),
+              select: vi.fn().mockReturnValue(query),
             }),
           },
         },

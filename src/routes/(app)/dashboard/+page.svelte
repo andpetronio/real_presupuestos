@@ -9,6 +9,7 @@
   import { route } from '$lib/shared/navigation';
   import { CurrencyDollar, PaperPlaneTilt } from '$lib/icons/phosphor';
   import DeliveryAlertBanner from '$lib/components/delivery/DeliveryAlertBanner.svelte';
+  import { PaperPlaneTiltIcon } from 'phosphor-svelte';
 
   type PeriodKey = '7d' | '30d' | '90d' | 'mtd';
 
@@ -122,8 +123,6 @@
     <HighlightCard
       label="Cobranzas del período"
       value={formatArs(data.payments.collected)}
-      delta={data.comparison.paymentsDeltaPct}
-      deltaLabel="vs período anterior"
     >
       {#snippet iconSnippet()}
         <CurrencyDollar size={20} aria-hidden="true" />
@@ -135,8 +134,6 @@
     <HighlightCard
       label="Total aceptado"
       value={formatArs(data.metrics.acceptedTotal)}
-      delta={data.comparison.acceptedTotalDeltaPct}
-      deltaLabel="vs período anterior"
     >
       {#snippet iconSnippet()}
         <CurrencyDollar size={20} aria-hidden="true" />
@@ -154,7 +151,7 @@
       colorVariant="default"
     >
       {#snippet iconSnippet()}
-        <PaperPlaneTilt size={20} class="text-gray-400" aria-hidden="true" />
+        <PaperPlaneTiltIcon size={20} class="text-gray-400" aria-hidden="true" />
       {/snippet}
     </MetricCard>
   </div>

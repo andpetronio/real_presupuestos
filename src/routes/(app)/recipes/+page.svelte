@@ -5,6 +5,7 @@
   import RecipeTable from '$lib/components/recipes/RecipeTable.svelte';
   import RecipePagination from '$lib/components/recipes/RecipePagination.svelte';
   import RecipeMobileCards from '$lib/components/recipes/RecipeMobileCards.svelte';
+  import { buildSortHref } from '$lib/shared/sort-links';
 
   type RecipeRow = {
     id: string;
@@ -24,11 +25,27 @@
       search: string;
       status: string;
     };
+    sort: {
+      sortBy: 'name' | 'is_active';
+      sortDir: 'asc' | 'desc';
+    };
   };
 
   let { data }: { data: PageData } = $props();
 
   const newRecipePath = '/recipes/new';
+
+  const buildRecipeSortHref = (field: 'name' | 'is_active'): string =>
+    buildSortHref({
+      basePath: '/recipes',
+      currentSortBy: data.sort.sortBy,
+      currentSortDir: data.sort.sortDir,
+      clickedField: field,
+      filters: {
+        q: data.filters.search,
+        status: data.filters.status
+      }
+    });
 </script>
 
 <div class="mb-4 flex justify-end">
@@ -46,6 +63,8 @@
       <RecipeFilterBar
         currentSearch={data.filters.search}
         currentStatus={data.filters.status}
+        currentSortBy={data.sort.sortBy}
+        currentSortDir={data.sort.sortDir}
       />
     </div>
 
@@ -56,7 +75,12 @@
 
     <!-- Desktop table (hidden on < md) -->
     <div class="hidden md:block">
-      <RecipeTable recipes={data.recipes} />
+      <RecipeTable
+        recipes={data.recipes}
+        sortBy={data.sort.sortBy}
+        sortDir={data.sort.sortDir}
+        buildSortHref={buildRecipeSortHref}
+      />
     </div>
 
     <!-- Pagination -->
@@ -67,6 +91,8 @@
         total={data.pagination.total}
         search={data.filters.search}
         status={data.filters.status}
+        sortBy={data.sort.sortBy}
+        sortDir={data.sort.sortDir}
       />
     </div>
   </Card>

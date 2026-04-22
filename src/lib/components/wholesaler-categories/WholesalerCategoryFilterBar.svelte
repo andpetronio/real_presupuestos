@@ -4,9 +4,11 @@
   type Props = {
     currentSearch: string;
     currentStatus: string;
+    currentSortBy: 'name' | 'is_active' | 'created_at';
+    currentSortDir: 'asc' | 'desc';
   };
 
-  let { currentSearch, currentStatus }: Props = $props();
+  let { currentSearch, currentStatus, currentSortBy, currentSortDir }: Props = $props();
 
   const statusOptions = [
     { value: 'all', label: 'Todos' },
@@ -23,4 +25,6 @@
   filterOptions={statusOptions}
   currentFilter={currentStatus}
   showSubmitButton={true}
+  currentSortBy={currentSortBy}
+  currentSortDir={currentSortDir}
 />
