@@ -21,7 +21,7 @@ describe("smoke: navegación admin e aislamiento público", () => {
       "/seguimiento",
       "/settings",
       "/mayoristas-dashboard",
-      "/mayoristas",
+      "/admin-mayoristas",
       "/mayorista-categories",
       "/mayorista-products",
       "/mayorista-assortment",
