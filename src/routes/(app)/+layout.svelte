@@ -133,7 +133,13 @@
   <!-- Navbar: logo + logout -->
   <Navbar class="h-16 min-h-16 border-b border-gray-200 bg-white px-4">
     <NavBrand href="/dashboard">
-      <span class="self-center text-xl font-semibold whitespace-nowrap text-primary">Presupuestos</span>
+      <img
+        src="/logo.png"
+        alt="Real, Amor en cada bocado"
+        class="h-9 w-auto sm:h-10"
+        loading="eager"
+        decoding="async"
+      />
     </NavBrand>
 
     <div class="flex items-center gap-3 md:order-2">

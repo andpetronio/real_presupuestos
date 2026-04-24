@@ -93,19 +93,30 @@
 </svelte:head>
 
 <main class="min-h-screen bg-gray-50 p-4 md:p-6">
-  <div class="mx-auto max-w-7xl space-y-4">
-    <p class="text-xs font-bold uppercase tracking-[0.14em] text-primary-700">Tienda mayorista de Real, Amor en cada bocado ®</p>
-    <Card size="xl" class="p-4 shadow-sm">
-      <div class="flex flex-wrap items-center justify-between gap-3">
-        <div>
-          <h1 class="text-2xl font-bold text-gray-900">Hola, {data.wholesaler.name}</h1>
-          <p class="text-sm text-gray-600">Pedido mínimo: <strong>{minUnits}</strong> unidades</p>
-        </div>
-        <form method="POST" action="/mayoristas/logout">
-          <Button type="submit" color="blue">Cerrar sesión</Button>
-        </form>
-      </div>
-    </Card>
+    <div class="mx-auto flex max-w-7xl flex-col items-center space-y-4 pb-4 text-center">
+        <img
+            src="/logo.png"
+            alt="Real, Amor en cada bocado"
+            class="h-12 w-auto sm:h-14"
+            loading="eager"
+            decoding="async"
+        />
+        <p class="text-xs font-bold uppercase tracking-[0.14em] text-primary-700">
+            Tienda mayorista
+        </p>
+    </div>
+    <div class="mx-auto max-w-7xl space-y-4">
+        <Card size="xl" class="p-4 shadow-sm">
+            <div class="flex flex-wrap items-center justify-between gap-3">
+                <div class="space-y-2">
+                    <h1 class="text-2xl font-bold text-gray-900">Hola, {data.wholesaler.name}</h1>
+                    <p class="text-sm text-gray-600">Pedido mínimo: <strong>{minUnits}</strong> unidades</p>
+                </div>
+                <form method="POST" action="/mayoristas/logout">
+                    <Button type="submit" class="bg-secondary hover:bg-secondary-700 text-white cursor-pointer">Cerrar sesión</Button>
+                </form>
+            </div>
+        </Card>
 
     {#if form?.operatorSuccess}
       <Alert color="green">

@@ -23,9 +23,16 @@
 <main class="flex min-h-screen items-center justify-center bg-gray-50 px-4 py-6 sm:py-10">
   <div class="w-full max-w-md">
     <Card size="xl" class="w-full p-5 shadow-sm sm:p-6">
-      <p class="text-xs font-bold uppercase tracking-[0.14em] text-primary-700">Panel interno</p>
-      <h1 class="mt-1 text-2xl font-bold text-gray-900">Iniciar sesión</h1>
-      <p class="mt-1 text-sm text-gray-600">Accedé para gestionar presupuestos, recetas y seguimiento comercial.</p>
+      <div class="mb-4 flex justify-center">
+        <img
+          src="/logo.png"
+          alt="Real, Amor en cada bocado"
+          class="h-16 w-auto sm:h-20"
+          loading="eager"
+          decoding="async"
+        />
+      </div>
+      <h1 class="mt-1 text-2xl font-bold text-gray-900 text-center">Iniciar sesión</h1>
 
       {#if form?.operatorError}
         <Alert color="red" class="mt-4" role="alert">{form.operatorError}</Alert>
@@ -62,7 +69,7 @@
           />
         </div>
 
-        <Button type="submit" class="h-11 w-full text-base font-semibold" disabled={isSubmitting} aria-busy={isSubmitting}>
+        <Button type="submit" class="h-11 w-full font-semibold bg-primary hover:bg-primary-600 text-white" disabled={isSubmitting} aria-busy={isSubmitting}>
           {isSubmitting ? 'Ingresando…' : 'Ingresar'}
         </Button>
       </form>

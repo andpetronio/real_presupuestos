@@ -1,5 +1,6 @@
 <script lang="ts">
   import { applyAction, enhance } from '$app/forms';
+  import { invalidateAll } from '$app/navigation';
   import { Badge, Button, Card, Input, Label, Select, Textarea } from 'flowbite-svelte';
   import StatusBadge from '$lib/components/admin/StatusBadge.svelte';
   import { formatArs } from '$lib/shared/currency';
@@ -103,12 +104,20 @@
 
   const isClosed = $derived(data.budget.status === 'closed');
 
-  const enhanceWithFeedback = (confirmOptions?: {
+  type ConfirmOptions = {
     title: string;
     text: string;
     confirmButtonText: string;
+  };
+
+  const enhanceWithFeedback = (options?: {
+    confirmOptions?: ConfirmOptions;
+    resetOnSuccess?: boolean;
   }) => {
-    return async ({ cancel }: { cancel: () => void }) => {
+    const confirmOptions = options?.confirmOptions;
+    const resetOnSuccess = options?.resetOnSuccess ?? false;
+
+    return async ({ cancel, formElement }: { cancel: () => void; formElement: HTMLFormElement }) => {
       if (confirmOptions) {
         const confirmed = await confirmAlert(confirmOptions);
         if (!confirmed) {
@@ -123,6 +132,12 @@
         await closeBlockingLoader();
         await applyAction(result);
         await presentActionFeedback(result);
+        if (result.type === 'success') {
+          if (resetOnSuccess) {
+            formElement.reset();
+          }
+          await invalidateAll();
+        }
       };
     };
   };
@@ -205,7 +220,7 @@
   {#if !isClosed}
   <Card size="xl" class="p-6 shadow-sm xl:col-span-4">
     <p class="text-sm font-semibold text-gray-900">Registrar cobro</p>
-    <form method="POST" action="?/addPayment" class="mt-3 space-y-3" use:enhance={enhanceWithFeedback()}>
+    <form method="POST" action="?/addPayment" class="mt-3 space-y-3" use:enhance={enhanceWithFeedback({ resetOnSuccess: true })}>
       <div>
         <Label for="amount">Monto</Label>
         <Input id="amount" name="amount" type="number" min="0.01" step="0.01" required />
@@ -233,7 +248,7 @@
 
   <Card size="xl" class="p-6 shadow-sm xl:col-span-4">
     <p class="text-sm font-semibold text-gray-900">Registrar preparación</p>
-    <form method="POST" action="?/addPreparation" class="mt-3 space-y-3" use:enhance={enhanceWithFeedback()}>
+    <form method="POST" action="?/addPreparation" class="mt-3 space-y-3" use:enhance={enhanceWithFeedback({ resetOnSuccess: true })}>
       <div>
         <Label for="preparationRecipe">Receta</Label>
         <Select id="preparationRecipe" name="budgetDogRecipeId" required>
@@ -260,7 +275,7 @@
 
   <Card size="xl" class="p-6 shadow-sm xl:col-span-4">
     <p class="text-sm font-semibold text-gray-900">Registrar entrega</p>
-    <form method="POST" action="?/addDelivery" class="mt-3 space-y-3" use:enhance={enhanceWithFeedback()}>
+    <form method="POST" action="?/addDelivery" class="mt-3 space-y-3" use:enhance={enhanceWithFeedback({ resetOnSuccess: true })}>
       <div>
         <Label for="deliveryRecipe">Receta</Label>
         <Select id="deliveryRecipe" name="budgetDogRecipeId" required>
@@ -303,9 +318,11 @@
               method="POST"
               action="?/deletePayment"
               use:enhance={enhanceWithFeedback({
-                title: 'Eliminar cobro',
-                text: 'Esta accion quitara el cobro registrado.',
-                confirmButtonText: 'Si, eliminar'
+                confirmOptions: {
+                  title: 'Eliminar cobro',
+                  text: 'Esta accion quitara el cobro registrado.',
+                  confirmButtonText: 'Si, eliminar'
+                }
               })}
             >
               <input type="hidden" name="paymentId" value={payment.id} />
@@ -335,9 +352,11 @@
               action="?/deletePreparation"
               class="mt-1"
               use:enhance={enhanceWithFeedback({
-                title: 'Eliminar preparacion',
-                text: 'Esta accion eliminara el registro de preparacion.',
-                confirmButtonText: 'Si, eliminar'
+                confirmOptions: {
+                  title: 'Eliminar preparacion',
+                  text: 'Esta accion eliminara el registro de preparacion.',
+                  confirmButtonText: 'Si, eliminar'
+                }
               })}
             >
               <input type="hidden" name="preparationId" value={preparation.id} />
@@ -367,9 +386,11 @@
               action="?/deleteDelivery"
               class="mt-1"
               use:enhance={enhanceWithFeedback({
-                title: 'Eliminar entrega',
-                text: 'Esta accion eliminara el registro de entrega.',
-                confirmButtonText: 'Si, eliminar'
+                confirmOptions: {
+                  title: 'Eliminar entrega',
+                  text: 'Esta accion eliminara el registro de entrega.',
+                  confirmButtonText: 'Si, eliminar'
+                }
               })}
             >
               <input type="hidden" name="deliveryId" value={delivery.id} />

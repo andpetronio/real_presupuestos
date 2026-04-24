@@ -22,6 +22,15 @@
 <main class="flex min-h-screen items-center justify-center bg-gray-50 px-4 py-6 sm:py-10">
   <div class="w-full max-w-md">
     <Card size="xl" class="w-full p-5 shadow-sm sm:p-6">
+      <div class="mb-4 flex justify-center">
+        <img
+          src="/logo.png"
+          alt="Real, Amor en cada bocado"
+          class="h-16 w-auto sm:h-20"
+          loading="eager"
+          decoding="async"
+        />
+      </div>
       <p class="text-xs font-bold uppercase tracking-[0.14em] text-primary-700">Marketplace mayorista</p>
       <h1 class="mt-1 text-2xl font-bold text-gray-900">Ingresar con código</h1>
       <p class="mt-1 text-sm text-gray-600">Usá tu código único de cliente para acceder al catálogo.</p>
@@ -53,4 +62,3 @@
     </Card>
   </div>
 </main>
-
