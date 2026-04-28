@@ -143,7 +143,6 @@
     color="light"
     class="px-2"
     aria-label="Acciones"
-    onclick={() => (open = !open)}
   >
     <svg class="h-4 w-4" fill="currentColor" viewBox="0 0 128 128">
       <circle cx="28" cy="64" r="6" />
