@@ -32,10 +32,12 @@ export const actions: Actions = {
     const draftValues = getWholesalerFormValues({
       formData,
       fallbackMinTotalUnits: "5",
+      fallbackDeliveryDays: "7",
     });
 
     const name = parseText(formData.get("name"));
     const minTotalUnits = parseInteger(formData.get("minTotalUnits"));
+    const deliveryDays = parseInteger(formData.get("deliveryDays"));
     const notes = normalizeOptionalText(formData.get("notes"));
     const providedCode = draftValues.code;
     const categoryId = normalizeOptionalText(formData.get("categoryId"));
@@ -102,6 +104,7 @@ export const actions: Actions = {
       name,
       unique_random_code: code,
       min_total_units: minTotalUnits,
+      delivery_days: deliveryDays,
       category_id: categoryId,
       tax_id: taxId,
       contact_full_name: contactFullName,

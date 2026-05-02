@@ -33,7 +33,7 @@ export const load: PageServerLoad = async ({ locals, url }) => {
     let query = locals.supabase
       .from("wholesalers")
       .select(
-        "id, name, unique_random_code, min_total_units, is_active, notes, created_at, category_id, tax_id, contact_full_name, contact_whatsapp, contact_email, address, delivery_preference, payment_preference, category:wholesaler_categories(id, name, is_active)",
+        "id, name, unique_random_code, min_total_units, delivery_days, is_active, notes, created_at, category_id, tax_id, contact_full_name, contact_whatsapp, contact_email, address, delivery_preference, payment_preference, category:wholesaler_categories(id, name, is_active)",
         { count: "exact" },
       );
 
@@ -64,6 +64,7 @@ export const load: PageServerLoad = async ({ locals, url }) => {
       name: row.name,
       unique_random_code: row.unique_random_code,
       min_total_units: Number(row.min_total_units ?? 0),
+      delivery_days: Number(row.delivery_days ?? 7),
       is_active: row.is_active,
       notes: row.notes,
       created_at: row.created_at,

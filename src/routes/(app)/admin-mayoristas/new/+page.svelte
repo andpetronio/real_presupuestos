@@ -18,6 +18,7 @@
     categoryId: form?.values?.categoryId ?? '',
     code: form?.values?.code ?? '',
     minTotalUnits: form?.values?.minTotalUnits ?? '5',
+    deliveryDays: form?.values?.deliveryDays ?? '7',
     taxId: form?.values?.taxId ?? '',
     contactFullName: form?.values?.contactFullName ?? '',
     contactWhatsapp: form?.values?.contactWhatsapp ?? '',

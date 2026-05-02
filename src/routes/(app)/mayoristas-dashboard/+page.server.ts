@@ -16,7 +16,7 @@ export const load: PageServerLoad = async ({ locals }) => {
   const orders = ordersResult.data ?? [];
 
   const pendingCount = orders.filter(
-    (order) => order.status === "pending",
+    (order) => order.status === "received" || order.status === "in_preparation",
   ).length;
   const deliveredUnpaidCount = orders.filter(
     (order) => order.status === "delivered",

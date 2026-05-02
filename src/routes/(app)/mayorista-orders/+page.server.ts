@@ -1,3 +1,4 @@
+import { fail } from "@sveltejs/kit";
 import type { Actions, PageServerLoad } from "./$types";
 import {
   buildFallbackError,
@@ -6,8 +7,12 @@ import {
 } from "$lib/server/shared/list-helpers";
 import { parseSortState } from "$lib/server/shared/sorting";
 import {
+  getDeliveryTiming,
   markWholesaleOrderDelivered,
+  markWholesaleOrderInPreparation,
+  markWholesaleOrderReady,
   markWholesaleOrderPaid,
+  parsePaymentMethod,
   parseText,
   toStatusLabel,
 } from "$lib/server/wholesale-backoffice/orders";
@@ -27,6 +32,7 @@ export const load: PageServerLoad = async ({ locals, url }) => {
     allowedSortBy: [
       "wholesaler",
       "placed_at",
+      "expected_delivery_at",
       "status",
       "total_units",
       "total_ars",
@@ -59,7 +65,7 @@ export const load: PageServerLoad = async ({ locals, url }) => {
     let query = locals.supabase
       .from("wholesale_orders")
       .select(
-        "id, wholesaler_id, status, total_units, total_ars, notes, placed_at, delivered_at, paid_at, wholesaler:wholesalers(name)",
+        "id, wholesaler_id, status, total_units, total_ars, notes, placed_at, expected_delivery_at, delivered_at, ready_at, paid_at, payment_method, wholesaler:wholesalers(name)",
         { count: "exact" },
       );
 
@@ -106,6 +112,14 @@ export const load: PageServerLoad = async ({ locals, url }) => {
       total_ars: Number(row.total_ars ?? 0),
       notes: row.notes,
       placed_at: row.placed_at,
+      expected_delivery_at: row.expected_delivery_at,
+      ready_at: row.ready_at,
+      paid_at: row.paid_at,
+      payment_method: row.payment_method,
+      ...getDeliveryTiming({
+        expectedDeliveryAt: row.expected_delivery_at,
+        status: row.status,
+      }),
     }));
 
     const total = count ?? 0;
@@ -140,6 +154,20 @@ export const load: PageServerLoad = async ({ locals, url }) => {
 };
 
 export const actions: Actions = {
+  markInPreparation: async ({ request, locals }) => {
+    const formData = await request.formData();
+    return markWholesaleOrderInPreparation({
+      supabase: locals.supabase,
+      orderId: parseText(formData.get("orderId")),
+    });
+  },
+  markReady: async ({ request, locals }) => {
+    const formData = await request.formData();
+    return markWholesaleOrderReady({
+      supabase: locals.supabase,
+      orderId: parseText(formData.get("orderId")),
+    });
+  },
   markDelivered: async ({ request, locals }) => {
     const formData = await request.formData();
     return markWholesaleOrderDelivered({
@@ -152,6 +180,32 @@ export const actions: Actions = {
     return markWholesaleOrderPaid({
       supabase: locals.supabase,
       orderId: parseText(formData.get("orderId")),
+      paymentMethod: parsePaymentMethod(formData.get("paymentMethod")),
     });
+  },
+  updatePreparedQuantity: async ({ request, locals }) => {
+    const formData = await request.formData();
+    const itemId = parseText(formData.get("itemId"));
+    const quantityRaw = parseText(formData.get("preparedQuantity"));
+    const preparedQuantity = Number(quantityRaw);
+
+    if (!itemId || !Number.isFinite(preparedQuantity) || preparedQuantity < 0) {
+      return fail(400, {
+        operatorError: "Ingresá una cantidad preparada válida (>= 0).",
+      });
+    }
+
+    const { error } = await locals.supabase
+      .from("wholesale_order_items")
+      .update({ prepared_quantity: Math.floor(preparedQuantity) })
+      .eq("id", itemId);
+
+    if (error) {
+      return fail(400, {
+        operatorError: "No pudimos actualizar la preparación parcial.",
+      });
+    }
+
+    return { operatorSuccess: "Preparación parcial actualizada." };
   },
 };

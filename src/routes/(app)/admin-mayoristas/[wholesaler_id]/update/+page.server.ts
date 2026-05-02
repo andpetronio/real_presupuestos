@@ -18,7 +18,7 @@ export const load: PageServerLoad = async ({ locals, params }) => {
   const wholesalerResult = await locals.supabase
     .from("wholesalers")
     .select(
-      "id, name, unique_random_code, min_total_units, is_active, notes, category_id, tax_id, contact_full_name, contact_whatsapp, contact_email, address, delivery_preference, payment_preference",
+      "id, name, unique_random_code, min_total_units, delivery_days, is_active, notes, category_id, tax_id, contact_full_name, contact_whatsapp, contact_email, address, delivery_preference, payment_preference",
     )
     .eq("id", params.wholesaler_id)
     .maybeSingle();
@@ -64,6 +64,7 @@ export const actions: Actions = {
     const name = parseText(formData.get("name"));
     const code = draftValues.code;
     const minTotalUnits = parseInteger(formData.get("minTotalUnits"));
+    const deliveryDays = parseInteger(formData.get("deliveryDays"));
     const categoryId = normalizeOptionalText(formData.get("categoryId"));
     const taxId = normalizeTaxId(formData.get("taxId"));
     const contactFullName = normalizeOptionalText(
@@ -122,6 +123,7 @@ export const actions: Actions = {
         name,
         unique_random_code: code,
         min_total_units: minTotalUnits,
+        delivery_days: deliveryDays,
         category_id: categoryId,
         tax_id: taxId,
         contact_full_name: contactFullName,

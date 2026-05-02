@@ -27,6 +27,33 @@ const parseDateToIso = (value: string): string | null => {
   return date.toISOString();
 };
 
+type DeliveryDraft = {
+  budgetDogRecipeId: string;
+  recipeDays: number;
+};
+
+const parseDeliveryDrafts = (formData: FormData): DeliveryDraft[] => {
+  const recipeIds = formData
+    .getAll("budgetDogRecipeId")
+    .map((value) => parseFormValue(value));
+  const recipeDaysValues = formData
+    .getAll("recipeDays")
+    .map((value) => parseFormValue(value));
+  const totalRows = Math.max(recipeIds.length, recipeDaysValues.length);
+  const drafts: DeliveryDraft[] = [];
+
+  for (let index = 0; index < totalRows; index += 1) {
+    const budgetDogRecipeId = recipeIds[index] ?? "";
+    const recipeDaysRaw = recipeDaysValues[index] ?? "";
+    if (!budgetDogRecipeId && !recipeDaysRaw) continue;
+    const recipeDays = parsePositiveInteger(recipeDaysRaw);
+    if (!budgetDogRecipeId || recipeDays === null) return [];
+    drafts.push({ budgetDogRecipeId, recipeDays });
+  }
+
+  return drafts;
+};
+
 const readBudgetDogBudgetId = (value: unknown): string | null => {
   if (!value) return null;
 
@@ -352,29 +379,28 @@ export const actions: Actions = {
 
   addDelivery: async ({ request, locals }) => {
     const formData = await request.formData();
-    const budgetDogRecipeId = parseFormValue(formData.get("budgetDogRecipeId"));
-    const recipeDaysRaw = parseFormValue(formData.get("recipeDays"));
+    const deliveryDrafts = parseDeliveryDrafts(formData);
     const deliveredAtRaw = parseFormValue(formData.get("entryDate"));
     const notes = parseFormValue(formData.get("notes"));
-
-    const recipeDays = parsePositiveInteger(recipeDaysRaw);
     const deliveredAt = parseDateToIso(deliveredAtRaw);
 
-    if (!budgetDogRecipeId || recipeDays === null || !deliveredAt) {
+    if (deliveryDrafts.length === 0 || !deliveredAt) {
       return fail(400, {
         operatorError:
-          "Seleccioná receta, días (> 0) y fecha válida para registrar entrega.",
+          "Seleccioná receta(s), días (> 0) y fecha válida para registrar entrega.",
       });
     }
 
     const { error } = await locals.supabase
       .from("budget_recipe_deliveries")
-      .insert({
-        budget_dog_recipe_id: budgetDogRecipeId,
-        recipe_days: recipeDays,
-        delivered_at: deliveredAt,
-        notes: notes || null,
-      });
+      .insert(
+        deliveryDrafts.map((draft) => ({
+          budget_dog_recipe_id: draft.budgetDogRecipeId,
+          recipe_days: draft.recipeDays,
+          delivered_at: deliveredAt,
+          notes: notes || null,
+        })),
+      );
 
     if (error) {
       return fail(400, {

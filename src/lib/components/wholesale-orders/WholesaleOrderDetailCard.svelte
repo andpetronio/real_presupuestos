@@ -9,8 +9,15 @@
 
   let { order }: Props = $props();
 
-  const badgeColor = (status: string) => status === 'pending' ? 'yellow' : status === 'delivered' ? 'blue' : 'green';
-  const formatDateTime = (value: string | null | undefined) => value ? new Date(value).toLocaleString('es-AR') : '—';
+  const badgeColor = (status: string) =>
+    status === 'received' ? 'yellow' : status === 'in_preparation' ? 'blue' : status === 'ready' ? 'purple' : status === 'delivered' ? 'teal' : 'green';
+  const paymentMethodLabels: Record<string, string> = {
+    cash: 'Efectivo',
+    transfer: 'Transferencia',
+    mercadopago: 'MercadoPago',
+    other: 'Otro'
+  };
+  const formatDateTime = (value: string | null | undefined) => value ? new Date(value).toLocaleDateString('es-AR') : '—';
 </script>
 
 <Card size="xl" class="w-full shadow-sm p-4">
@@ -27,10 +34,18 @@
     </div>
   </div>
 
-  <div class="mt-4 grid gap-3 md:grid-cols-3">
+  <div class="mt-4 grid gap-3 md:grid-cols-5">
     <div class="rounded-lg border border-gray-200 p-3">
       <p class="text-xs text-gray-500">Pedido generado</p>
       <p class="font-medium">{formatDateTime(order.placed_at)}</p>
+    </div>
+    <div class="rounded-lg border border-gray-200 p-3">
+      <p class="text-xs text-gray-500">Entrega estimada</p>
+      <p class="font-medium">{formatDateTime(order.expected_delivery_at)}</p>
+    </div>
+    <div class="rounded-lg border border-gray-200 p-3">
+      <p class="text-xs text-gray-500">Listo</p>
+      <p class="font-medium">{formatDateTime(order.ready_at)}</p>
     </div>
     <div class="rounded-lg border border-gray-200 p-3">
       <p class="text-xs text-gray-500">Entregado</p>
@@ -41,6 +56,18 @@
       <p class="font-medium">{formatDateTime(order.paid_at)}</p>
     </div>
   </div>
+
+  <div class="mt-3 rounded-lg border border-gray-200 p-3">
+    <p class="text-xs text-gray-500">Estado de entrega</p>
+    <p class="font-medium">{order.isOverdue ? `Demorado ${Math.abs(order.daysToDelivery)} día(s)` : `Restan ${Math.max(order.daysToDelivery, 0)} día(s)`}</p>
+  </div>
+
+  {#if order.payment_method}
+    <div class="mt-3 rounded-lg border border-gray-200 p-3">
+      <p class="text-xs text-gray-500">Método de pago</p>
+      <p class="font-medium">{paymentMethodLabels[order.payment_method] ?? order.payment_method}</p>
+    </div>
+  {/if}
 
   {#if order.notes}
     <div class="mt-4 rounded-lg border border-gray-200 bg-gray-50 p-3">
@@ -54,6 +81,7 @@
       <TableHead>
         <TableHeadCell>Producto</TableHeadCell>
         <TableHeadCell>Cantidad</TableHeadCell>
+        <TableHeadCell>Preparado</TableHeadCell>
         <TableHeadCell>Unitario</TableHeadCell>
         <TableHeadCell>Subtotal</TableHeadCell>
       </TableHead>
@@ -65,6 +93,7 @@
               <p class="text-xs text-gray-500">{item.presentation_snapshot}</p>
             </TableBodyCell>
             <TableBodyCell>{item.quantity}</TableBodyCell>
+            <TableBodyCell>{item.prepared_quantity}</TableBodyCell>
             <TableBodyCell>{formatArs(Number(item.unit_price_ars_snapshot ?? 0))}</TableBodyCell>
             <TableBodyCell>{formatArs(Number(item.line_total_ars_snapshot ?? 0))}</TableBodyCell>
           </TableBodyRow>

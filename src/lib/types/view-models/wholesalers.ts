@@ -9,6 +9,7 @@ export type WholesalerListRow = {
   name: string;
   unique_random_code: string;
   min_total_units: number;
+  delivery_days: number;
   is_active: boolean;
   notes: string | null;
   created_at: string;
@@ -28,6 +29,7 @@ export type WholesalerFormValues = {
   categoryId: string;
   code: string;
   minTotalUnits: string;
+  deliveryDays: string;
   taxId: string;
   contactFullName: string;
   contactWhatsapp: string;

@@ -23,7 +23,7 @@
   let { data, form }: { data: PageData; form: FormState | null } = $props();
 
   const buildOrderSortHref = (
-    field: 'wholesaler' | 'placed_at' | 'status' | 'total_units' | 'total_ars',
+    field: 'wholesaler' | 'placed_at' | 'expected_delivery_at' | 'status' | 'total_units' | 'total_ars',
   ): string =>
     buildSortHref({
       basePath: '/mayorista-orders',

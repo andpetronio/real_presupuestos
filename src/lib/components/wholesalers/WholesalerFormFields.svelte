@@ -51,6 +51,18 @@
   />
 </div>
 
+<div>
+  <Label for='deliveryDays' class='mb-1'>Días de entrega</Label>
+  <Input
+    id='deliveryDays'
+    name='deliveryDays'
+    type='number'
+    min={1}
+    required
+    value={values.deliveryDays}
+  />
+</div>
+
 <div class='md:col-span-2 mt-2'>
   <h3 class='text-sm font-semibold uppercase tracking-wide text-gray-500'>Identificación y contacto</h3>
 </div>

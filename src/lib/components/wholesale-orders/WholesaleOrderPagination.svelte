@@ -8,7 +8,7 @@
     total: number;
     search: string;
     status: string;
-    sortBy: 'wholesaler' | 'placed_at' | 'status' | 'total_units' | 'total_ars';
+    sortBy: 'wholesaler' | 'placed_at' | 'expected_delivery_at' | 'status' | 'total_units' | 'total_ars';
     sortDir: 'asc' | 'desc';
   };
   let { page, totalPages, total, search, status, sortBy, sortDir }: Props = $props();

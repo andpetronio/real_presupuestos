@@ -1,9 +1,21 @@
-export type WholesaleOrderStatus = "pending" | "delivered" | "paid";
+export type WholesaleOrderStatus =
+  | "received"
+  | "in_preparation"
+  | "ready"
+  | "delivered"
+  | "paid";
+
+export type WholesalePaymentMethod =
+  | "cash"
+  | "transfer"
+  | "mercadopago"
+  | "other";
 
 export type WholesaleOrderItemView = {
   id: string;
   order_id?: string;
   quantity: number;
+  prepared_quantity: number;
   unit_price_ars_snapshot: number;
   line_total_ars_snapshot: number;
   product_name_snapshot: string;
@@ -19,6 +31,12 @@ export type WholesaleOrderListRow = {
   total_ars: number;
   notes?: string | null;
   placed_at: string;
+  expected_delivery_at: string;
+  ready_at?: string | null;
+  paid_at?: string | null;
+  payment_method?: WholesalePaymentMethod | null;
+  isOverdue: boolean;
+  daysToDelivery: number;
 };
 
 export type WholesaleOrderDetailView = WholesaleOrderListRow & {
@@ -34,7 +52,13 @@ export type WholesaleOrdersPageDataViewModel = {
   pagination: { page: number; totalPages: number; total: number };
   filters: { search: string; status: string };
   sort: {
-    sortBy: "wholesaler" | "placed_at" | "status" | "total_units" | "total_ars";
+    sortBy:
+      | "wholesaler"
+      | "placed_at"
+      | "expected_delivery_at"
+      | "status"
+      | "total_units"
+      | "total_ars";
     sortDir: "asc" | "desc";
   };
 };

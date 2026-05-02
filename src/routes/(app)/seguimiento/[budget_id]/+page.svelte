@@ -104,6 +104,27 @@
 
   const isClosed = $derived(data.budget.status === 'closed');
 
+  const parseCurrencyInput = (value: string): number | null => {
+    const cleaned = value.replace(/[^\d.,-]/g, '').trim();
+    if (!cleaned) return null;
+
+    const lastComma = cleaned.lastIndexOf(',');
+    const lastDot = cleaned.lastIndexOf('.');
+    const decimalIndex = Math.max(lastComma, lastDot);
+
+    let normalized = cleaned;
+    if (decimalIndex >= 0) {
+      const intPart = cleaned.slice(0, decimalIndex).replace(/[.,]/g, '');
+      const decPart = cleaned.slice(decimalIndex + 1).replace(/[.,]/g, '');
+      normalized = `${intPart}.${decPart}`;
+    } else {
+      normalized = cleaned.replace(/[.,]/g, '');
+    }
+
+    const parsed = Number(normalized);
+    return Number.isFinite(parsed) && parsed > 0 ? parsed : null;
+  };
+
   type ConfirmOptions = {
     title: string;
     text: string;
@@ -113,6 +134,7 @@
   const enhanceWithFeedback = (options?: {
     confirmOptions?: ConfirmOptions;
     resetOnSuccess?: boolean;
+    onSuccess?: () => void;
   }) => {
     const confirmOptions = options?.confirmOptions;
     const resetOnSuccess = options?.resetOnSuccess ?? false;
@@ -136,10 +158,49 @@
           if (resetOnSuccess) {
             formElement.reset();
           }
+          options?.onSuccess?.();
           await invalidateAll();
         }
       };
     };
+  };
+
+  type DeliveryRow = {
+    id: number;
+  };
+
+  let deliveryRowSeq = 0;
+  const createDeliveryRow = (): DeliveryRow => ({ id: deliveryRowSeq++ });
+  let deliveryRows = $state<DeliveryRow[]>([createDeliveryRow()]);
+
+  const addDeliveryRow = () => {
+    deliveryRows = [...deliveryRows, createDeliveryRow()];
+  };
+
+  const removeDeliveryRow = (rowId: number) => {
+    if (deliveryRows.length === 1) return;
+    deliveryRows = deliveryRows.filter((row) => row.id !== rowId);
+  };
+
+  const resetDeliveryRows = () => {
+    deliveryRows = [createDeliveryRow()];
+  };
+
+  let paymentAmountDisplay = $state('');
+  const paymentAmountNumber = $derived(parseCurrencyInput(paymentAmountDisplay));
+  const paymentAmountValue = $derived(paymentAmountNumber === null ? '' : String(paymentAmountNumber));
+
+  const handlePaymentAmountFocus = () => {
+    paymentAmountDisplay = paymentAmountValue;
+  };
+
+  const handlePaymentAmountBlur = () => {
+    if (paymentAmountNumber === null) return;
+    paymentAmountDisplay = formatArs(paymentAmountNumber);
+  };
+
+  const resetPaymentAmount = () => {
+    paymentAmountDisplay = '';
   };
 </script>
 
@@ -220,10 +281,20 @@
   {#if !isClosed}
   <Card size="xl" class="p-6 shadow-sm xl:col-span-4">
     <p class="text-sm font-semibold text-gray-900">Registrar cobro</p>
-    <form method="POST" action="?/addPayment" class="mt-3 space-y-3" use:enhance={enhanceWithFeedback({ resetOnSuccess: true })}>
+    <form method="POST" action="?/addPayment" class="mt-3 space-y-3" use:enhance={enhanceWithFeedback({ resetOnSuccess: true, onSuccess: resetPaymentAmount })}>
       <div>
         <Label for="amount">Monto</Label>
-        <Input id="amount" name="amount" type="number" min="0.01" step="0.01" required />
+        <Input
+          id="amount"
+          type="text"
+          inputmode="decimal"
+          placeholder="$ 0,00"
+          bind:value={paymentAmountDisplay}
+          onfocus={handlePaymentAmountFocus}
+          onblur={handlePaymentAmountBlur}
+          required
+        />
+        <input type="hidden" name="amount" value={paymentAmountValue} />
       </div>
       <div>
         <Label for="paymentMethod">Medio de pago</Label>
@@ -275,19 +346,30 @@
 
   <Card size="xl" class="p-6 shadow-sm xl:col-span-4">
     <p class="text-sm font-semibold text-gray-900">Registrar entrega</p>
-    <form method="POST" action="?/addDelivery" class="mt-3 space-y-3" use:enhance={enhanceWithFeedback({ resetOnSuccess: true })}>
-      <div>
-        <Label for="deliveryRecipe">Receta</Label>
-        <Select id="deliveryRecipe" name="budgetDogRecipeId" required>
-          {#each data.recipeOptions as option (option.budgetDogRecipeId)}
-            <option value={option.budgetDogRecipeId}>{option.label}</option>
-          {/each}
-        </Select>
-      </div>
-      <div>
-        <Label for="deliveryDays">Días entregados</Label>
-        <Input id="deliveryDays" name="recipeDays" type="number" min="1" step="1" required />
-      </div>
+    <form method="POST" action="?/addDelivery" class="mt-3 space-y-3" use:enhance={enhanceWithFeedback({ resetOnSuccess: true, onSuccess: resetDeliveryRows })}>
+      {#each deliveryRows as row, index (row.id)}
+        <div class="rounded-md border border-gray-200 p-3 space-y-3">
+          <div class="flex items-center justify-between gap-2">
+            <p class="text-xs font-semibold text-gray-700">Entrega #{index + 1}</p>
+            {#if deliveryRows.length > 1}
+              <Button type="button" size="xs" color="light" onclick={() => removeDeliveryRow(row.id)}>Quitar</Button>
+            {/if}
+          </div>
+          <div>
+            <Label for={`deliveryRecipe-${row.id}`}>Receta</Label>
+            <Select id={`deliveryRecipe-${row.id}`} name="budgetDogRecipeId" required>
+              {#each data.recipeOptions as option (option.budgetDogRecipeId)}
+                <option value={option.budgetDogRecipeId}>{option.label}</option>
+              {/each}
+            </Select>
+          </div>
+          <div>
+            <Label for={`deliveryDays-${row.id}`}>Días entregados</Label>
+            <Input id={`deliveryDays-${row.id}`} name="recipeDays" type="number" min="1" step="1" required />
+          </div>
+        </div>
+      {/each}
+      <Button type="button" color="light" size="xs" onclick={addDeliveryRow}>+ Agregar receta</Button>
       <div>
         <Label for="deliveryDate">Fecha</Label>
         <Input id="deliveryDate" name="entryDate" type="date" required />

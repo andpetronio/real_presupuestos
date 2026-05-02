@@ -86,6 +86,7 @@
 
   const firstImageUrl = (product: Product): string =>
     product.images?.slice().sort((a, b) => a.sort_order - b.sort_order)[0]?.public_url ?? "";
+
 </script>
 
 <svelte:head>
@@ -112,9 +113,12 @@
                     <h1 class="text-2xl font-bold text-gray-900">Hola, {data.wholesaler.name}</h1>
                     <p class="text-sm text-gray-600">Pedido mínimo: <strong>{minUnits}</strong> unidades</p>
                 </div>
-                <form method="POST" action="/mayoristas/logout">
-                    <Button type="submit" class="bg-secondary hover:bg-secondary-700 text-white cursor-pointer">Cerrar sesión</Button>
-                </form>
+                <div class="flex gap-2">
+                  <Button href="/mayoristas/pedidos" class="bg-primary-600 text-white hover:bg-primary-700">Mis pedidos</Button>
+                  <form method="POST" action="/mayoristas/logout">
+                      <Button type="submit" class="bg-secondary hover:bg-secondary-700 text-white cursor-pointer">Cerrar sesión</Button>
+                  </form>
+                </div>
             </div>
         </Card>
 

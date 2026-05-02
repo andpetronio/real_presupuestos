@@ -15,6 +15,31 @@ const EMPTY_LABELS = {
   detail: "Creá la primera categoría para clasificar mayoristas.",
 };
 
+type WholesalerCountRelation = { count?: number | null } | null;
+type WholesalerCategoryQueryRow = {
+  id: string;
+  name: string;
+  is_active: boolean;
+  created_at: string;
+  wholesalers?: WholesalerCountRelation[] | WholesalerCountRelation;
+};
+
+const mapCategoryRow = (
+  row: WholesalerCategoryQueryRow,
+): WholesalerCategoryListRow => {
+  const wholesalersRelation = Array.isArray(row.wholesalers)
+    ? (row.wholesalers[0] ?? null)
+    : (row.wholesalers ?? null);
+
+  return {
+    id: row.id,
+    name: row.name,
+    is_active: row.is_active,
+    created_at: row.created_at,
+    wholesalers_count: Number(wholesalersRelation?.count ?? 0),
+  };
+};
+
 export const load: PageServerLoad = async ({ locals, url }) => {
   const { page, pageSize, offset } = getPagination(
     url.searchParams.get("page"),
@@ -32,7 +57,9 @@ export const load: PageServerLoad = async ({ locals, url }) => {
   try {
     let query = locals.supabase
       .from("wholesaler_categories")
-      .select("id, name, is_active, created_at", { count: "exact" });
+      .select("id, name, is_active, created_at, wholesalers(count)", {
+        count: "exact",
+      });
 
     query = query.order(sort.sortBy, { ascending: sort.sortDir === "asc" });
     query = query
@@ -58,7 +85,9 @@ export const load: PageServerLoad = async ({ locals, url }) => {
     );
 
     return {
-      categories: (data ?? []) as WholesalerCategoryListRow[],
+      categories: ((data ?? []) as WholesalerCategoryQueryRow[]).map(
+        mapCategoryRow,
+      ),
       filters,
       sort,
       pagination: {

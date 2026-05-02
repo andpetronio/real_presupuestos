@@ -3,6 +3,7 @@ export type WholesalerCategoryListRow = {
   name: string;
   is_active: boolean;
   created_at: string;
+  wholesalers_count: number;
 };
 
 export type WholesalerCategoryFormValues = {

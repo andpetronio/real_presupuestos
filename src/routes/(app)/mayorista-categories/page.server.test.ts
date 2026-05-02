@@ -11,6 +11,7 @@ describe("(app)/mayorista-categories/+page.server load", () => {
           name: "Carnes",
           is_active: true,
           created_at: "2026-01-01",
+          wholesalers: [{ count: 3 }],
         },
       ],
       count: 1,
@@ -37,7 +38,7 @@ describe("(app)/mayorista-categories/+page.server load", () => {
       }),
     )) as {
       tableState: string;
-      categories: ReadonlyArray<unknown>;
+      categories: ReadonlyArray<{ wholesalers_count: number }>;
     };
 
     expect(order).toHaveBeenNthCalledWith(1, "name", { ascending: true });
@@ -48,6 +49,7 @@ describe("(app)/mayorista-categories/+page.server load", () => {
     expect(eq).toHaveBeenCalledWith("is_active", true);
     expect(data.tableState).toBe("success");
     expect(data.categories).toHaveLength(1);
+    expect(data.categories[0]?.wholesalers_count).toBe(3);
   });
 
   it("aplica sorter por created_at cuando viene en query", async () => {

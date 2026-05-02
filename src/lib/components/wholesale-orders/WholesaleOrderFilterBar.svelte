@@ -4,14 +4,16 @@
   type Props = {
     currentSearch: string;
     currentStatus: string;
-    currentSortBy: 'wholesaler' | 'placed_at' | 'status' | 'total_units' | 'total_ars';
+    currentSortBy: 'wholesaler' | 'placed_at' | 'expected_delivery_at' | 'status' | 'total_units' | 'total_ars';
     currentSortDir: 'asc' | 'desc';
   };
   let { currentSearch, currentStatus, currentSortBy, currentSortDir }: Props = $props();
 
   const statusOptions = [
     { value: 'all', label: 'Todos' },
-    { value: 'pending', label: 'Pendientes' },
+    { value: 'received', label: 'Recibidos' },
+    { value: 'in_preparation', label: 'En preparación' },
+    { value: 'ready', label: 'Listos' },
     { value: 'delivered', label: 'Entregados' },
     { value: 'paid', label: 'Cobrados' },
   ];

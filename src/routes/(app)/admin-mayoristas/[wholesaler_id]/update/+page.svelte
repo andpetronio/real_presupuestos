@@ -13,6 +13,7 @@
       name: string;
       unique_random_code: string;
       min_total_units: number;
+      delivery_days: number;
       is_active: boolean;
       notes: string | null;
       category_id: string | null;
@@ -34,6 +35,7 @@
     categoryId: form?.values?.categoryId ?? (data.wholesaler.category_id ?? ''),
     code: form?.values?.code ?? data.wholesaler.unique_random_code,
     minTotalUnits: form?.values?.minTotalUnits ?? String(data.wholesaler.min_total_units),
+    deliveryDays: form?.values?.deliveryDays ?? String(data.wholesaler.delivery_days),
     taxId: form?.values?.taxId ?? (data.wholesaler.tax_id ?? ''),
     contactFullName: form?.values?.contactFullName ?? (data.wholesaler.contact_full_name ?? ''),
     contactWhatsapp: form?.values?.contactWhatsapp ?? (data.wholesaler.contact_whatsapp ?? ''),

@@ -50,6 +50,7 @@ export const getWholesalerFormValues = (params: {
   formData: FormData;
   fallbackCode?: string;
   fallbackMinTotalUnits?: string;
+  fallbackDeliveryDays?: string;
 }): WholesalerFormValues => ({
   name: parseText(params.formData.get("name")),
   categoryId: parseText(params.formData.get("categoryId")),
@@ -58,6 +59,9 @@ export const getWholesalerFormValues = (params: {
   minTotalUnits:
     parseText(params.formData.get("minTotalUnits")) ||
     (params.fallbackMinTotalUnits ?? "1"),
+  deliveryDays:
+    parseText(params.formData.get("deliveryDays")) ||
+    (params.fallbackDeliveryDays ?? "7"),
   taxId: parseText(params.formData.get("taxId")).slice(0, 13),
   contactFullName: parseText(params.formData.get("contactFullName")),
   contactWhatsapp: parseText(params.formData.get("contactWhatsapp")),

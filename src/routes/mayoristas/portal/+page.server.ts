@@ -137,7 +137,7 @@ export const actions: Actions = {
 
     return {
       orderCreated: true,
-      operatorSuccess: "¡Pedido enviado! Lo registramos como pendiente.",
+      operatorSuccess: "¡Pedido enviado! Lo registramos como recibido.",
       orderId: row.order_id,
       totalUnits: row.total_units,
       totalArs: Number(row.total_ars),

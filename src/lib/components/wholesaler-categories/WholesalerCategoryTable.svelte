@@ -65,6 +65,9 @@
       />
     </TableHeadCell>
     <TableHeadCell>
+      Mayoristas
+    </TableHeadCell>
+    <TableHeadCell>
       <SortableHeader
         label='Estado'
         href={buildSortHref('is_active')}
@@ -86,6 +89,7 @@
     {#each categories as category (category.id)}
       <TableBodyRow>
         <TableBodyCell>{category.name}</TableBodyCell>
+        <TableBodyCell>{category.wholesalers_count}</TableBodyCell>
         <TableBodyCell><ActiveStatusBadge isActive={category.is_active} activeLabel='Activa' inactiveLabel='Inactiva' /></TableBodyCell>
         <TableBodyCell>{new Date(category.created_at).toLocaleDateString('es-AR')}</TableBodyCell>
         <TableBodyCell>
