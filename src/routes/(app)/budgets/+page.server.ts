@@ -105,7 +105,7 @@ export const load: PageServerLoad = async ({ locals, url }) => {
       tableState: "error",
       tableMessage: buildFallbackError("presupuestos"),
       pagination: { page: 1, totalPages: 1, total: 0 },
-      filters: { status: "all" as const, search: "", tutorId: null },
+      filters: { status: "open" as const, search: "", tutorId: null },
       sort: defaultBudgetSort,
       tutors: [],
     };

@@ -22,7 +22,7 @@ export type BudgetsPageDataViewModel = {
   tableMessage: { title: string; detail: string } | null;
   pagination: { page: number; totalPages: number; total: number };
   filters: {
-    status: BudgetStatus | "pending" | "all";
+    status: BudgetStatus | "pending" | "open";
     search: string;
     tutorId: string | null;
   };

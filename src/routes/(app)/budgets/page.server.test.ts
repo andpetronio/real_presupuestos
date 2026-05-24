@@ -25,9 +25,11 @@ describe("(app)/budgets/+page.server load", () => {
     });
     const budgetsOrder = vi.fn();
     const budgetsQuery = {
+      in: vi.fn(),
       order: budgetsOrder,
       range: budgetsRange,
     };
+    budgetsQuery.in.mockReturnValue(budgetsQuery);
     budgetsOrder.mockReturnValue(budgetsQuery);
 
     const from = vi.fn((table: string) => {
@@ -113,6 +115,7 @@ describe("(app)/budgets/+page.server load", () => {
         });
         const budgetsOrder = vi.fn();
         const budgetsQuery = {
+          in: vi.fn(),
           order: budgetsOrder,
           range: budgetsRange,
           eq: vi.fn().mockReturnValue({
@@ -121,6 +124,7 @@ describe("(app)/budgets/+page.server load", () => {
               .mockResolvedValue({ data: baseBudget, error: null }),
           }),
         };
+        budgetsQuery.in.mockReturnValue(budgetsQuery);
         budgetsOrder.mockReturnValue(budgetsQuery);
 
         return {

@@ -4,8 +4,8 @@
 
   type TutorOption = { id: string; full_name: string };
 
-  // "pending" is a virtual filter value handled server-side
-  type FilterStatus = BudgetStatus | 'pending' | 'all';
+  // "open" and "pending" are virtual filter values handled server-side
+  type FilterStatus = BudgetStatus | 'pending' | 'open';
 
   type BudgetFilterBarProps = {
     currentStatus: FilterStatus;
@@ -30,18 +30,17 @@
     currentSortDir
   }: BudgetFilterBarProps = $props();
 
-  // "pending" is a virtual filter value (maps to draft + ready_to_send server-side)
-  type FilterValue = BudgetStatus | 'pending' | 'all';
+  // Virtual values map to concrete status groups server-side
+  type FilterValue = BudgetStatus | 'pending' | 'open';
 
   type StatusOption = { value: FilterValue; label: string };
 
   const statusOptions: StatusOption[] = [
-    { value: 'all', label: 'Todos' },
+    { value: 'open', label: 'Abiertos' },
     { value: 'pending', label: 'Pendientes' },
-    { value: 'draft', label: 'Borradores' },
-    { value: 'ready_to_send', label: 'Listos para enviar' },
     { value: 'sent', label: 'Enviados' },
     { value: 'accepted', label: 'Aceptados' },
+    { value: 'closed', label: 'Cerrados' },
     { value: 'rejected', label: 'Rechazados' },
     { value: 'expired', label: 'Expirados' },
     { value: 'discarded', label: 'Descartados' }
@@ -70,7 +69,7 @@
   };
 
   const hasActiveFilters = $derived(
-    currentStatus !== 'all' || currentSearch !== '' || currentTutorId !== null
+    currentStatus !== 'open' || currentSearch !== '' || currentTutorId !== null
   );
 
   const clearHref = $derived.by(() => {

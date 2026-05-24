@@ -18,7 +18,7 @@ export const buildPaginationHref = (
   },
 ): string => {
   const params = new URLSearchParams();
-  if (filters.status && filters.status !== "all")
+  if (filters.status && filters.status !== "open")
     params.set("status", filters.status);
   if (filters.search) params.set("q", filters.search);
   if (filters.tutorId) params.set("tutor", filters.tutorId);
@@ -45,7 +45,7 @@ export const parseBudgetFilters = (
   const page = parseInt(searchParams.get("page") ?? "1", 10);
   return {
     page: isNaN(page) || page < 1 ? 1 : page,
-    status: searchParams.get("status") ?? "all",
+    status: searchParams.get("status") ?? "open",
     search: searchParams.get("q") ?? "",
     tutorId: searchParams.get("tutor") || null,
     sortBy: searchParams.get("sortBy") ?? "tutor",
@@ -62,7 +62,7 @@ export const hasActiveFilters = (filters: {
   tutorId: string | null;
 }): boolean => {
   return (
-    filters.status !== "all" ||
+    filters.status !== "open" ||
     filters.search !== "" ||
     filters.tutorId !== null
   );

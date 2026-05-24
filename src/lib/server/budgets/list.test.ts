@@ -37,7 +37,7 @@ describe("parseBudgetFilters", () => {
     const result = parseBudgetFilters(url);
 
     expect(result).toEqual({
-      status: "all",
+      status: "open",
       search: "",
       tutorId: null,
     });
@@ -57,12 +57,12 @@ describe("parseBudgetFilters", () => {
     });
   });
 
-  it("falls back to all when status is invalid", () => {
+  it("falls back to open when status is invalid", () => {
     const url = new URL("http://localhost/budgets?status=whatever");
 
     const result = parseBudgetFilters(url);
 
-    expect(result.status).toBe("all");
+    expect(result.status).toBe("open");
   });
 
   it("accepts discarded status from URL params", () => {
@@ -102,7 +102,30 @@ describe("parseBudgetSort", () => {
   });
 });
 
+  it("accepts open virtual status from URL params", () => {
+    const url = new URL("http://localhost/budgets?status=open");
+
+    const result = parseBudgetFilters(url);
+
+    expect(result.status).toBe("open");
+  });
+
 describe("applyBudgetListFilters", () => {
+  it("maps open status to all non-terminal workflow states", () => {
+    const { query, calls } = makeQuerySpy();
+
+    applyBudgetListFilters(query as never, {
+      status: "open",
+      search: "",
+      tutorId: null,
+    });
+
+    expect(calls).toContainEqual({
+      method: "in",
+      args: ["status", ["draft", "ready_to_send", "sent", "accepted"]],
+    });
+  });
+
   it("maps pending status to draft + ready_to_send", () => {
     const { query, calls } = makeQuerySpy();
 
@@ -137,7 +160,7 @@ describe("applyBudgetListFilters", () => {
     const { query, calls } = makeQuerySpy();
 
     applyBudgetListFilters(query as never, {
-      status: "all",
+      status: "open",
       search: "lucas",
       tutorId: "t-99",
     });
@@ -156,7 +179,7 @@ describe("applyBudgetListFilters", () => {
 describe("hasBudgetFilters", () => {
   it("returns false only for default filter set", () => {
     const defaults: BudgetListFilters = {
-      status: "all",
+      status: "open",
       search: "",
       tutorId: null,
     };
@@ -169,10 +192,10 @@ describe("hasBudgetFilters", () => {
       hasBudgetFilters({ status: "sent", search: "", tutorId: null }),
     ).toBe(true);
     expect(
-      hasBudgetFilters({ status: "all", search: "ana", tutorId: null }),
+      hasBudgetFilters({ status: "open", search: "ana", tutorId: null }),
     ).toBe(true);
     expect(
-      hasBudgetFilters({ status: "all", search: "", tutorId: "t-1" }),
+      hasBudgetFilters({ status: "open", search: "", tutorId: "t-1" }),
     ).toBe(true);
   });
 });

@@ -8,7 +8,7 @@ import {
 describe("buildPaginationHref", () => {
   it("builds URL with only page param when no filters active", () => {
     const result = buildPaginationHref("/budgets", 2, {
-      status: "all",
+      status: "open",
       search: "",
       tutorId: null,
     });
@@ -27,7 +27,7 @@ describe("buildPaginationHref", () => {
 
   it("preserves search filter in URL", () => {
     const result = buildPaginationHref("/budgets", 1, {
-      status: "all",
+      status: "open",
       search: "Juan Pérez",
       tutorId: null,
     });
@@ -38,7 +38,7 @@ describe("buildPaginationHref", () => {
 
   it("preserves tutor filter in URL", () => {
     const result = buildPaginationHref("/budgets", 2, {
-      status: "all",
+      status: "open",
       search: "",
       tutorId: "tutor-123",
     });
@@ -46,9 +46,9 @@ describe("buildPaginationHref", () => {
     expect(result).toContain("page=2");
   });
 
-  it("omits status=all from URL", () => {
+  it("omits status=open from URL", () => {
     const result = buildPaginationHref("/budgets", 1, {
-      status: "all",
+      status: "open",
       search: "test",
       tutorId: null,
     });
@@ -70,7 +70,7 @@ describe("buildPaginationHref", () => {
 
   it("preserves sortBy/sortDir", () => {
     const result = buildPaginationHref("/budgets", 2, {
-      status: "all",
+      status: "open",
       search: "",
       tutorId: null,
       sortBy: "total_cost",
@@ -105,9 +105,9 @@ describe("parseBudgetFilters", () => {
     expect(result.page).toBe(1);
   });
 
-  it("defaults status to all", () => {
+  it("defaults status to open", () => {
     const result = parseBudgetFilters(makeParams([]));
-    expect(result.status).toBe("all");
+    expect(result.status).toBe("open");
   });
 
   it("parses status param", () => {
@@ -150,7 +150,7 @@ describe("parseBudgetFilters", () => {
 
 describe("hasActiveFilters", () => {
   it("returns false when no filters active", () => {
-    expect(hasActiveFilters({ status: "all", search: "", tutorId: null })).toBe(
+    expect(hasActiveFilters({ status: "open", search: "", tutorId: null })).toBe(
       false,
     );
   });
@@ -163,13 +163,13 @@ describe("hasActiveFilters", () => {
 
   it("returns true when search filter active", () => {
     expect(
-      hasActiveFilters({ status: "all", search: "Juan", tutorId: null }),
+      hasActiveFilters({ status: "open", search: "Juan", tutorId: null }),
     ).toBe(true);
   });
 
   it("returns true when tutor filter active", () => {
     expect(
-      hasActiveFilters({ status: "all", search: "", tutorId: "t-123" }),
+      hasActiveFilters({ status: "open", search: "", tutorId: "t-123" }),
     ).toBe(true);
   });
 

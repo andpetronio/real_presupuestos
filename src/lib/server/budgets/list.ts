@@ -2,10 +2,10 @@ import type { PostgrestFilterBuilder } from "@supabase/supabase-js";
 import type { BudgetStatus } from "$lib/types/budget";
 import { parseSortState, type SortState } from "$lib/server/shared/sorting";
 
-export type BudgetListStatusFilter = BudgetStatus | "pending" | "all";
+export type BudgetListStatusFilter = BudgetStatus | "pending" | "open";
 
 const allowedStatusFilters = new Set<BudgetListStatusFilter>([
-  "all",
+  "open",
   "pending",
   "draft",
   "ready_to_send",
@@ -49,7 +49,7 @@ export const parseBudgetFilters = (url: URL): BudgetListFilters => {
     statusParam &&
     allowedStatusFilters.has(statusParam as BudgetListStatusFilter)
       ? (statusParam as BudgetListStatusFilter)
-      : "all";
+      : "open";
 
   return {
     status,
@@ -74,12 +74,17 @@ export const parseBudgetSort = (url: URL): BudgetListSort =>
 export function applyBudgetListFilters<
   T extends PostgrestFilterBuilder<any, any, any, any[], string, unknown>,
 >(query: T, filters: BudgetListFilters): T {
-  if (filters.status !== "all") {
-    if (filters.status === "pending") {
-      query = query.in("status", ["draft", "ready_to_send"]) as T;
-    } else {
-      query = query.eq("status", filters.status) as T;
-    }
+  if (filters.status === "open") {
+    query = query.in("status", [
+      "draft",
+      "ready_to_send",
+      "sent",
+      "accepted",
+    ]) as T;
+  } else if (filters.status === "pending") {
+    query = query.in("status", ["draft", "ready_to_send"]) as T;
+  } else {
+    query = query.eq("status", filters.status) as T;
   }
 
   if (filters.tutorId) {
@@ -94,7 +99,7 @@ export function applyBudgetListFilters<
 }
 
 export const hasBudgetFilters = (filters: BudgetListFilters): boolean =>
-  filters.status !== "all" || filters.search !== "" || filters.tutorId !== null;
+  filters.status !== "open" || filters.search !== "" || filters.tutorId !== null;
 
 export const resolveBudgetTableMessage = (params: {
   total: number;

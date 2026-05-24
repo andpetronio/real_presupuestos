@@ -39,7 +39,7 @@ describe("loadBudgetList", () => {
     const result = await loadBudgetList({
       supabase: { from } as unknown as SupabaseClient,
       filters: {
-        status: "all",
+        status: "open",
         search: "",
         tutorId: null,
       } as BudgetListFilters,
@@ -86,7 +86,7 @@ describe("loadBudgetList", () => {
     await loadBudgetList({
       supabase: { from } as unknown as SupabaseClient,
       filters: {
-        status: "all",
+        status: "open",
         search: "",
         tutorId: null,
       } as BudgetListFilters,
