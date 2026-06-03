@@ -135,6 +135,84 @@ describe("(app)/budgets/[id]/preview sendWhatsapp", () => {
     expect(updateEq).toHaveBeenCalledWith("id", "b-1");
   });
 
+  it("permite enviar por WhatsApp si el presupuesto está ready_to_send", async () => {
+    const updateEq = vi.fn().mockResolvedValue({ error: null });
+    const update = vi
+      .fn()
+      .mockReturnValue({ eq: vi.fn().mockReturnValue({ eq: updateEq }) });
+
+    const from = vi.fn((table: string) => {
+      if (table === "budgets") {
+        return {
+          select: vi.fn().mockReturnValue({
+            eq: vi.fn().mockReturnValue({
+              single: vi.fn().mockResolvedValue({
+                data: {
+                  id: "b-1",
+                  status: "ready_to_send",
+                  tutor_id: "t-1",
+                  final_sale_price: 12345,
+                  expires_at: "2026-05-20T00:00:00.000Z",
+                  public_token: "token123",
+                  tutor: {
+                    full_name: "Ana Tutor",
+                    whatsapp_number: "+54 9 11 1234 5678",
+                  },
+                },
+                error: null,
+              }),
+            }),
+          }),
+          update,
+        };
+      }
+
+      if (table === "settings") {
+        return {
+          select: vi.fn().mockReturnValue({
+            eq: vi.fn().mockReturnValue({
+              single: vi.fn().mockResolvedValue({
+                data: { whatsapp_default_template: "Hola {{tutor_nombre}}" },
+                error: null,
+              }),
+            }),
+          }),
+        };
+      }
+
+      if (table === "budget_dogs") {
+        return {
+          select: vi.fn().mockReturnValue({
+            eq: vi.fn().mockResolvedValue({
+              data: [{ dog: { name: "Nanuk" } }],
+              error: null,
+            }),
+          }),
+        };
+      }
+
+      return { select: vi.fn(), update: vi.fn() };
+    });
+
+    const result = (await actions.sendWhatsapp(
+      asActionEvent<Parameters<(typeof actions)["sendWhatsapp"]>[0]>({
+        params: { id: "b-1" },
+        request: {
+          url: "https://test.local/budgets/b-1/preview",
+          headers: { get: vi.fn().mockReturnValue(null) },
+        },
+        locals: { supabase: { from } },
+      }),
+    )) as {
+      waUrl?: string;
+      error?: string;
+    };
+
+    expect(result.error).toBeUndefined();
+    expect(result.waUrl).toContain("https://web.whatsapp.com/send?phone=");
+    expect(updateEq).toHaveBeenCalledWith("status", "ready_to_send");
+  });
+
   it("devuelve error claro si la plantilla tiene unicode roto", async () => {
     const from = vi.fn((table: string) => {
       if (table === "budgets") {
@@ -239,7 +317,7 @@ describe("(app)/budgets/[id]/preview sendWhatsapp", () => {
     expect(result.error).toContain("enlace de WhatsApp");
   });
 
-  it("devuelve error si el presupuesto no está en estado draft", async () => {
+  it("devuelve error si el presupuesto no está en draft ni ready_to_send", async () => {
     const from = vi.fn((table: string) => {
       if (table === "budgets") {
         return {
@@ -283,7 +361,7 @@ describe("(app)/budgets/[id]/preview sendWhatsapp", () => {
     };
 
     expect(result.waUrl).toBeUndefined();
-    expect(result.error).toContain("borrador");
+    expect(result.error).toContain("listo para enviar");
   });
 
   it("devuelve error si el tutor no tiene número de WhatsApp", async () => {
@@ -513,7 +591,7 @@ describe("(app)/budgets/[id]/preview markSent", () => {
     expect(result.error).toContain("No encontramos");
   });
 
-  it("devuelve error si el presupuesto no está en estado draft", async () => {
+  it("devuelve error si el presupuesto no está en draft ni ready_to_send", async () => {
     const from = vi.fn((table: string) => {
       if (table === "budgets") {
         return {
@@ -540,7 +618,39 @@ describe("(app)/budgets/[id]/preview markSent", () => {
       error?: string;
     };
 
-    expect(result.error).toContain("borrador");
+    expect(result.error).toContain("listos para enviar");
+  });
+
+  it("permite marcar como enviado un presupuesto ready_to_send", async () => {
+    const updateEq = vi.fn().mockResolvedValue({ error: null });
+    const from = vi.fn((table: string) => {
+      if (table === "budgets") {
+        return {
+          select: vi.fn().mockReturnValue({
+            eq: vi.fn().mockReturnValue({
+              single: vi.fn().mockResolvedValue({
+                data: { id: "b-1", status: "ready_to_send" },
+                error: null,
+              }),
+            }),
+          }),
+          update: vi.fn().mockReturnValue({ eq: updateEq }),
+        };
+      }
+
+      return { select: vi.fn(), update: vi.fn() };
+    });
+
+    await expect(
+      actions.markSent(
+        asActionEvent<Parameters<(typeof actions)["markSent"]>[0]>({
+          params: { id: "b-1" },
+          locals: { supabase: { from } },
+        }),
+      ),
+    ).rejects.toMatchObject({ status: 303, location: "/budgets" });
+
+    expect(updateEq).toHaveBeenCalledWith("id", "b-1");
   });
 
   it("devuelve error si el update falla", async () => {

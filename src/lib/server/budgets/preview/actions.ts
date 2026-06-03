@@ -47,10 +47,13 @@ export const sendWhatsappAction = async ({
     if (budgetResult.error) throw budgetResult.error;
     const budget = budgetResult.data;
 
-    if ((budget.status as BudgetStatus) !== "draft") {
+    if (
+      (budget.status as BudgetStatus) !== "draft" &&
+      (budget.status as BudgetStatus) !== "ready_to_send"
+    ) {
       return {
         error:
-          "Solo se puede enviar por WhatsApp cuando el presupuesto está en borrador.",
+          "Solo se puede enviar por WhatsApp cuando el presupuesto está en borrador o listo para enviar.",
       };
     }
 
@@ -184,7 +187,7 @@ export const sendWhatsappAction = async ({
       .from("budgets")
       .update({ status: "sent", sent_at: new Date().toISOString() })
       .eq("id", budgetId)
-      .eq("status", "draft");
+      .eq("status", budget.status as BudgetStatus);
 
     if (markSentError) {
       return {
@@ -215,9 +218,13 @@ export const markSentAction = async ({
     return { error: "No encontramos el presupuesto a marcar como enviado." };
   }
 
-  if ((budgetResult.data.status as BudgetStatus) !== "draft") {
+  if (
+    (budgetResult.data.status as BudgetStatus) !== "draft" &&
+    (budgetResult.data.status as BudgetStatus) !== "ready_to_send"
+  ) {
     return {
-      error: "Solo podés marcar como enviado presupuestos en borrador.",
+      error:
+        "Solo podés marcar como enviado presupuestos en borrador o listos para enviar.",
     };
   }
 

@@ -301,15 +301,18 @@ export const sendBudgetWhatsapp = async (params: {
     userAgent,
   });
 
-  // 8. Guardar mensaje en draft y marcar como enviado
+  // 8. Guardar mensaje y marcar como enviado
   const newSentAt = new Date().toISOString();
   const { error: updateError } = await supabase
     .from("budgets")
     .update({
+      status: "sent",
+      sent_at: newSentAt,
       whatsapp_message_draft: rendered,
       whatsapp_message_sent: null,
     })
-    .eq("id", budgetTyped.id);
+    .eq("id", budgetTyped.id)
+    .eq("status", budgetTyped.status);
 
   if (updateError) {
     return {

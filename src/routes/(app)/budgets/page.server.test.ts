@@ -432,7 +432,6 @@ describe("(app)/budgets/+page.server actions.create", () => {
       error: null,
     });
 
-    const budgetUpdateEq = vi.fn().mockResolvedValue({ error: null });
     const budgetUpdateSecondEq = vi.fn().mockResolvedValue({ error: null });
     const budgetUpdate = vi.fn().mockReturnValue({
       eq: vi.fn().mockReturnValue({ eq: budgetUpdateSecondEq }),
@@ -503,7 +502,10 @@ describe("(app)/budgets/+page.server actions.create", () => {
     expect(updatePayload.whatsapp_message_draft).toContain(
       "https://test.local/budget-response/token1234567890",
     );
+    expect(updatePayload.status).toBe("sent");
+    expect(updatePayload.sent_at).toEqual(expect.any(String));
     expect(updatePayload.whatsapp_message_sent).toBeNull();
+    expect(budgetUpdateSecondEq).toHaveBeenCalledWith("status", "draft");
   });
 
   it("falla envío cuando la firma tiene unicode roto", async () => {

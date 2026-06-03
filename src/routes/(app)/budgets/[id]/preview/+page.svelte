@@ -117,7 +117,9 @@
     )
   );
 
-  const canSendWhatsapp = $derived(data.budget?.status === 'draft' && !form?.waUrl);
+  const canManageSending = $derived(
+    (data.budget?.status === 'draft' || data.budget?.status === 'ready_to_send') && !form?.waUrl
+  );
 
   const enhanceWithFeedback = () => {
     return async () => {
@@ -169,16 +171,19 @@
           </div>
 
           <div class="flex min-w-56 flex-col items-stretch gap-2">
-            {#if canSendWhatsapp}
+            {#if canManageSending}
               <Button href={getEditPath()} color="light">Editar</Button>
               <form method="POST" action="?/sendWhatsapp" use:enhance={enhanceWithFeedback()}>
                 <Button type="submit" class="w-full">Enviar WhatsApp</Button>
+              </form>
+              <form method="POST" action="?/markSent" use:enhance={enhanceWithFeedback()}>
+                <Button type="submit" color="light" class="w-full">Marcar como enviado</Button>
               </form>
             {:else if form?.waUrl}
               <Button href={form.waUrl} target="whatsapp_compose">Abrir WhatsApp</Button>
               <p class="text-xs text-gray-500">Enviado. Si cerraste WhatsApp, podés abrirlo de nuevo.</p>
             {:else}
-              <p class="text-xs text-gray-500">Envío por WhatsApp disponible solo en estado borrador.</p>
+              <p class="text-xs text-gray-500">Envío por WhatsApp disponible solo en estado borrador o listo para enviar.</p>
             {/if}
           </div>
         </div>

@@ -179,9 +179,11 @@ const makeWhatsappSupabase = (
         }),
       }),
       update: vi.fn().mockReturnValue({
-        eq: vi
-          .fn()
-          .mockReturnValue(overrides.budgetUpdateResult ?? { error: null }),
+        eq: vi.fn().mockReturnValue({
+          eq: vi
+            .fn()
+            .mockReturnValue(overrides.budgetUpdateResult ?? { error: null }),
+        }),
       }),
     },
     tutors: {
@@ -255,15 +257,22 @@ describe("sendBudgetWhatsapp", () => {
       }
     });
 
-    it("preserva status draft del budget", async () => {
+    it("marca el presupuesto como sent al preparar WhatsApp", async () => {
       const supabase = makeWhatsappSupabase();
       const result = await sendBudgetWhatsapp({
         budgetId: "b-1",
         supabase,
         origin: "https://example.com",
       });
-      // No modifica el status — solo guarda el mensaje draft
       expect(result).toMatchObject({ ok: true });
+
+      const budgetsTable = (supabase.from as any)("budgets");
+      expect(budgetsTable.update).toHaveBeenCalledWith(
+        expect.objectContaining({
+          status: "sent",
+          sent_at: expect.any(String),
+        }),
+      );
     });
 
     it("genera link con public_token del budget", async () => {
@@ -329,6 +338,10 @@ describe("sendBudgetWhatsapp", () => {
         origin: "https://example.com",
       });
       expect(result).toMatchObject({ ok: true });
+
+      const budgetsTable = (supabase.from as any)("budgets");
+      const eqMock = budgetsTable.update.mock.results[0]?.value.eq;
+      expect(eqMock).toHaveBeenCalledWith("id", "b-1");
     });
 
     it("funciona sin signature configurada", async () => {
