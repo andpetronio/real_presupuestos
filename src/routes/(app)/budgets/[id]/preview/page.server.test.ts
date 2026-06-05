@@ -98,13 +98,15 @@ describe("(app)/budgets/[id]/preview sendWhatsapp", () => {
       expect.objectContaining({
         status: "sent",
         sent_at: expect.any(String),
+        expires_at: expect.any(String),
       }),
     );
     expect(updateEq).toHaveBeenCalledWith("status", "draft");
   });
 
   it("marca presupuesto como enviado explícitamente y redirige al listado", async () => {
-    const updateEq = vi.fn().mockResolvedValue({ error: null });
+    const updateStatusEq = vi.fn().mockResolvedValue({ error: null });
+    const updateIdEq = vi.fn().mockReturnValue({ eq: updateStatusEq });
     const from = vi.fn((table: string) => {
       if (table === "budgets") {
         return {
@@ -116,7 +118,20 @@ describe("(app)/budgets/[id]/preview sendWhatsapp", () => {
               }),
             }),
           }),
-          update: vi.fn().mockReturnValue({ eq: updateEq }),
+          update: vi.fn().mockReturnValue({ eq: updateIdEq }),
+        };
+      }
+
+      if (table === "settings") {
+        return {
+          select: vi.fn().mockReturnValue({
+            eq: vi.fn().mockReturnValue({
+              single: vi.fn().mockResolvedValue({
+                data: { budget_validity_days: 7 },
+                error: null,
+              }),
+            }),
+          }),
         };
       }
 
@@ -132,7 +147,8 @@ describe("(app)/budgets/[id]/preview sendWhatsapp", () => {
       ),
     ).rejects.toMatchObject({ status: 303, location: "/budgets" });
 
-    expect(updateEq).toHaveBeenCalledWith("id", "b-1");
+    expect(updateIdEq).toHaveBeenCalledWith("id", "b-1");
+    expect(updateStatusEq).toHaveBeenCalledWith("status", "draft");
   });
 
   it("permite enviar por WhatsApp si el presupuesto está ready_to_send", async () => {
@@ -622,7 +638,8 @@ describe("(app)/budgets/[id]/preview markSent", () => {
   });
 
   it("permite marcar como enviado un presupuesto ready_to_send", async () => {
-    const updateEq = vi.fn().mockResolvedValue({ error: null });
+    const updateStatusEq = vi.fn().mockResolvedValue({ error: null });
+    const updateIdEq = vi.fn().mockReturnValue({ eq: updateStatusEq });
     const from = vi.fn((table: string) => {
       if (table === "budgets") {
         return {
@@ -634,7 +651,20 @@ describe("(app)/budgets/[id]/preview markSent", () => {
               }),
             }),
           }),
-          update: vi.fn().mockReturnValue({ eq: updateEq }),
+          update: vi.fn().mockReturnValue({ eq: updateIdEq }),
+        };
+      }
+
+      if (table === "settings") {
+        return {
+          select: vi.fn().mockReturnValue({
+            eq: vi.fn().mockReturnValue({
+              single: vi.fn().mockResolvedValue({
+                data: { budget_validity_days: 7 },
+                error: null,
+              }),
+            }),
+          }),
         };
       }
 
@@ -650,13 +680,15 @@ describe("(app)/budgets/[id]/preview markSent", () => {
       ),
     ).rejects.toMatchObject({ status: 303, location: "/budgets" });
 
-    expect(updateEq).toHaveBeenCalledWith("id", "b-1");
+    expect(updateIdEq).toHaveBeenCalledWith("id", "b-1");
+    expect(updateStatusEq).toHaveBeenCalledWith("status", "ready_to_send");
   });
 
   it("devuelve error si el update falla", async () => {
-    const updateEq = vi
+    const updateStatusEq = vi
       .fn()
       .mockResolvedValue({ error: { message: "DB error" } });
+    const updateIdEq = vi.fn().mockReturnValue({ eq: updateStatusEq });
 
     const from = vi.fn((table: string) => {
       if (table === "budgets") {
@@ -669,7 +701,20 @@ describe("(app)/budgets/[id]/preview markSent", () => {
               }),
             }),
           }),
-          update: vi.fn().mockReturnValue({ eq: updateEq }),
+          update: vi.fn().mockReturnValue({ eq: updateIdEq }),
+        };
+      }
+
+      if (table === "settings") {
+        return {
+          select: vi.fn().mockReturnValue({
+            eq: vi.fn().mockReturnValue({
+              single: vi.fn().mockResolvedValue({
+                data: { budget_validity_days: 7 },
+                error: null,
+              }),
+            }),
+          }),
         };
       }
 

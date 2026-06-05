@@ -93,7 +93,7 @@ export const undoSentBudget = async (params: {
     budgetId: budgetIdResult.budgetId,
     supabase: locals.supabase,
     status: "draft",
-    extraFields: { sent_at: null },
+    extraFields: { sent_at: null, expires_at: null },
   });
 
   if (!result.ok) {

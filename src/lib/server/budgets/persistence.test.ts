@@ -9,6 +9,7 @@ import {
   deleteBudget,
   getBudgetById,
   getBudgetExpiry,
+  getBudgetExpirationFromSentAt,
 } from "./persistence";
 import type { ParsedCompositionRow } from "./types";
 
@@ -523,15 +524,39 @@ describe("buildBudgetPayload", () => {
     expect(result.calcium_qty).toBe(7);
     expect(result.kefir_qty).toBe(8);
   });
+
+  it("permite expires_at null para borradores", () => {
+    const result = buildBudgetPayload({
+      tutorId: "t-1",
+      referenceMonth: "2026-01",
+      referenceDays: 20,
+      notes: null,
+      expiresAt: null,
+      appliedMargin: 0,
+      ingredientTotal: 0,
+      operationalTotal: 0,
+      totalCost: 0,
+      finalSalePrice: 0,
+      operationals: {
+        vacuumBagSmallQty: 1,
+        vacuumBagLargeQty: 2,
+        labelsQty: 3,
+        nonWovenBagQty: 4,
+        laborHoursQty: 5,
+        cookingHoursQty: 6,
+        calciumQty: 7,
+        kefirQty: 8,
+      },
+    });
+
+    expect(result.expires_at).toBeNull();
+  });
 });
 
 // ─── getBudgetExpiry ────────────────────────────────────────────────────────
 
 describe("getBudgetExpiry", () => {
-  it("create usa settingsValidityDays para calcular expiracion", async () => {
-    vi.useFakeTimers();
-    vi.setSystemTime(new Date("2026-04-01T10:00:00.000Z"));
-
+  it("retorna null para borradores nuevos", async () => {
     const result = await getBudgetExpiry({
       action: "create",
       settingsValidityDays: 7,
@@ -539,26 +564,14 @@ describe("getBudgetExpiry", () => {
       supabase: makeMockSupabase(),
     });
 
-    vi.useRealTimers();
-
     expect(result.ok).toBe(true);
     if (result.ok) {
-      expect(result.expiresAt).toBe("2026-04-08T10:00:00.000Z");
+      expect(result.expiresAt).toBeNull();
     }
   });
 
-  it("update renueva expiracion fixa a settingsValidityDays desde la creacion", async () => {
-    vi.useFakeTimers();
-    vi.setSystemTime(new Date("2026-04-01T10:00:00.000Z"));
-
-    const maybeSingle = vi.fn().mockResolvedValue({
-      data: { created_at: "2026-04-01T10:00:00.000Z" },
-      error: null,
-    });
-    const eq = vi.fn().mockReturnValue({ maybeSingle });
-    const select = vi.fn().mockReturnValue({ eq });
-    const fromSpy = vi.fn().mockReturnValue({ select });
-
+  it("retorna null para borradores editados", async () => {
+    const fromSpy = vi.fn();
     const result = await getBudgetExpiry({
       action: "update",
       budgetId: "b-1",
@@ -567,13 +580,19 @@ describe("getBudgetExpiry", () => {
       supabase: { from: fromSpy } as unknown as SupabaseClient,
     });
 
-    vi.useRealTimers();
-
     expect(result.ok).toBe(true);
     if (result.ok) {
-      expect(result.expiresAt).toBe("2026-05-16T10:00:00.000Z");
+      expect(result.expiresAt).toBeNull();
     }
-    expect(fromSpy).toHaveBeenCalledWith("budgets");
+    expect(fromSpy).not.toHaveBeenCalled();
+  });
+});
+
+describe("getBudgetExpirationFromSentAt", () => {
+  it("calcula la vigencia desde sent_at", () => {
+    const result = getBudgetExpirationFromSentAt("2026-04-01T10:00:00.000Z", 7);
+
+    expect(result).toBe("2026-04-08T10:00:00.000Z");
   });
 });
 

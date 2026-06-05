@@ -165,7 +165,7 @@ export const buildBudgetPayload = (params: {
   referenceMonth: string;
   referenceDays: number;
   notes: string | null;
-  expiresAt: string;
+  expiresAt: string | null;
   appliedMargin: number;
   ingredientTotal: number;
   operationalTotal: number;

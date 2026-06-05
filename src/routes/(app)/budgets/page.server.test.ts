@@ -504,6 +504,7 @@ describe("(app)/budgets/+page.server actions.create", () => {
     );
     expect(updatePayload.status).toBe("sent");
     expect(updatePayload.sent_at).toEqual(expect.any(String));
+    expect(updatePayload.expires_at).toEqual(expect.any(String));
     expect(updatePayload.whatsapp_message_sent).toBeNull();
     expect(budgetUpdateSecondEq).toHaveBeenCalledWith("status", "draft");
   });

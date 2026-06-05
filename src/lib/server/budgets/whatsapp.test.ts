@@ -271,6 +271,7 @@ describe("sendBudgetWhatsapp", () => {
         expect.objectContaining({
           status: "sent",
           sent_at: expect.any(String),
+          expires_at: expect.any(String),
         }),
       );
     });

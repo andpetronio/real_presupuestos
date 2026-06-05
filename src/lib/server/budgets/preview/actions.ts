@@ -9,6 +9,7 @@ import {
   renderWhatsappTemplate,
 } from "$lib/server/whatsapp/template";
 import { buildDogsSummary } from "$lib/server/budgets/whatsapp";
+import { getBudgetExpirationFromSentAt } from "$lib/server/budgets/persistence";
 
 const getMonthLabel = (date: Date): string =>
   new Intl.DateTimeFormat("es-AR", { month: "long" }).format(date);
@@ -74,7 +75,7 @@ export const sendWhatsappAction = async ({
     const settingsResult = await locals.supabase
       .from("settings")
       .select(
-        "whatsapp_default_template, business_name, bank_cbu, bank_alias, bank_account_holder, bank_provider",
+        "whatsapp_default_template, business_name, bank_cbu, bank_alias, bank_account_holder, bank_provider, budget_validity_days",
       )
       .eq("id", 1)
       .single();
@@ -94,6 +95,12 @@ export const sendWhatsappAction = async ({
           "El mensaje base de WhatsApp tiene caracteres inválidos (�). Guardalo de nuevo en Configuración pegando los emojis correctos.",
       };
     }
+
+    const newSentAt = new Date().toISOString();
+    const newExpiresAt = getBudgetExpirationFromSentAt(
+      newSentAt,
+      settingsResult.data?.budget_validity_days ?? 7,
+    );
 
     // JOIN: budget_dogs + dogs en una sola query
     const { data: budgetDogs } = await locals.supabase
@@ -119,13 +126,11 @@ export const sendWhatsappAction = async ({
           ? dogNames.join(", ")
           : "tu perro";
 
-    const expirationDate = budget.expires_at
-      ? new Date(budget.expires_at).toLocaleDateString("es-AR", {
-          day: "2-digit",
-          month: "2-digit",
-          year: "numeric",
-        })
-      : "";
+    const expirationDate = new Date(newExpiresAt).toLocaleDateString("es-AR", {
+      day: "2-digit",
+      month: "2-digit",
+      year: "numeric",
+    });
 
     const responseLink = budget.public_token
       ? `${new URL(request.url).origin}/budget-response/${budget.public_token}`
@@ -185,7 +190,11 @@ export const sendWhatsappAction = async ({
 
     const { error: markSentError } = await locals.supabase
       .from("budgets")
-      .update({ status: "sent", sent_at: new Date().toISOString() })
+      .update({
+        status: "sent",
+        sent_at: newSentAt,
+        expires_at: newExpiresAt,
+      })
       .eq("id", budgetId)
       .eq("status", budget.status as BudgetStatus);
 
@@ -228,10 +237,30 @@ export const markSentAction = async ({
     };
   }
 
+  const settingsResult = await locals.supabase
+    .from("settings")
+    .select("budget_validity_days")
+    .eq("id", 1)
+    .single();
+
+  if (settingsResult.error) {
+    return {
+      error:
+        "No pudimos leer la configuración de vigencia del presupuesto. Reintentá en unos segundos.",
+    };
+  }
+
+  const sentAt = new Date().toISOString();
+  const expiresAt = getBudgetExpirationFromSentAt(
+    sentAt,
+    settingsResult.data?.budget_validity_days ?? 7,
+  );
+
   const { error } = await locals.supabase
     .from("budgets")
-    .update({ status: "sent", sent_at: new Date().toISOString() })
-    .eq("id", budgetId);
+    .update({ status: "sent", sent_at: sentAt, expires_at: expiresAt })
+    .eq("id", budgetId)
+    .eq("status", budgetResult.data.status as BudgetStatus);
 
   if (error) {
     return {

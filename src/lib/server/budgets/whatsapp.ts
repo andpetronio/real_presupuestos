@@ -13,6 +13,7 @@ import {
   normalizeWhatsappNumber,
   renderWhatsappTemplate,
 } from "$lib/server/whatsapp/template";
+import { getBudgetExpirationFromSentAt } from "$lib/server/budgets/persistence";
 import type { SendWhatsappResult } from "./types";
 
 /** Fila de budget para el flujo de WhatsApp — status tipado como BudgetStatus. */
@@ -186,7 +187,7 @@ export const sendBudgetWhatsapp = async (params: {
   const { data: settings, error: settingsError } = await supabase
     .from("settings")
     .select(
-      "business_name, whatsapp_default_template, whatsapp_signature, bank_cbu, bank_alias, bank_account_holder, bank_provider",
+      "business_name, whatsapp_default_template, whatsapp_signature, bank_cbu, bank_alias, bank_account_holder, bank_provider, budget_validity_days",
     )
     .eq("id", 1)
     .single();
@@ -221,7 +222,11 @@ export const sendBudgetWhatsapp = async (params: {
 
   // 5. Construir mensaje
   const dogsSummary = buildDogsSummary(dogsWithDays);
-  const now = new Date();
+  const newSentAt = new Date().toISOString();
+  const newExpiresAt = getBudgetExpirationFromSentAt(
+    newSentAt,
+    settings.budget_validity_days ?? 7,
+  );
   const link = `${origin}/budget-response/${budgetTyped.public_token}`;
 
   const template = (settings.whatsapp_default_template ?? "").trim();
@@ -245,7 +250,7 @@ export const sendBudgetWhatsapp = async (params: {
     tutorFullName: tutor.full_name ?? "Cliente",
     dogsSummary,
     finalSalePrice: Number(budgetTyped.final_sale_price ?? 0),
-    expiresAt: budgetTyped.expires_at,
+    expiresAt: newExpiresAt,
     referenceMonth: budgetTyped.reference_month,
     referenceDays: budgetTyped.reference_days,
     businessName: settings.business_name ?? "REAL",
@@ -302,12 +307,12 @@ export const sendBudgetWhatsapp = async (params: {
   });
 
   // 8. Guardar mensaje y marcar como enviado
-  const newSentAt = new Date().toISOString();
   const { error: updateError } = await supabase
     .from("budgets")
     .update({
       status: "sent",
       sent_at: newSentAt,
+      expires_at: newExpiresAt,
       whatsapp_message_draft: rendered,
       whatsapp_message_sent: null,
     })

@@ -17,5 +17,6 @@ export type {
 export {
   validateBudgetInput,
   getBudgetExpiry,
+  getBudgetExpirationFromSentAt,
   persistBudget,
 } from "$lib/server/budgets/persistence-workflow";

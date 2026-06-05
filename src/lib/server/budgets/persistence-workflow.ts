@@ -15,7 +15,6 @@ import {
   parseOperationalInputs,
   getSettingsForBudgetFormula,
   readRecipeDailyCosts,
-  parseDefaultExpiration,
   createBudgetPublicToken,
 } from "$lib/server/budgets/parsers";
 import {
@@ -197,8 +196,21 @@ export const validateBudgetInput = async (params: {
 };
 
 export type BudgetExpiryResult =
-  | { ok: true; expiresAt: string }
+  | { ok: true; expiresAt: string | null }
   | { ok: false; operatorError: string; values: ActionValues };
+
+export const getBudgetExpirationFromSentAt = (
+  sentAt: string,
+  validityDays: number,
+): string => {
+  const baseSentAt = new Date(sentAt);
+  const expirationBase = Number.isNaN(baseSentAt.getTime())
+    ? new Date()
+    : baseSentAt;
+
+  expirationBase.setDate(expirationBase.getDate() + validityDays);
+  return expirationBase.toISOString();
+};
 
 export const getBudgetExpiry = async (params: {
   action: "create" | "update";
@@ -207,28 +219,8 @@ export const getBudgetExpiry = async (params: {
   values: ActionValues;
   supabase: SupabaseClient;
 }): Promise<BudgetExpiryResult> => {
-  const { action, budgetId, settingsValidityDays, supabase } = params;
-
-  let expiresAt = parseDefaultExpiration(settingsValidityDays);
-
-  if (action === "update" && budgetId) {
-    const { data: currentBudgetDate, error: currentBudgetDateError } =
-      await supabase
-        .from("budgets")
-        .select("created_at")
-        .eq("id", budgetId)
-        .maybeSingle();
-
-    if (!currentBudgetDateError && currentBudgetDate?.created_at) {
-      const baseCreatedAt = new Date(currentBudgetDate.created_at);
-      if (!Number.isNaN(baseCreatedAt.getTime())) {
-        baseCreatedAt.setDate(baseCreatedAt.getDate() + settingsValidityDays);
-        expiresAt = baseCreatedAt.toISOString();
-      }
-    }
-  }
-
-  return { ok: true, expiresAt };
+  void params;
+  return { ok: true, expiresAt: null };
 };
 
 export type PersistBudgetResult =
@@ -243,7 +235,7 @@ export const persistBudget = async (params: {
   referenceMonth: string;
   referenceDays: number;
   notes: string | null;
-  expiresAt: string;
+  expiresAt: string | null;
   calculation: {
     appliedMargin: number;
     ingredientTotal: number;
