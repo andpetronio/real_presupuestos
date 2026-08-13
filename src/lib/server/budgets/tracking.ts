@@ -1,4 +1,9 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
+import {
+  buildWhatsappSendUrl,
+  normalizeWhatsappNumber,
+} from "$lib/server/whatsapp/template";
+import { formatArs } from "$lib/shared/currency";
 
 type BudgetTrackingSupabase = Pick<SupabaseClient, "from">;
 
@@ -161,6 +166,55 @@ export const getPaymentSummary = (
     paidAmount,
     pendingAmount: Math.max(totalPrice - paidAmount, 0),
   };
+};
+
+export const getRemainingDeliveryMeals = (
+  recipes: ReadonlyArray<
+    Pick<RecipeTrackingRow, "assignedDays" | "deliveredDays">
+  >,
+): number =>
+  recipes.reduce(
+    (sum, recipe) =>
+      sum +
+      Math.max(Number(recipe.assignedDays) - Number(recipe.deliveredDays), 0),
+    0,
+  );
+
+export const buildTrackingPaymentWhatsappMessage = (params: {
+  tutorName: string;
+  amount: number;
+  remainingBalance: number;
+}): string =>
+  [
+    `Hola ${params.tutorName}, te confirmamos que registramos tu pago de ${formatArs(params.amount)}.`,
+    `El saldo pendiente de tu cuenta es ${formatArs(params.remainingBalance)}.`,
+    "Gracias.",
+  ].join("\n");
+
+export const buildTrackingDeliveryWhatsappMessage = (params: {
+  tutorName: string;
+  deliveredMeals: number;
+  remainingMeals: number;
+}): string =>
+  [
+    `Hola ${params.tutorName}, te confirmamos que registramos la entrega de ${params.deliveredMeals} comidas.`,
+    `El saldo pendiente es de ${params.remainingMeals} comidas.`,
+    "Gracias.",
+  ].join("\n");
+
+export const buildTrackingWhatsappUrl = (params: {
+  phone: string | null | undefined;
+  message: string;
+  userAgent?: string | null;
+}): string | null => {
+  const phone = normalizeWhatsappNumber(params.phone ?? "");
+  if (!phone) return null;
+
+  return buildWhatsappSendUrl({
+    phone,
+    message: params.message,
+    userAgent: params.userAgent,
+  });
 };
 
 export type DeliveryAlertEntry = {
