@@ -6,6 +6,10 @@ import {
 } from "$lib/server/forms/parsers";
 import {
   buildRecipeTracking,
+  buildTrackingDeliveryWhatsappMessage,
+  buildTrackingPaymentWhatsappMessage,
+  buildTrackingWhatsappUrl,
+  getRemainingDeliveryMeals,
   getPaymentSummary,
   markBudgetViewed,
   getDeliveryAlerts,
@@ -30,6 +34,158 @@ const parseDateToIso = (value: string): string | null => {
 type DeliveryDraft = {
   budgetDogRecipeId: string;
   recipeDays: number;
+};
+
+type TrackingWhatsappData = {
+  whatsappUrl?: string;
+};
+
+const wantsWhatsapp = (formData: FormData): boolean =>
+  parseFormValue(formData.get("sendWhatsapp")) === "1";
+
+const getBudgetWhatsappRecipient = async (params: {
+  supabase: App.Locals["supabase"];
+  budgetId: string;
+}) => {
+  const { data, error } = await params.supabase
+    .from("budgets")
+    .select("final_sale_price, tutor:tutors(full_name, whatsapp_number)")
+    .eq("id", params.budgetId)
+    .maybeSingle();
+
+  if (error || !data) return null;
+
+  const tutor = data.tutor as {
+    full_name?: string | null;
+    whatsapp_number?: string | null;
+  } | null;
+
+  return {
+    totalPrice: Number(data.final_sale_price ?? 0),
+    tutorName: tutor?.full_name?.trim() || "Cliente",
+    whatsappNumber: tutor?.whatsapp_number ?? null,
+  };
+};
+
+const buildPaymentWhatsappData = async (params: {
+  supabase: App.Locals["supabase"];
+  budgetId: string;
+  amount: number;
+  userAgent?: string | null;
+}): Promise<TrackingWhatsappData> => {
+  const recipient = await getBudgetWhatsappRecipient(params);
+  if (!recipient) return {};
+
+  const { data: payments, error } = await params.supabase
+    .from("budget_payments")
+    .select("id, budget_id, amount, payment_method, paid_at, notes")
+    .eq("budget_id", params.budgetId);
+
+  if (error) return {};
+
+  const summary = getPaymentSummary(
+    (payments as Array<{
+      id: string;
+      budget_id: string;
+      amount: number;
+      payment_method: PaymentMethod;
+      paid_at: string;
+      notes: string | null;
+    }>) ?? [],
+    recipient.totalPrice,
+  );
+
+  const message = buildTrackingPaymentWhatsappMessage({
+    tutorName: recipient.tutorName,
+    amount: params.amount,
+    remainingBalance: summary.pendingAmount,
+  });
+
+  const whatsappUrl = buildTrackingWhatsappUrl({
+    phone: recipient.whatsappNumber,
+    message,
+    userAgent: params.userAgent,
+  });
+
+  return whatsappUrl ? { whatsappUrl } : {};
+};
+
+const buildDeliveryWhatsappData = async (params: {
+  supabase: App.Locals["supabase"];
+  budgetId: string;
+  deliveredMeals: number;
+  userAgent?: string | null;
+}): Promise<TrackingWhatsappData> => {
+  const recipient = await getBudgetWhatsappRecipient(params);
+  if (!recipient) return {};
+
+  const { data: recipeRows, error: recipeError } = await params.supabase
+    .from("budget_dog_recipes")
+    .select(
+      "id, assigned_days, recipe:recipes(name), budget_dog:budget_dogs!inner(id, budget_id, dog:dogs(name))",
+    )
+    .eq("budget_dog.budget_id", params.budgetId);
+
+  if (recipeError) return {};
+
+  const safeRecipeRows = (
+    (recipeRows ?? []) as Array<{
+      id: string;
+      assigned_days: number;
+      recipe: { name?: string | null } | null;
+      budget_dog:
+        | { budget_id?: string | null; dog?: { name?: string | null } | null }
+        | Array<{
+            budget_id?: string | null;
+            dog?: { name?: string | null } | null;
+          }>;
+    }>
+  ).filter((row) => readBudgetDogBudgetId(row.budget_dog) === params.budgetId);
+
+  const recipeIds = safeRecipeRows.map((row) => row.id);
+  const { data: deliveries, error: deliveriesError } = recipeIds.length
+    ? await params.supabase
+        .from("budget_recipe_deliveries")
+        .select("budget_dog_recipe_id, recipe_days")
+        .in("budget_dog_recipe_id", recipeIds)
+    : { data: [], error: null };
+
+  if (deliveriesError) return {};
+
+  const tracking = buildRecipeTracking({
+    recipeRows: safeRecipeRows.map((row) => {
+      const relation = Array.isArray(row.budget_dog)
+        ? (row.budget_dog[0] ?? null)
+        : row.budget_dog;
+
+      return {
+        id: row.id,
+        assigned_days: row.assigned_days,
+        recipe: row.recipe,
+        budget_dog: relation ? { dog: relation.dog ?? null } : { dog: null },
+      };
+    }),
+    preparations: [],
+    deliveries:
+      (deliveries as Array<{
+        budget_dog_recipe_id: string;
+        recipe_days: number;
+      }>) ?? [],
+  });
+
+  const message = buildTrackingDeliveryWhatsappMessage({
+    tutorName: recipient.tutorName,
+    deliveredMeals: params.deliveredMeals,
+    remainingMeals: getRemainingDeliveryMeals(tracking),
+  });
+
+  const whatsappUrl = buildTrackingWhatsappUrl({
+    phone: recipient.whatsappNumber,
+    message,
+    userAgent: params.userAgent,
+  });
+
+  return whatsappUrl ? { whatsappUrl } : {};
 };
 
 const parseDeliveryDrafts = (formData: FormData): DeliveryDraft[] => {
@@ -258,6 +414,7 @@ export const actions: Actions = {
     ) as PaymentMethod;
     const paidAtRaw = parseFormValue(formData.get("paidAt"));
     const notes = parseFormValue(formData.get("notes"));
+    const sendWhatsapp = wantsWhatsapp(formData);
 
     const amount = Number(amountRaw);
     const paidAt = parseDateToIso(paidAtRaw);
@@ -289,7 +446,22 @@ export const actions: Actions = {
       });
     }
 
-    return { operatorSuccess: "Cobro parcial registrado correctamente." };
+    const whatsappData = sendWhatsapp
+      ? await buildPaymentWhatsappData({
+          supabase: locals.supabase,
+          budgetId: params.budget_id,
+          amount,
+          userAgent: request.headers.get("user-agent"),
+        })
+      : {};
+
+    return {
+      operatorSuccess:
+        sendWhatsapp && !whatsappData.whatsappUrl
+          ? "Cobro registrado. No encontramos un WhatsApp válido para abrir."
+          : "Cobro parcial registrado correctamente.",
+      ...whatsappData,
+    };
   },
 
   deletePayment: async ({ request, locals, params }) => {
@@ -377,12 +549,13 @@ export const actions: Actions = {
     return { operatorSuccess: "Preparación eliminada." };
   },
 
-  addDelivery: async ({ request, locals }) => {
+  addDelivery: async ({ request, locals, params }) => {
     const formData = await request.formData();
     const deliveryDrafts = parseDeliveryDrafts(formData);
     const deliveredAtRaw = parseFormValue(formData.get("entryDate"));
     const notes = parseFormValue(formData.get("notes"));
     const deliveredAt = parseDateToIso(deliveredAtRaw);
+    const sendWhatsapp = wantsWhatsapp(formData);
 
     if (deliveryDrafts.length === 0 || !deliveredAt) {
       return fail(400, {
@@ -411,7 +584,25 @@ export const actions: Actions = {
       });
     }
 
-    return { operatorSuccess: "Entrega registrada correctamente." };
+    const whatsappData = sendWhatsapp
+      ? await buildDeliveryWhatsappData({
+          supabase: locals.supabase,
+          budgetId: params.budget_id,
+          deliveredMeals: deliveryDrafts.reduce(
+            (sum, draft) => sum + draft.recipeDays,
+            0,
+          ),
+          userAgent: request.headers.get("user-agent"),
+        })
+      : {};
+
+    return {
+      operatorSuccess:
+        sendWhatsapp && !whatsappData.whatsappUrl
+          ? "Entrega registrada. No encontramos un WhatsApp válido para abrir."
+          : "Entrega registrada correctamente.",
+      ...whatsappData,
+    };
   },
 
   close: async ({ locals, params }) => {

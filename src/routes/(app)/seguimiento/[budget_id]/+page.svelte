@@ -6,6 +6,7 @@
   import { formatArs } from '$lib/shared/currency';
   import DeliveryAlertBanner from '$lib/components/delivery/DeliveryAlertBanner.svelte';
   import { closeBlockingLoader, confirmAlert, presentActionFeedback, showBlockingLoader } from '$lib/shared/alerts';
+  import { readWhatsappUrl, shouldOpenWhatsappForResult } from './whatsapp-open-guard';
 
   type RecipeTracking = {
     budgetDogRecipeId: string;
@@ -112,14 +113,13 @@
     const lastDot = cleaned.lastIndexOf('.');
     const decimalIndex = Math.max(lastComma, lastDot);
 
-    let normalized = cleaned;
-    if (decimalIndex >= 0) {
+    const normalized = (() => {
+      if (decimalIndex < 0) return cleaned.replace(/[.,]/g, '');
+
       const intPart = cleaned.slice(0, decimalIndex).replace(/[.,]/g, '');
       const decPart = cleaned.slice(decimalIndex + 1).replace(/[.,]/g, '');
-      normalized = `${intPart}.${decPart}`;
-    } else {
-      normalized = cleaned.replace(/[.,]/g, '');
-    }
+      return `${intPart}.${decPart}`;
+    })();
 
     const parsed = Number(normalized);
     return Number.isFinite(parsed) && parsed > 0 ? parsed : null;
@@ -155,6 +155,13 @@
         await applyAction(result);
         await presentActionFeedback(result);
         if (result.type === 'success') {
+          if (shouldOpenWhatsappForResult(result)) {
+            const whatsappUrl = readWhatsappUrl(result);
+            if (whatsappUrl) {
+              window.open(whatsappUrl, 'real-whatsapp-confirmation', 'noopener,noreferrer');
+            }
+          }
+
           if (resetOnSuccess) {
             formElement.reset();
           }
@@ -313,6 +320,10 @@
         <Label for="paymentNotes">Notas</Label>
         <Textarea id="paymentNotes" name="notes" rows={3} class="w-full" />
       </div>
+      <label class="flex items-start gap-2 rounded-md border border-gray-200 bg-gray-50 p-3 text-sm text-gray-700">
+        <input type="checkbox" name="sendWhatsapp" value="1" class="mt-1 rounded border-gray-300" />
+        <span>Ofrecer confirmación por WhatsApp al cliente después de registrar el cobro.</span>
+      </label>
       <Button type="submit">Registrar cobro</Button>
     </form>
   </Card>
@@ -378,6 +389,10 @@
         <Label for="deliveryNotes">Notas</Label>
         <Textarea id="deliveryNotes" name="notes" rows={3} class="w-full" />
       </div>
+      <label class="flex items-start gap-2 rounded-md border border-gray-200 bg-gray-50 p-3 text-sm text-gray-700">
+        <input type="checkbox" name="sendWhatsapp" value="1" class="mt-1 rounded border-gray-300" />
+        <span>Ofrecer confirmación por WhatsApp al cliente después de registrar la entrega.</span>
+      </label>
       <Button type="submit">Registrar entrega</Button>
     </form>
   </Card>

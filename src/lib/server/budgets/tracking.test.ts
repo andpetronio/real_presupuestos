@@ -1,6 +1,12 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
 import type { SupabaseClient } from "@supabase/supabase-js";
-import { getDeliveryAlerts } from "./tracking";
+import {
+  buildTrackingDeliveryWhatsappMessage,
+  buildTrackingPaymentWhatsappMessage,
+  buildTrackingWhatsappUrl,
+  getDeliveryAlerts,
+  getRemainingDeliveryMeals,
+} from "./tracking";
 
 type BudgetRow = {
   id: string;
@@ -196,5 +202,51 @@ describe("getDeliveryAlerts", () => {
       dayOfMonth: 10,
       daysOffset: 10,
     });
+  });
+});
+
+describe("tracking WhatsApp helpers", () => {
+  it("builds payment confirmation with paid amount and remaining balance", () => {
+    const message = buildTrackingPaymentWhatsappMessage({
+      tutorName: "Ana",
+      amount: 15000,
+      remainingBalance: 35000,
+    });
+
+    expect(message).toContain("Ana");
+    expect(message).toContain("15.000");
+    expect(message).toContain("35.000");
+  });
+
+  it("builds delivery confirmation with delivered and remaining meals", () => {
+    const message = buildTrackingDeliveryWhatsappMessage({
+      tutorName: "Ana",
+      deliveredMeals: 6,
+      remainingMeals: 14,
+    });
+
+    expect(message).toContain("6 comidas");
+    expect(message).toContain("14 comidas");
+  });
+
+  it("sums remaining delivery meals from recalculated persisted tracking", () => {
+    expect(
+      getRemainingDeliveryMeals([
+        { assignedDays: 10, deliveredDays: 4 },
+        { assignedDays: 8, deliveredDays: 10 },
+      ]),
+    ).toBe(6);
+  });
+
+  it("returns a WhatsApp URL only when the phone is usable", () => {
+    expect(
+      buildTrackingWhatsappUrl({ phone: null, message: "Hola" }),
+    ).toBeNull();
+    expect(
+      buildTrackingWhatsappUrl({
+        phone: "+54 9 11 1234-5678",
+        message: "Hola",
+      }),
+    ).toContain("5491112345678");
   });
 });
