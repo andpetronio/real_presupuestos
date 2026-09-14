@@ -1,5 +1,8 @@
 import { describe, expect, it } from "vitest";
-import { resolveSupabasePublicEnv } from "./config";
+import {
+  resolveSupabaseAuthCookieName,
+  resolveSupabasePublicEnv,
+} from "./config";
 
 describe("supabase public config guardrail", () => {
   it("normaliza y devuelve URL + publishable key cuando existen", () => {
@@ -32,5 +35,13 @@ describe("supabase public config guardrail", () => {
     ).toThrowError(
       /Missing required public env var: PUBLIC_SUPABASE_PUBLISHABLE_KEY/,
     );
+  });
+});
+
+describe("supabase auth cookie name", () => {
+  it("deriva el nombre de cookie del project ref", () => {
+    expect(
+      resolveSupabaseAuthCookieName("https://example-project.supabase.co"),
+    ).toBe("sb-example-project-auth-token");
   });
 });

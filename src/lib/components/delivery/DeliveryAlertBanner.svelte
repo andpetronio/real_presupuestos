@@ -35,26 +35,29 @@
 </script>
 
 {#if alerts.length > 0}
-  <div class="mb-4 w-fit rounded-lg border border-gray-200 bg-white p-4 shadow-sm">
-    <div class="flex flex-wrap items-center gap-3">
-      <div class="flex-1 min-w-0">
-        <div class="flex items-center gap-2">
+  <section class="mb-5 rounded-lg border border-gray-200 bg-white" aria-labelledby="delivery-alerts-title">
+    <div class="flex flex-wrap items-center justify-between gap-3 border-b border-gray-100 px-4 py-3">
+      <div class="flex items-center gap-2">
           <CalendarBlank size={18} class="text-accent-600" />
-          <p class="text-sm font-semibold text-gray-900">Alertas de entrega</p>
-        </div>
+          <h2 id="delivery-alerts-title" class="text-sm font-semibold text-gray-900">Alertas de entrega</h2>
+      </div>
+      {#if showLink}
+        <Button href="/seguimiento" color="light" size="xs">Ver seguimiento</Button>
+      {/if}
+    </div>
+    <div class="grid gap-3 p-3 lg:grid-cols-2">
         {#if overdueAlerts.length > 0}
-          <div class="mt-2 rounded-md border border-red-200 bg-red-50 p-3">
+          <div class="rounded-md border border-red-200 bg-red-50 p-3">
             <p class="text-xs font-semibold uppercase tracking-wide text-red-700">Entregas con demora</p>
-            <ul class="mt-1 space-y-1">
+            <ul class="mt-2 space-y-1.5">
               {#each overdueAlerts as alert (alert.budgetDogRecipeId + '-' + alert.dayOfMonth)}
                 {@const lateLabel = alert.daysOffset === 1 ? 'hace 1 día' : `hace ${alert.daysOffset} días`}
-                <li class="text-sm text-gray-800">
-                  <span class="font-semibold text-gray-900">{alert.dogName}</span>
-                  {#if alert.tutorName !== 'Sin tutor'}
-                    <span class="text-gray-600"> de {alert.tutorName}</span>
-                  {/if}
-                  — {alert.recipeName}: debías entregar <strong>{alert.missingMeals}</strong>
-                  comida{alert.missingMeals === 1 ? '' : 's'} (día {alert.dayOfMonth}, {lateLabel})
+                <li class="rounded border border-red-100 bg-white/70 px-2.5 py-2 text-sm text-gray-800">
+                  <div class="flex flex-wrap items-baseline justify-between gap-x-3 gap-y-1">
+                    <span class="font-semibold text-gray-900">{alert.dogName}<span class="font-normal text-gray-600">{alert.tutorName !== 'Sin tutor' ? ` · ${alert.tutorName}` : ''}</span></span>
+                    <span class="text-xs font-semibold text-red-700">{lateLabel}</span>
+                  </div>
+                  <p class="mt-0.5 text-xs text-gray-600">{alert.recipeName} · <strong class="font-semibold text-gray-800">{alert.missingMeals} comidas pendientes</strong> · día {alert.dayOfMonth}</p>
                 </li>
               {/each}
             </ul>
@@ -62,29 +65,24 @@
         {/if}
 
         {#if dueSoonAlerts.length > 0}
-          <div class="mt-3 rounded-md border border-amber-200 bg-amber-50 p-3">
+          <div class="rounded-md border border-amber-200 bg-amber-50 p-3">
             <p class="text-xs font-semibold uppercase tracking-wide text-amber-800">Entregas próximas</p>
-            <ul class="mt-1 space-y-1">
+            <ul class="mt-2 space-y-1.5">
               {#each dueSoonAlerts as alert (alert.budgetDogRecipeId + '-' + alert.dayOfMonth)}
                 {@const urgency = alert.daysOffset <= 1 ? 'font-medium text-amber-900' : 'text-gray-800'}
                 {@const whenLabel = alert.daysOffset === 0 ? 'hoy' : alert.daysOffset === 1 ? 'mañana' : `en ${alert.daysOffset} días`}
 
-                <li class="text-sm {urgency}">
-                  <span class="font-semibold text-gray-900">{alert.dogName}</span>
-                  {#if alert.tutorName !== 'Sin tutor'}
-                    <span class="text-gray-600"> de {alert.tutorName}</span>
-                  {/if}
-                  — {alert.recipeName}: <strong>{alert.missingMeals}</strong> comidas pendientes
-                  (día {alert.dayOfMonth}, {whenLabel})
+                <li class="rounded border border-amber-100 bg-white/70 px-2.5 py-2 text-sm {urgency}">
+                  <div class="flex flex-wrap items-baseline justify-between gap-x-3 gap-y-1">
+                    <span class="font-semibold text-gray-900">{alert.dogName}<span class="font-normal text-gray-600">{alert.tutorName !== 'Sin tutor' ? ` · ${alert.tutorName}` : ''}</span></span>
+                    <span class="text-xs font-semibold text-amber-800">{whenLabel}</span>
+                  </div>
+                  <p class="mt-0.5 text-xs text-gray-600">{alert.recipeName} · <strong class="font-semibold text-gray-800">{alert.missingMeals} comidas pendientes</strong> · día {alert.dayOfMonth}</p>
                 </li>
               {/each}
             </ul>
           </div>
         {/if}
-      </div>
-      {#if showLink}
-        <Button href="/seguimiento" color="light" size="xs" class="flex-shrink-0">Ver seguimiento</Button>
-      {/if}
     </div>
-  </div>
+  </section>
 {/if}

@@ -62,7 +62,7 @@
     </div>
 
     <!-- Desktop table (hidden on < md) -->
-    <div class="hidden md:block">
+    <div class="hidden lg:block">
       <DogTable
         dogs={data.dogs}
         sortBy={data.sort.sortBy}

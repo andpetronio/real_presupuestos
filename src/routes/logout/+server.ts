@@ -10,7 +10,7 @@ export const POST: RequestHandler = async ({ locals, request, url }) => {
   const requestedNext =
     parseFormString(formData.get("next")) ?? `${url.pathname}${url.search}`;
 
-  await locals.supabase.auth.signOut();
+  await locals.supabase.auth.signOut({ scope: "local" });
 
   throw redirect(303, buildPublicLoginRedirect(requestedNext));
 };

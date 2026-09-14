@@ -3,13 +3,13 @@
   import { invalidateAll } from '$app/navigation';
   import {
     Button,
-    Table,
     TableBody,
     TableBodyCell,
     TableBodyRow,
     TableHead,
     TableHeadCell,
   } from 'flowbite-svelte';
+  import DataTable from '$lib/components/admin/DataTable.svelte';
   import ActiveStatusBadge from '$lib/components/admin/ActiveStatusBadge.svelte';
   import SortableHeader from '$lib/components/admin/SortableHeader.svelte';
   import { route } from '$lib/shared/navigation';
@@ -56,7 +56,7 @@
   };
 </script>
 
-<Table hoverable striped aria-label='Tabla de mayoristas'>
+<DataTable ariaLabel='Tabla de mayoristas'>
   <TableHead>
     <TableHeadCell>
       <SortableHeader
@@ -126,4 +126,4 @@
       </TableBodyRow>
     {/each}
   </TableBody>
-</Table>
+</DataTable>

@@ -14,22 +14,25 @@
       status: BudgetStatus;
       tutor: { full_name: string } | null;
     };
+    renderContext: 'table' | 'mobile';
   };
 
-  let { budget }: BudgetActionsMenuProps = $props();
+  let { budget, renderContext }: BudgetActionsMenuProps = $props();
 
   let open = $state(false);
 
   const previewPath = $derived(route('/budgets/', budget.id, '/preview'));
   const editPath = $derived(route('/budgets/', budget.id, '/update'));
   const seguimientoPath = $derived(route('/seguimiento/', budget.id));
-  const acceptFormId = $derived(`accept-form-${budget.id}`);
-  const rejectFormId = $derived(`reject-form-${budget.id}`);
-  const deleteFormId = $derived(`delete-form-${budget.id}`);
-  const undoFormId = $derived(`undo-form-${budget.id}`);
-  const sendWhatsappFormId = $derived(`send-whatsapp-form-${budget.id}`);
+  const acceptFormId = $derived(`${renderContext}-accept-form-${budget.id}`);
+  const rejectFormId = $derived(`${renderContext}-reject-form-${budget.id}`);
+  const deleteFormId = $derived(`${renderContext}-delete-form-${budget.id}`);
+  const undoFormId = $derived(`${renderContext}-undo-form-${budget.id}`);
+  const sendWhatsappFormId = $derived(`${renderContext}-send-whatsapp-form-${budget.id}`);
+  const actionTriggerId = $derived(`${renderContext}-budget-actions-trigger-${budget.id}`);
 
   const submitFormById = (formId: string) => () => {
+    open = false;
     const form = document.getElementById(formId);
     if (!(form instanceof HTMLFormElement)) return;
     form.requestSubmit();
@@ -139,6 +142,7 @@
   </form>
 
   <Button
+    id={actionTriggerId}
     size="xs"
     color="light"
     class="px-2"
@@ -151,7 +155,12 @@
     </svg>
   </Button>
 
-  <Dropdown bind:isOpen={open} class="z-50 min-w-44 list-none">
+  <Dropdown
+    bind:isOpen={open}
+    triggeredBy={`#${actionTriggerId}`}
+    placement="bottom-end"
+    class="z-50 min-w-44 list-none"
+  >
     <DropdownItem href={previewPath}>
       <div class="flex items-center gap-2">
         <EyeIcon size={16} />

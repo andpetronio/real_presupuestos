@@ -1,8 +1,5 @@
 <script lang="ts">
-  import {
-    Button,
-    Card
-  } from 'flowbite-svelte';
+  import { Button } from 'flowbite-svelte';
   import FeedbackBanner from '$lib/components/FeedbackBanner.svelte';
   import BudgetFilterBar from '$lib/components/budgets/BudgetFilterBar.svelte';
   import BudgetTable from '$lib/components/budgets/BudgetTable.svelte';
@@ -43,7 +40,7 @@
 </script>
 
 <div class="mb-4 flex justify-end">
-  <Button href={newBudgetPath} class="bg-secondary hover:bg-secondary-600 text-white">
+  <Button href={newBudgetPath}>
     Nuevo presupuesto
   </Button>
 </div>
@@ -53,9 +50,8 @@
 {:else if data.tableState === 'empty'}
   <FeedbackBanner message={data.tableMessage?.detail ?? 'Todavía no hay presupuestos.'} color="blue" />
 {:else}
-  <Card size="xl" class="w-full shadow-sm p-0">
-    <!-- Filter bar -->
-    <div class="p-4">
+  <section class="rounded-lg border border-gray-200 bg-white" aria-live="polite">
+    <div class="border-b border-gray-100 px-4 py-3">
       <BudgetFilterBar
         currentStatus={data.filters.status}
         currentSearch={data.filters.search}
@@ -67,7 +63,7 @@
     </div>
 
     <!-- Mobile cards (hidden on md+) -->
-    <div class="px-4 pb-4">
+    <div class="px-4 py-3">
       <BudgetMobileCards
         budgets={data.budgets}
         {formatDate}
@@ -75,18 +71,15 @@
     </div>
 
     <!-- Desktop table (hidden on < md) -->
-    <div class="hidden md:block">
-      <BudgetTable
-        budgets={data.budgets}
-        {formatDate}
-        sortBy={data.sort.sortBy}
-        sortDir={data.sort.sortDir}
-        buildSortHref={buildBudgetSortHref}
-      />
-    </div>
+    <BudgetTable
+      budgets={data.budgets}
+      {formatDate}
+      sortBy={data.sort.sortBy}
+      sortDir={data.sort.sortDir}
+      buildSortHref={buildBudgetSortHref}
+    />
 
-    <!-- Pagination -->
-    <div class="px-4 pb-4">
+    <div class="border-t border-gray-100 px-4 py-3">
       <BudgetPagination
         page={data.pagination.page}
         totalPages={data.pagination.totalPages}
@@ -98,5 +91,5 @@
         sortDir={data.sort.sortDir}
       />
     </div>
-  </Card>
+  </section>
 {/if}

@@ -26,7 +26,7 @@
   let { rawMaterials }: RawMaterialMobileCardsProps = $props();
 </script>
 
-<div class="space-y-3 md:hidden" aria-label="Lista de materias primas">
+<div class="space-y-3 lg:hidden" aria-label="Lista de materias primas">
   {#each rawMaterials as material (material.id)}
     <Card class="p-4" role="listitem">
       <!-- Nombre + Estado -->

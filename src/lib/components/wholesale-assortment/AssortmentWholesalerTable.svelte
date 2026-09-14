@@ -1,5 +1,6 @@
 <script lang="ts">
-  import { Button, Table, TableBody, TableBodyCell, TableBodyRow, TableHead, TableHeadCell } from 'flowbite-svelte';
+  import { Button, TableBody, TableBodyCell, TableBodyRow, TableHead, TableHeadCell } from 'flowbite-svelte';
+  import DataTable from '$lib/components/admin/DataTable.svelte';
   import ActiveStatusBadge from '$lib/components/admin/ActiveStatusBadge.svelte';
   import { route } from '$lib/shared/navigation';
   import type { AssortmentWholesalerRow } from '$lib/types/view-models/wholesale-assortment';
@@ -8,7 +9,7 @@
   let { wholesalers }: Props = $props();
 </script>
 
-<Table hoverable striped aria-label="Tabla de surtido por mayorista">
+<DataTable ariaLabel="Tabla de surtido por mayorista">
   <TableHead>
     <TableHeadCell>Nombre</TableHeadCell>
     <TableHeadCell>Código</TableHeadCell>
@@ -33,4 +34,4 @@
       </TableBodyRow>
     {/each}
   </TableBody>
-</Table>
+</DataTable>

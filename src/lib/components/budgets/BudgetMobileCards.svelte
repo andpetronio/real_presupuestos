@@ -1,9 +1,7 @@
 <script lang="ts">
-  import { Card, Button } from 'flowbite-svelte';
   import StatusBadge from '$lib/components/admin/StatusBadge.svelte';
   import type { BudgetStatus } from '$lib/types/budget';
   import { formatArs } from '$lib/shared/currency';
-  import { route } from '$lib/shared/navigation';
   import BudgetActionsMenu from './BudgetActionsMenu.svelte';
 
   type BudgetRow = {
@@ -25,10 +23,10 @@
   let { budgets, formatDate }: BudgetMobileCardsProps = $props();
 </script>
 
-<div class="space-y-3 md:hidden" aria-label="Lista de presupuestos">
+<div class="space-y-2.5 lg:hidden" aria-label="Lista de presupuestos">
   {#each budgets as budget (budget.id)}
-    <Card class="p-4" role="listitem">
-      <div class="mb-3 flex items-start justify-between gap-2">
+    <article class="rounded-lg border border-gray-200 bg-white p-3" role="listitem">
+      <div class="mb-2.5 flex items-start justify-between gap-2">
         <div>
           <p class="font-semibold text-gray-900">
             {budget.tutor?.full_name ?? 'Sin tutor'}
@@ -40,7 +38,7 @@
         <StatusBadge status={budget.status} />
       </div>
 
-      <div class="mb-3 grid grid-cols-2 gap-2 text-sm">
+      <div class="mb-2.5 grid grid-cols-2 gap-2 text-sm">
         <div>
           <p class="text-xs text-gray-500">Ingredientes</p>
           <p class="font-medium">{formatArs(budget.ingredient_total_global)}</p>
@@ -60,14 +58,14 @@
       </div>
 
       {#if budget.expires_at}
-        <p class="mb-3 text-xs text-gray-500">
+        <p class="mb-2.5 text-xs text-gray-500">
           Vence: {formatDate(budget.expires_at)}
         </p>
       {/if}
 
       <div class="flex items-center justify-end">
-        <BudgetActionsMenu {budget} />
+        <BudgetActionsMenu {budget} renderContext="mobile" />
       </div>
-    </Card>
+    </article>
   {/each}
 </div>

@@ -1,5 +1,6 @@
 <script lang="ts">
-  import { Button, Table, TableBody, TableBodyCell, TableBodyRow, TableHead, TableHeadCell } from 'flowbite-svelte';
+  import { Button, TableBody, TableBodyCell, TableBodyRow, TableHead, TableHeadCell } from 'flowbite-svelte';
+  import DataTable from '$lib/components/admin/DataTable.svelte';
   import ActiveStatusBadge from '$lib/components/admin/ActiveStatusBadge.svelte';
   import SortableHeader from '$lib/components/admin/SortableHeader.svelte';
   import { formatArs } from '$lib/shared/currency';
@@ -32,7 +33,7 @@
   let { rawMaterials, sortBy, sortDir, buildSortHref }: RawMaterialTableProps = $props();
 </script>
 
-<Table hoverable striped aria-label="Tabla de materias primas">
+<DataTable ariaLabel="Tabla de materias primas">
   <TableHead>
     <TableHeadCell>
       <SortableHeader
@@ -93,4 +94,4 @@
       </TableBodyRow>
     {/each}
   </TableBody>
-</Table>
+</DataTable>

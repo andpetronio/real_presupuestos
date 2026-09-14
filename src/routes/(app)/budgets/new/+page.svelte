@@ -92,6 +92,7 @@
 
 <FormShell
   title="Nuevo presupuesto"
+  density="compact"
   description="Seleccioná tutor, composición por perro/receta y costos globales."
   action="?/create"
   method="POST"

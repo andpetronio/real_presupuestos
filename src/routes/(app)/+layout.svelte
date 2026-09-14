@@ -1,227 +1,119 @@
 <script lang="ts">
   import { page } from '$app/state';
   import { onMount } from 'svelte';
-  import {
-    Button,
-    Navbar,
-    NavBrand,
-    NavHamburger,
-    NavUl,
-    NavLi,
-    Sidebar,
-    SidebarGroup,
-    SidebarItem,
-    uiHelpers,
-    CloseButton,
-    Breadcrumb,
-    BreadcrumbItem
-  } from 'flowbite-svelte';
-  import { navItems, type NavItem, type AdminModule } from '$lib/constants/navigation';
+  import { Button } from 'flowbite-svelte';
+  import { ListIcon } from 'phosphor-svelte';
+  import PageHeader from '$lib/components/admin/PageHeader.svelte';
+  import SidebarSection from '$lib/components/admin/SidebarSection.svelte';
+  import { navItems, type AdminModule, type NavItem } from '$lib/constants/navigation';
 
   type LayoutData = {
     actorId: string;
     pendingAcceptedCount: number;
-    navContext: ReadonlyArray<{
-      key: AdminModule;
-      href: string;
-      label: string;
-    }>;
+    navContext: ReadonlyArray<{ key: AdminModule; href: string; label: string }>;
   };
+  type NavGroup = NavItem['group'];
 
   let { data, children }: { data: LayoutData; children: import('svelte').Snippet } = $props();
+  let isMobileMenuOpen = $state(false);
+  let isCollapsed = $state(false);
 
   const navByKey = new Map(navItems.map((item) => [item.key, item]));
+  const groupOrder: ReadonlyArray<NavGroup> = ['Gestión', 'Clientes y producción', 'Mayoristas', 'Sistema'];
   const resolvedNavItems = $derived(
-    data.navContext
-      .map((item) => navByKey.get(item.key))
-      .filter((item): item is NavItem => Boolean(item)) as ReadonlyArray<NavItem>
+    data.navContext.map((item) => navByKey.get(item.key)).filter((item): item is NavItem => Boolean(item)) as ReadonlyArray<NavItem>,
   );
+  const navGroups = $derived(groupOrder.map((label) => ({ label, items: resolvedNavItems.filter((item) => item.group === label) })).filter((group) => group.items.length > 0));
 
-  const getPageTitle = (path: string) => {
-    const prefixMatch = resolvedNavItems.find((item) => path === item.href || path.startsWith(`${item.href}/`));
-    return prefixMatch?.label ?? 'Administración';
-  };
-
+  const getPageTitle = (path: string) => resolvedNavItems.find((item) => path === item.href || path.startsWith(`${item.href}/`))?.label ?? 'Administración';
   const getBreadcrumbs = (pathname: string) => {
-    const crumbs: Array<{ href: string; label: string }> = [
-      { href: '/dashboard', label: 'Inicio' }
-    ];
+    const crumbs: Array<{ href: string; label: string }> = [{ href: '/dashboard', label: 'Inicio' }];
+    const matched = resolvedNavItems.find((item) => pathname.startsWith(item.href));
+    if (!matched) return crumbs;
+    if (matched.href !== '/dashboard') crumbs.push({ href: matched.href, label: matched.label });
 
-    const matchedItem = resolvedNavItems.find((item) => pathname.startsWith(item.href));
-    if (matchedItem) {
-      if (matchedItem.href !== '/dashboard') {
-        crumbs.push({ href: matchedItem.href, label: matchedItem.label });
-      }
-
-      const pathParts = pathname.slice(matchedItem.href.length + 1).split('/');
-      if (pathParts[0] && pathParts[0] !== 'new' && !pathParts[0].includes('=')) {
-        crumbs.push({
-          href: matchedItem.href + '/' + pathParts[0],
-          label: pathParts[0] === 'preview' ? 'Ver' : pathParts[0] === 'update' ? 'Editar' : pathParts[0]
-        });
-      }
-
-      if (pathname.includes('/preview/') || pathname.includes('/update/')) {
-        const idMatch = pathname.match(/\/(preview|update)\/([^/]+)/);
-        if (idMatch) {
-          crumbs.push({ href: '#', label: '...' + idMatch[2].slice(0, 4) });
-        }
-      } else if (pathname.endsWith('/new') || pathParts[0] === 'new') {
-        crumbs.push({ href: pathname, label: 'Nuevo' });
-      }
+    const pathParts = pathname.slice(matched.href.length + 1).split('/');
+    if (pathParts[0] && pathParts[0] !== 'new' && !pathParts[0].includes('=')) {
+      crumbs.push({
+        href: `${matched.href}/${pathParts[0]}`,
+        label: pathParts[0] === 'preview' ? 'Ver' : pathParts[0] === 'update' ? 'Editar' : pathParts[0],
+      });
     }
 
+    if (pathname.includes('/preview/') || pathname.includes('/update/')) {
+      const idMatch = pathname.match(/\/(preview|update)\/([^/]+)/);
+      if (idMatch) crumbs.push({ href: '#', label: `...${idMatch[2].slice(0, 4)}` });
+    } else if (pathname.endsWith('/new') || pathParts[0] === 'new') {
+      crumbs.push({ href: pathname, label: 'Nuevo' });
+    }
     return crumbs;
   };
-
   const breadcrumbs = $derived(getBreadcrumbs(page.url.pathname));
+  const badgeModules = new Set<AdminModule>(['budgets', 'tracking']);
+  const getBadgeCount = (module: AdminModule) => (badgeModules.has(module) ? data.pendingAcceptedCount : 0);
+  const isActive = (item: NavItem) => page.url.pathname === item.href || page.url.pathname.startsWith(`${item.href}/`);
 
-  const badgeModules = new Set<AdminModule>(['budgets', 'tracking' as AdminModule]);
-
-  const getBadgeCount = (module: AdminModule): number => {
-    return badgeModules.has(module) ? data.pendingAcceptedCount : 0;
+  const toggleCollapse = () => {
+    isCollapsed = !isCollapsed;
+    localStorage.setItem('real-admin-sidebar-collapsed', String(isCollapsed));
   };
-
-  const getNavLabel = (item: NavItem): string => {
-    const badge = getBadgeCount(item.key);
-    return badge > 0 ? `${item.label} (${badge})` : item.label;
-  };
-
-  const sidebarUi = uiHelpers();
-  let isDesktop = $state(false);
-
-  onMount(() => {
-    const mediaQuery = window.matchMedia('(min-width: 640px)');
-
-    const syncDesktopState = () => {
-      isDesktop = mediaQuery.matches;
-      if (mediaQuery.matches) {
-        sidebarUi.close();
-      }
-    };
-
-    syncDesktopState();
-
-    const handleViewportChange = (event: MediaQueryListEvent) => {
-      isDesktop = event.matches;
-      if (event.matches) {
-        sidebarUi.close();
-      }
-    };
-
-    mediaQuery.addEventListener('change', handleViewportChange);
-    return () => {
-      mediaQuery.removeEventListener('change', handleViewportChange);
-    };
-  });
-
-  const closeSidebar = () => {
-    sidebarUi.close();
-  };
-
-  const desktopSidebarClasses = {
-    active:
-      'flex items-center group-has-[ul]:ms-6 p-2 text-base font-medium rounded-sm text-white bg-white/20 hover:bg-white/25',
-    nonactive:
-      'flex items-center group-has-[ul]:ms-6 p-2 text-base font-normal rounded-sm text-white hover:bg-white/10 hover:text-white'
-  };
-
-  const wholesalersSectionStartKey: AdminModule = 'wholesalers-dashboard';
+  const closeMobileMenu = () => { isMobileMenuOpen = false; };
+  onMount(() => { isCollapsed = localStorage.getItem('real-admin-sidebar-collapsed') === 'true'; });
 </script>
 
-<div class="flex h-screen flex-col bg-base-100">
-  <!-- Navbar: logo + logout -->
-  <Navbar class="h-16 min-h-16 border-b border-gray-200 bg-white px-4">
-    <NavBrand href="/dashboard">
-      <img
-        src="/logo.png"
-        alt="Real, Amor en cada bocado"
-        class="h-9 w-auto sm:h-10"
-        loading="eager"
-        decoding="async"
-      />
-    </NavBrand>
+{#snippet navigation(collapsed: boolean, onNavigate?: () => void)}
+  <nav aria-label="Módulos administrativos" class="min-h-0 flex-1 overflow-y-auto px-2 py-3">
+    {#each navGroups as group (group.label)}
+      <SidebarSection label={group.label} {collapsed}>
+        {#each group.items as item (item.href)}
+          {@const badgeCount = getBadgeCount(item.key)}
+          <li>
+            <a href={item.href} aria-current={isActive(item) ? 'page' : undefined} aria-label={collapsed ? item.label : undefined} title={collapsed ? item.label : undefined} onclick={onNavigate} class:nav-item-active={isActive(item)} class="relative group flex min-h-9 items-center gap-2.5 rounded-md px-2.5 py-2 text-sm font-medium text-gray-600 transition-colors hover:bg-primary-50 hover:text-primary-800 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:ring-offset-2 {collapsed ? 'justify-center px-2' : ''}">
+              <item.icon size={18} weight={isActive(item) ? 'fill' : 'regular'} aria-hidden="true" class="shrink-0" />
+              {#if !collapsed}
+                <span class="min-w-0 flex-1 truncate">{item.label}</span>
+                {#if badgeCount > 0}<span class="rounded-full bg-primary-100 px-1.5 py-0.5 text-[0.6875rem] font-semibold tabular-nums text-primary-800">{badgeCount}</span>{/if}
+              {:else if badgeCount > 0}
+                <span class="absolute sr-only"> ({badgeCount} pendientes)</span>
+              {/if}
+            </a>
+          </li>
+        {/each}
+      </SidebarSection>
+    {/each}
+  </nav>
+{/snippet}
 
-    <div class="flex items-center gap-3 md:order-2">
-      <NavHamburger class="sm:hidden" onclick={() => !isDesktop && sidebarUi.toggle()} />
-      <form method="POST" action="/logout">
-        <input type="hidden" name="next" value={page.url.pathname + page.url.search} />
-        <Button type="submit" size="sm" color="light">Cerrar sesión</Button>
-      </form>
+<div class="min-h-screen bg-gray-50 text-gray-900 lg:grid lg:grid-cols-[auto_minmax(0,1fr)]">
+  <aside class="hidden h-screen shrink-0 border-r border-gray-200 bg-white lg:sticky lg:top-0 lg:flex lg:flex-col {isCollapsed ? 'lg:w-20' : 'lg:w-64'}">
+    <div class="flex h-16 items-center border-b border-gray-100 px-4 {isCollapsed ? 'justify-center' : 'justify-between'}">
+      <a href="/dashboard" class="focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:ring-offset-2"><img src="/logo.png" alt="Real, Amor en cada bocado" class="h-8 w-auto" loading="eager" decoding="async" /></a>
+      {#if !isCollapsed}<button type="button" onclick={toggleCollapse} class="rounded-md p-2 text-gray-500 hover:bg-gray-100 hover:text-gray-800 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-500" aria-label="Contraer navegación"><svg aria-hidden="true" width="18" height="18" viewBox="0 0 256 256" fill="currentColor"><path d="M224,128a96,96,0,0,1-94.71,96H128A95.38,95.38,0,0,1,62.1,197.8a8,8,0,1,1,11-11.63A80,80,0,1,0,71.43,71.39a3.07,3.07,0,0,1-.26.25L44.59,96H72a8,8,0,0,1,0,16H24a8,8,0,0,1-8-8V56a8,8,0,0,1,16,0V85.8L60.25,60A96,96,0,0,1,224,128Z" /></svg></button>{/if}
     </div>
-  </Navbar>
+    {@render navigation(isCollapsed)}
+    {#if isCollapsed}<button type="button" onclick={toggleCollapse} class="m-2 rounded-md p-2 text-gray-500 hover:bg-gray-100 hover:text-gray-800 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-500" aria-label="Expandir navegación" title="Expandir navegación"><ListIcon size={19} aria-hidden="true" /></button>{/if}
+  </aside>
 
-  <!-- Contenedor: sidebar + content -->
-  <div class="flex flex-1 overflow-hidden">
-    <!-- Sidebar: desktop fixed left, mobile drawer -->
-    <div class="hidden sm:block sm:w-72 sm:shrink-0">
-      <Sidebar
-        alwaysOpen
-        breakpoint="sm"
-        position="static"
-        classes={desktopSidebarClasses}
-        class="h-full w-72 border-r border-primary-800 bg-primary-700 p-4 [&>div]:h-full [&>div]:overflow-y-auto [&>div]:bg-transparent [&>div]:px-0! [&>div]:py-0! [&>div]:pb-6"
-      >
-        <SidebarGroup class="pb-4">
-          <span class="mb-4 block px-2 text-lg font-semibold text-white">Menú</span>
-          {#each resolvedNavItems as item (item.href)}
-            {#if item.key === wholesalersSectionStartKey}
-              <div class="my-2 border-t border-white/30 pt-2" aria-hidden="true"></div>
-            {/if}
-            <SidebarItem
-              href={item.href}
-              label={getNavLabel(item)}
-              active={page.url.pathname.startsWith(item.href)}
-            >
-              {#snippet icon()}
-                <item.icon class="me-2.5 h-5 w-5" />
-              {/snippet}
-            </SidebarItem>
-          {/each}
-        </SidebarGroup>
-      </Sidebar>
+  {#if isMobileMenuOpen}
+    <div class="fixed inset-0 z-50 lg:hidden">
+      <button type="button" class="absolute inset-0 bg-gray-900/30" aria-label="Cerrar menú de navegación" onclick={closeMobileMenu}></button>
+      <aside class="relative flex h-full w-72 max-w-[85vw] flex-col bg-white shadow-xl" aria-label="Navegación interna">
+        <div class="flex h-16 items-center justify-between border-b border-gray-100 px-4"><a href="/dashboard" onclick={closeMobileMenu}><img src="/logo.png" alt="Real, Amor en cada bocado" class="h-8 w-auto" /></a><button type="button" onclick={closeMobileMenu} class="rounded-md px-2 py-1 text-sm font-medium text-gray-600 hover:bg-gray-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-500">Cerrar</button></div>
+        {@render navigation(false, closeMobileMenu)}
+      </aside>
     </div>
+  {/if}
 
-    <!-- Mobile drawer sidebar -->
-    {#if !isDesktop}
-      <Sidebar
-        isOpen={sidebarUi.isOpen}
-        closeSidebar={closeSidebar}
-        backdrop
-        position="fixed"
-        class="fixed inset-y-0 left-0 z-40 h-full w-64 transform overflow-y-auto transition-transform sm:hidden [&>div]:h-full [&>div]:overflow-y-auto [&>div]:pb-6"
-      >
-        <CloseButton onclick={closeSidebar} class="absolute inset-e-2.5 top-2.5" />
-        <SidebarGroup class="mt-12 pb-4">
-          <span class="mb-4 block px-2 text-lg font-semibold text-primary">Menú</span>
-          {#each resolvedNavItems as item (item.href)}
-            {#if item.key === wholesalersSectionStartKey}
-              <div class="my-2 border-t border-primary-200 pt-2" aria-hidden="true"></div>
-            {/if}
-            <SidebarItem href={item.href} label={getNavLabel(item)} active={page.url.pathname.startsWith(item.href)} onclick={closeSidebar}>
-              {#snippet icon()}
-                <item.icon class="me-2.5 h-5 w-5" />
-              {/snippet}
-            </SidebarItem>
-          {/each}
-        </SidebarGroup>
-      </Sidebar>
-    {/if}
-
-    <!-- Content -->
-    <div class="flex-1 overflow-x-auto p-4 md:p-6">
-      <!-- Breadcrumb + título -->
-      <div class="mb-4">
-        <Breadcrumb class="mb-2">
-          {#each breadcrumbs as crumb, index (`${crumb.href}-${index}`)}
-            <BreadcrumbItem href={crumb.href}>
-              {crumb.label}
-            </BreadcrumbItem>
-          {/each}
-        </Breadcrumb>
-        <h1 class="text-2xl font-bold text-primary">{getPageTitle(page.url.pathname)}</h1>
-      </div>
-      {@render children?.()}
-    </div>
+  <div class="min-w-0">
+    <header class="flex h-16 items-center justify-between border-b border-gray-200 bg-white px-4 sm:px-5">
+      <button type="button" onclick={() => (isMobileMenuOpen = true)} class="rounded-md p-2 text-gray-600 hover:bg-gray-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-500 lg:hidden" aria-label="Abrir menú de navegación"><ListIcon size={21} aria-hidden="true" /></button>
+      <span class="text-sm font-medium text-gray-500 lg:hidden">Real</span>
+      <div class="ml-auto"><form method="POST" action="/logout"><input type="hidden" name="next" value={page.url.pathname + page.url.search} /><Button type="submit" size="xs" color="light">Cerrar sesión</Button></form></div>
+    </header>
+    <main id="main-content" class="min-w-0 p-4 sm:p-5 lg:p-6"><PageHeader title={getPageTitle(page.url.pathname)} {breadcrumbs} />{@render children?.()}</main>
   </div>
 </div>
+
+<style>
+  :global(.nav-item-active) { background: var(--color-primary-50); color: var(--color-primary-800); box-shadow: inset 2px 0 0 var(--color-primary-600); }
+</style>

@@ -1,5 +1,7 @@
 <script lang="ts">
-  import { Button, Card, Table, TableBody, TableBodyCell, TableBodyRow, TableHead, TableHeadCell, Badge, Select } from 'flowbite-svelte';
+  import { Button, TableBody, TableBodyCell, TableBodyRow, TableHead, TableHeadCell, Badge, Select } from 'flowbite-svelte';
+  import DataTable from '$lib/components/admin/DataTable.svelte';
+  import ListSurface from '$lib/components/admin/ListSurface.svelte';
   import StatusBadge from '$lib/components/admin/StatusBadge.svelte';
   import FeedbackBanner from '$lib/components/FeedbackBanner.svelte';
   import { goto } from '$app/navigation';
@@ -33,8 +35,6 @@
 
   let { data }: { data: PageData } = $props();
 
-
-
   const pctBadge = (pct: number) => {
     if (pct === 0) return { color: 'red' as const, label: '0%' };
     if (pct < 33) return { color: 'red' as const, label: `${pct}%` };
@@ -67,14 +67,15 @@
 {#if data.state === 'error'}
   <FeedbackBanner message={data.message?.detail ?? 'No pudimos cargar seguimiento.'} color="red" />
 {:else}
-  <Card size="xl" class="w-full shadow-sm p-0">
-    <div class="flex flex-wrap items-end gap-4 border-b border-gray-200 p-4">
-      <div class="inline-flex items-center gap-1 rounded-xl border border-gray-200 bg-gray-50 p-1" role="tablist" aria-label="Filtro por estado">
+  <ListSurface>
+    {#snippet toolbar()}
+    <div class="flex flex-col gap-3 lg:flex-row lg:items-end lg:justify-between">
+      <div class="inline-flex w-fit items-center gap-1 rounded-lg border border-gray-200 bg-gray-50 p-1" role="tablist" aria-label="Filtro por estado">
         <button
           type="button"
           role="tab"
           aria-selected={data.selectedShow === 'active'}
-          class={`inline-flex items-center gap-2 rounded-lg px-3 py-2 text-sm font-medium transition ${data.selectedShow === 'active' ? 'bg-primary-700 text-white shadow-sm' : 'text-gray-700 hover:bg-gray-100'}`}
+          class={`inline-flex items-center gap-2 rounded-md px-3 py-2 text-sm font-medium transition ${data.selectedShow === 'active' ? 'bg-primary-700 text-white' : 'text-gray-700 hover:bg-gray-100'}`}
           onclick={() => handleShowChange('active')}
         >
           <span>Activos</span>
@@ -86,7 +87,7 @@
           type="button"
           role="tab"
           aria-selected={data.selectedShow === 'closed'}
-          class={`inline-flex items-center gap-2 rounded-lg px-3 py-2 text-sm font-medium transition ${data.selectedShow === 'closed' ? 'bg-primary-700 text-white shadow-sm' : 'text-gray-700 hover:bg-gray-100'}`}
+          class={`inline-flex items-center gap-2 rounded-md px-3 py-2 text-sm font-medium transition ${data.selectedShow === 'closed' ? 'bg-primary-700 text-white' : 'text-gray-700 hover:bg-gray-100'}`}
           onclick={() => handleShowChange('closed')}
         >
           <span>Cerrados</span>
@@ -95,7 +96,7 @@
           </span>
         </button>
       </div>
-      <div class="grid gap-1 md:max-w-xs">
+      <div class="grid w-full gap-1 sm:w-56">
         <label for="tutor-filter" class="text-sm font-medium text-gray-700">Tutor</label>
         <Select
           id="tutor-filter"
@@ -105,29 +106,31 @@
         />
       </div>
     </div>
+    {/snippet}
 
+    {#snippet content()}
     {#if data.state === 'empty'}
       <div class="p-4">
         <FeedbackBanner message={data.message?.detail ?? 'No hay presupuestos para este filtro.'} color="blue" />
       </div>
     {:else}
-      <div class="hidden overflow-x-auto md:block" aria-label="Tabla de seguimiento de presupuestos aceptados">
-        <Table hoverable striped>
+      <div class="hidden lg:block" aria-label="Tabla de seguimiento de presupuestos aceptados">
+        <DataTable ariaLabel="Tabla de seguimiento de presupuestos aceptados" scrollable={false}>
           <TableHead>
-            <TableHeadCell>Tutor</TableHeadCell>
-            <TableHeadCell class="text-center">Preparadas</TableHeadCell>
-            <TableHeadCell class="text-center">Entregadas</TableHeadCell>
-            <TableHeadCell class="text-center">Cobrado</TableHeadCell>
-            <TableHeadCell class="text-right">Total</TableHeadCell>
-            <TableHeadCell>Acciones</TableHeadCell>
+            <TableHeadCell class="bg-gray-50 px-4 py-2.5 text-xs font-semibold uppercase tracking-wide text-gray-500">Tutor</TableHeadCell>
+            <TableHeadCell class="bg-gray-50 px-4 py-2.5 text-center text-xs font-semibold uppercase tracking-wide text-gray-500">Preparadas</TableHeadCell>
+            <TableHeadCell class="bg-gray-50 px-4 py-2.5 text-center text-xs font-semibold uppercase tracking-wide text-gray-500">Entregadas</TableHeadCell>
+            <TableHeadCell class="bg-gray-50 px-4 py-2.5 text-center text-xs font-semibold uppercase tracking-wide text-gray-500">Cobrado</TableHeadCell>
+            <TableHeadCell class="bg-gray-50 px-4 py-2.5 text-right text-xs font-semibold uppercase tracking-wide text-gray-500">Total</TableHeadCell>
+            <TableHeadCell class="bg-gray-50 px-4 py-2.5 text-right text-xs font-semibold uppercase tracking-wide text-gray-500">Acciones</TableHeadCell>
           </TableHead>
           <TableBody>
             {#each data.trackingRows as budget (budget.id)}
               {@const prepBadge = pctBadge(budget.preparedPct)}
               {@const delBadge = pctBadge(budget.deliveredPct)}
               {@const colBadge = pctBadge(budget.collectedPct)}
-              <TableBodyRow>
-                <TableBodyCell>
+              <TableBodyRow class="border-gray-100 bg-white hover:bg-gray-50">
+                <TableBodyCell class="px-4 py-2.5">
                   <div class="flex items-center gap-2">
                     {#if budget.status === 'closed'}
                       <StatusBadge status="closed" />
@@ -137,31 +140,31 @@
                     <span class="font-medium text-gray-900">{budget.tutorName}</span>
                   </div>
                 </TableBodyCell>
-                <TableBodyCell class="text-center">
+                <TableBodyCell class="px-4 py-2.5 text-center">
                   <Badge color={prepBadge.color}>{prepBadge.label}</Badge>
                 </TableBodyCell>
-                <TableBodyCell class="text-center">
+                <TableBodyCell class="px-4 py-2.5 text-center">
                   <Badge color={delBadge.color}>{delBadge.label}</Badge>
                 </TableBodyCell>
-                <TableBodyCell class="text-center">
+                <TableBodyCell class="px-4 py-2.5 text-center">
                   <Badge color={colBadge.color}>{colBadge.label}</Badge>
                 </TableBodyCell>
-                <TableBodyCell class="text-right">{budget.total.toLocaleString('es-AR', { style: 'currency', currency: 'ARS' })}</TableBodyCell>
-                <TableBodyCell>
+                <TableBodyCell class="whitespace-nowrap px-4 py-2.5 text-right font-semibold text-gray-900 tabular-nums">{budget.total.toLocaleString('es-AR', { style: 'currency', currency: 'ARS' })}</TableBodyCell>
+                <TableBodyCell class="px-4 py-2.5 text-right">
                   <Button href={route('/seguimiento/', budget.id)} size="xs" color="light">Ver detalle</Button>
                 </TableBodyCell>
               </TableBodyRow>
             {/each}
           </TableBody>
-        </Table>
+        </DataTable>
       </div>
 
-      <div class="grid gap-3 p-4 md:hidden">
+      <div class="grid gap-2.5 p-3 lg:hidden">
         {#each data.trackingRows as budget (budget.id)}
           {@const prepBadge = pctBadge(budget.preparedPct)}
           {@const delBadge = pctBadge(budget.deliveredPct)}
           {@const colBadge = pctBadge(budget.collectedPct)}
-          <div class="rounded-lg border border-gray-200 bg-white p-4 shadow-sm">
+          <article class="rounded-lg border border-gray-200 bg-white p-3">
             <div class="flex items-start justify-between gap-3">
               <div class="flex items-center gap-2">
                 {#if budget.status === 'closed'}
@@ -174,30 +177,31 @@
             </div>
 
             <div class="mt-3 grid grid-cols-3 gap-2 text-sm">
-              <div class="flex flex-col items-center rounded bg-gray-50 p-2">
+              <div class="flex flex-col items-center rounded-md bg-gray-50 p-2">
                 <p class="text-xs text-gray-500">Prep.</p>
                 <Badge color={prepBadge.color}>{prepBadge.label}</Badge>
               </div>
-              <div class="flex flex-col items-center rounded bg-gray-50 p-2">
+              <div class="flex flex-col items-center rounded-md bg-gray-50 p-2">
                 <p class="text-xs text-gray-500">Entr.</p>
                 <Badge color={delBadge.color}>{delBadge.label}</Badge>
               </div>
-              <div class="flex flex-col items-center rounded bg-gray-50 p-2">
+              <div class="flex flex-col items-center rounded-md bg-gray-50 p-2">
                 <p class="text-xs text-gray-500">Cob.</p>
                 <Badge color={colBadge.color}>{colBadge.label}</Badge>
               </div>
             </div>
 
             <div class="mt-3 grid grid-cols-1 gap-2 border-t border-gray-100 pt-3 text-sm">
-              <div class="text-right"><p class="text-gray-500">Total</p><p class="font-semibold">{budget.total.toLocaleString('es-AR', { style: 'currency', currency: 'ARS' })}</p></div>
+              <div class="text-right"><p class="text-gray-500">Total</p><p class="font-semibold tabular-nums text-gray-900">{budget.total.toLocaleString('es-AR', { style: 'currency', currency: 'ARS' })}</p></div>
             </div>
 
             <div class="mt-3">
               <Button href={route('/seguimiento/', budget.id)} size="xs" color="light">Ver seguimiento</Button>
             </div>
-          </div>
+          </article>
         {/each}
       </div>
     {/if}
-  </Card>
+    {/snippet}
+  </ListSurface>
 {/if}

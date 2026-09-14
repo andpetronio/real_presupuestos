@@ -47,7 +47,7 @@
   };
 </script>
 
-<div class="space-y-3 md:hidden" aria-label="Lista de tutores">
+<div class="space-y-3 lg:hidden" aria-label="Lista de tutores">
   {#each tutors as tutor (tutor.id)}
     <Card class="p-4" role="listitem">
       <!-- Nombre -->

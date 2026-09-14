@@ -1,5 +1,6 @@
 <script lang="ts">
-  import { Button, Table, TableBody, TableBodyCell, TableBodyRow, TableHead, TableHeadCell } from 'flowbite-svelte';
+  import { Button, TableBody, TableBodyCell, TableBodyRow, TableHead, TableHeadCell } from 'flowbite-svelte';
+  import DataTable from '$lib/components/admin/DataTable.svelte';
   import SortableHeader from '$lib/components/admin/SortableHeader.svelte';
   import { route } from '$lib/shared/navigation';
 
@@ -19,7 +20,7 @@
   let { veterinaries, sortBy, sortDir, buildSortHref }: VeterinaryTableProps = $props();
 </script>
 
-<Table hoverable striped aria-label="Tabla de veterinarias">
+<DataTable ariaLabel="Tabla de veterinarias">
   <TableHead>
     <TableHeadCell>
       <SortableHeader
@@ -41,4 +42,4 @@
       </TableBodyRow>
     {/each}
   </TableBody>
-</Table>
+</DataTable>

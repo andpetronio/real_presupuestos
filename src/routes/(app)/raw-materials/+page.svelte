@@ -84,7 +84,7 @@
     </div>
 
     <!-- Desktop table (hidden on < md) -->
-    <div class="hidden md:block">
+    <div class="hidden lg:block">
       <RawMaterialTable
         rawMaterials={data.rawMaterials}
         sortBy={data.sort.sortBy}

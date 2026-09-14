@@ -118,6 +118,7 @@
 
 <FormShell
   title="Editar presupuesto"
+  density="compact"
   description="Ajustá composición y costos globales del borrador seleccionado."
   action="?/update"
   method="POST"

@@ -55,7 +55,7 @@
       <WholesaleProductMobileCards products={data.products} />
     </div>
 
-    <div class="hidden md:block">
+    <div class="hidden lg:block">
       <WholesaleProductTable
         products={data.products}
         sortBy={data.sort.sortBy}
