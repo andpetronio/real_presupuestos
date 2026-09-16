@@ -41,7 +41,9 @@ export type BudgetOptions = {
  */
 export async function loadBudgetOptions(
   supabase: BudgetOptionsSupabase,
+  options: { activeOnly?: boolean } = {},
 ): Promise<BudgetOptions> {
+  const { activeOnly = false } = options;
   const [tutorsResult, dogsResult, recipesResult, settingsResult] =
     await Promise.all([
       supabase
@@ -50,11 +52,11 @@ export async function loadBudgetOptions(
         .order("full_name", { ascending: true }),
       supabase
         .from("dogs")
-        .select("id, tutor_id, name")
+        .select("id, tutor_id, name, is_active")
         .order("name", { ascending: true }),
       supabase
         .from("recipes")
-        .select("id, dog_id, name")
+        .select("id, dog_id, name, is_active")
         .order("name", { ascending: true }),
       supabase
         .from("settings")
@@ -65,22 +67,35 @@ export async function loadBudgetOptions(
         .single(),
     ]);
 
-  const tutorOptions: TutorOption[] = (tutorsResult.data ?? []).map((t) => ({
+  const activeDogs = (dogsResult.data ?? []).filter(
+    (dog) => !activeOnly || dog.is_active,
+  );
+  const activeDogIds = new Set(activeDogs.map((dog) => dog.id));
+  const activeTutorIds = new Set(activeDogs.map((dog) => dog.tutor_id));
+
+  const tutorOptions: TutorOption[] = (tutorsResult.data ?? [])
+    .filter((tutor) => !activeOnly || activeTutorIds.has(tutor.id))
+    .map((t) => ({
     id: t.id,
     fullName: t.full_name,
-  }));
+    }));
 
-  const dogOptions: DogOption[] = (dogsResult.data ?? []).map((d) => ({
+  const dogOptions: DogOption[] = activeDogs.map((d) => ({
     id: d.id,
     tutorId: d.tutor_id,
     name: d.name,
   }));
 
-  const recipeOptions: RecipeOption[] = (recipesResult.data ?? []).map((r) => ({
+  const recipeOptions: RecipeOption[] = (recipesResult.data ?? [])
+    .filter(
+      (recipe) =>
+        !activeOnly || (recipe.is_active && activeDogIds.has(recipe.dog_id)),
+    )
+    .map((r) => ({
     id: r.id,
     dogId: r.dog_id,
     name: r.name,
-  }));
+    }));
 
   return {
     tutorOptions,

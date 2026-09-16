@@ -29,7 +29,7 @@ export const load: PageServerLoad = async ({ locals, url }) => {
   });
   const filters = {
     search: url.searchParams.get("q")?.trim() ?? "",
-    status: url.searchParams.get("status") ?? "all",
+    status: url.searchParams.get("status") ?? "active",
   };
 
   try {
