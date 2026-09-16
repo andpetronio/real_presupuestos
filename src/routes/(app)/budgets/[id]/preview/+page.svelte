@@ -5,13 +5,13 @@
   import {
     Button,
     Card,
-    Table,
     TableBody,
     TableBodyCell,
     TableBodyRow,
     TableHead,
     TableHeadCell
   } from 'flowbite-svelte';
+  import DataTable from '$lib/components/admin/DataTable.svelte';
   import FormShell from '$lib/components/admin/FormShell.svelte';
   import StatusBadge from '$lib/components/admin/StatusBadge.svelte';
   import type { BudgetStatus } from '$lib/types/budget';
@@ -157,9 +157,9 @@
     </div>
   </FormShell>
 {:else if data.budget}
-  <div class="grid grid-cols-1 gap-4 xl:grid-cols-12">
+  <div class="grid grid-cols-1 gap-3 xl:grid-cols-12">
     <div class="space-y-4 xl:col-span-8">
-      <Card size="xl" class="w-full p-6 shadow-sm">
+      <Card size="xl" class="w-full border border-gray-200 p-4 shadow-none">
         <div class="flex flex-wrap items-start justify-between gap-4">
           <div>
             <p class="mt-1 text-2xl font-semibold text-gray-900">Presupuesto para {data.budget.tutor?.full_name ?? 'Sin tutor'}</p>
@@ -189,7 +189,7 @@
         </div>
       </Card>
 
-      <Card size="xl" class="w-full p-6 shadow-sm">
+      <Card size="xl" class="w-full border border-gray-200 p-4 shadow-none">
         <h3 class="text-xl font-semibold text-gray-900">Desglose de materias primas</h3>
         {#each data.recipeBreakdowns as recipe (recipe.recipeId)}
           <div class="mt-4 overflow-hidden rounded-lg border border-gray-200">
@@ -202,7 +202,7 @@
             </div>
 
             <div class="overflow-x-auto">
-              <Table hoverable striped>
+              <DataTable ariaLabel="Materias primas de la receta">
                 <TableHead>
                   <TableHeadCell>Materia prima</TableHeadCell>
                   <TableHeadCell>Cantidad/día</TableHeadCell>
@@ -219,7 +219,7 @@
                     </TableBodyRow>
                   {/each}
                 </TableBody>
-              </Table>
+              </DataTable>
             </div>
           </div>
         {/each}
@@ -230,10 +230,10 @@
         </div>
       </Card>
 
-      <Card size="xl" class="w-full p-6 shadow-sm">
+      <Card size="xl" class="w-full border border-gray-200 p-4 shadow-none">
         <h3 class="text-xl font-semibold text-gray-900">Desglose de costos operativos</h3>
         <div class="mt-4 overflow-x-auto rounded-lg border border-gray-200">
-          <Table hoverable striped>
+          <DataTable ariaLabel="Costos operativos del presupuesto">
             <TableHead>
               <TableHeadCell>Item</TableHeadCell>
               <TableHeadCell>Cantidad</TableHeadCell>
@@ -250,7 +250,7 @@
                 </TableBodyRow>
               {/each}
             </TableBody>
-          </Table>
+          </DataTable>
         </div>
 
         <div class="mt-4 flex items-center justify-between border-t border-gray-200 pt-3 text-sm font-semibold text-gray-900">
@@ -260,7 +260,7 @@
       </Card>
 
       {#if data.budget.notes}
-        <Card size="xl" class="w-full p-6 shadow-sm">
+        <Card size="xl" class="w-full border border-gray-200 p-4 shadow-none">
           <h3 class="text-lg font-semibold text-gray-900">Notas</h3>
           <p class="mt-2 whitespace-pre-wrap text-sm text-gray-700">{data.budget.notes}</p>
         </Card>
@@ -268,7 +268,7 @@
     </div>
 
     <div class="xl:col-span-4">
-      <Card size="xl" class="w-full border bg-primary p-6 shadow-sm xl:sticky xl:top-4">
+      <Card size="xl" class="w-full border border-primary-700 bg-primary p-4 shadow-none xl:sticky xl:top-4">
         <p class="text-xs font-bold uppercase tracking-[0.14em] text-gray-200">Resumen financiero</p>
 
         <div class="mt-3 space-y-2 text-gray-300">

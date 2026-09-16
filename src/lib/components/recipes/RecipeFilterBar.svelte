@@ -24,6 +24,7 @@
   filterName="status"
   filterOptions={statusOptions}
   currentFilter={currentStatus}
+  defaultFilter="active"
   showSubmitButton={true}
   currentSortBy={currentSortBy}
   currentSortDir={currentSortDir}

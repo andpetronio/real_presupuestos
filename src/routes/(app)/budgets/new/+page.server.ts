@@ -7,6 +7,7 @@ export const load: PageServerLoad = async ({ locals }) => {
   const formData = await loadBudgetFormData({
     supabase: locals.supabase,
     editingBudgetId: null,
+    activeOnly: true,
   });
 
   return {

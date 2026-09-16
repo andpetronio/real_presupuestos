@@ -1,5 +1,6 @@
 <script lang="ts">
-  import { Button, Table, TableBody, TableBodyCell, TableBodyRow, TableHead, TableHeadCell } from 'flowbite-svelte';
+  import { Button, TableBody, TableBodyCell, TableBodyRow, TableHead, TableHeadCell } from 'flowbite-svelte';
+  import DataTable from '$lib/components/admin/DataTable.svelte';
   import ActiveStatusBadge from '$lib/components/admin/ActiveStatusBadge.svelte';
   import SortableHeader from '$lib/components/admin/SortableHeader.svelte';
   import { formatArs } from '$lib/shared/currency';
@@ -16,6 +17,7 @@
     purchase_quantity: number;
     base_cost: number;
     wastage_percentage: number;
+    yield_factor: number;
     cost_with_wastage: number;
     is_active: boolean;
   };
@@ -32,7 +34,7 @@
   let { rawMaterials, sortBy, sortDir, buildSortHref }: RawMaterialTableProps = $props();
 </script>
 
-<Table hoverable striped aria-label="Tabla de materias primas">
+<DataTable ariaLabel="Tabla de materias primas">
   <TableHead>
     <TableHeadCell>
       <SortableHeader
@@ -53,6 +55,7 @@
     <TableHeadCell>Cantidad comprada</TableHeadCell>
     <TableHeadCell>Costo base</TableHeadCell>
     <TableHeadCell>% Merma</TableHeadCell>
+    <TableHeadCell>Rendimiento</TableHeadCell>
     <TableHeadCell>
       <SortableHeader
         label="Costo con merma"
@@ -79,6 +82,7 @@
         <TableBodyCell>{formatQuantity(material.purchase_quantity)} {material.base_unit}</TableBodyCell>
         <TableBodyCell>{formatArs(material.base_cost)}</TableBodyCell>
         <TableBodyCell>{material.wastage_percentage.toFixed(2)}%</TableBodyCell>
+        <TableBodyCell>{material.yield_factor.toFixed(2)}×</TableBodyCell>
         <TableBodyCell>{formatArs(material.cost_with_wastage)}</TableBodyCell>
         <TableBodyCell>
           <ActiveStatusBadge
@@ -93,4 +97,4 @@
       </TableBodyRow>
     {/each}
   </TableBody>
-</Table>
+</DataTable>

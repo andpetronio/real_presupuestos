@@ -15,7 +15,7 @@
   let { veterinaries }: VeterinaryMobileCardsProps = $props();
 </script>
 
-<div class="space-y-3 md:hidden" aria-label="Lista de veterinarias">
+<div class="space-y-3 lg:hidden" aria-label="Lista de veterinarias">
   {#each veterinaries as veterinary (veterinary.id)}
     <Card class="p-4" role="listitem">
       <!-- Nombre -->

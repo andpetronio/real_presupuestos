@@ -48,6 +48,7 @@
     "flowbite-svelte": "^1.33.1",
     "phosphor-svelte": "^3.1.0",
     "svelte-apexcharts": "^1.0.2",
-    "sweetalert2": "^11.26.24"
+    "sweetalert2": "^11.26.24",
+    "xlsx": "^0.18.5"
   }
 }

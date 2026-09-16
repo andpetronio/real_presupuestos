@@ -65,12 +65,12 @@ describe("parseBudgetFilters", () => {
     expect(result.status).toBe("open");
   });
 
-  it("accepts discarded status from URL params", () => {
+  it("falls back to open status for discarded URL params", () => {
     const url = new URL("http://localhost/budgets?status=discarded");
 
     const result = parseBudgetFilters(url);
 
-    expect(result.status).toBe("discarded");
+    expect(result.status).toBe("open");
   });
 });
 

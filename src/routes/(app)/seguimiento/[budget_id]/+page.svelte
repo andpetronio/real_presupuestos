@@ -213,8 +213,8 @@
 
 <DeliveryAlertBanner alerts={data.deliveryAlerts} showLink={false} />
 
-<section class="grid grid-cols-1 gap-4 xl:grid-cols-12">
-  <Card size="xl" class="p-6 shadow-sm xl:col-span-12">
+<section class="grid grid-cols-1 gap-3 xl:grid-cols-12">
+  <Card size="xl" class="border border-gray-200 p-4 shadow-none xl:col-span-12">
     <div class="flex items-start justify-between gap-3">
       <div>
         <p class="text-sm font-semibold text-gray-600">Seguimiento de presupuesto</p>
@@ -245,11 +245,11 @@
       </div>
     </div>
 
-    <div class="mt-6 border-t border-gray-200 pt-4">
+    <div class="mt-4 border-t border-gray-200 pt-4">
       <p class="mb-4 text-sm font-semibold text-gray-900">Progreso por receta</p>
       <div class="space-y-4">
         {#each data.dogs as dog (`dog-${dog.dogName}`)}
-          <div class="rounded-lg border border-gray-200 p-4">
+          <div class="rounded-lg border border-gray-200 p-3">
             <p class="font-semibold text-gray-900">{dog.dogName} · {dog.totalAssignedDays} días</p>
             <div class="mt-3 space-y-4">
               {#each dog.recipes as recipe (recipe.budgetDogRecipeId)}
@@ -286,7 +286,7 @@
   </Card>
 
   {#if !isClosed}
-  <Card size="xl" class="p-6 shadow-sm xl:col-span-4">
+  <Card size="xl" class="border border-gray-200 p-4 shadow-none xl:col-span-4">
     <p class="text-sm font-semibold text-gray-900">Registrar cobro</p>
     <form method="POST" action="?/addPayment" class="mt-3 space-y-3" use:enhance={enhanceWithFeedback({ resetOnSuccess: true, onSuccess: resetPaymentAmount })}>
       <div>
@@ -328,7 +328,7 @@
     </form>
   </Card>
 
-  <Card size="xl" class="p-6 shadow-sm xl:col-span-4">
+  <Card size="xl" class="border border-gray-200 p-4 shadow-none xl:col-span-4">
     <p class="text-sm font-semibold text-gray-900">Registrar preparación</p>
     <form method="POST" action="?/addPreparation" class="mt-3 space-y-3" use:enhance={enhanceWithFeedback({ resetOnSuccess: true })}>
       <div>
@@ -355,7 +355,7 @@
     </form>
   </Card>
 
-  <Card size="xl" class="p-6 shadow-sm xl:col-span-4">
+  <Card size="xl" class="border border-gray-200 p-4 shadow-none xl:col-span-4">
     <p class="text-sm font-semibold text-gray-900">Registrar entrega</p>
     <form method="POST" action="?/addDelivery" class="mt-3 space-y-3" use:enhance={enhanceWithFeedback({ resetOnSuccess: true, onSuccess: resetDeliveryRows })}>
       {#each deliveryRows as row, index (row.id)}
@@ -398,7 +398,7 @@
   </Card>
   {/if}
 
-  <Card size="xl" class="p-6 shadow-sm xl:col-span-4">
+  <Card size="xl" class="border border-gray-200 p-4 shadow-none xl:col-span-4">
     <p class="text-sm font-semibold text-gray-900">Cobros registrados</p>
     <div class="mt-3 space-y-2">
       {#if data.payments.length === 0}
@@ -432,7 +432,7 @@
     </div>
   </Card>
 
-  <Card size="xl" class="p-6 shadow-sm xl:col-span-4">
+  <Card size="xl" class="border border-gray-200 p-4 shadow-none xl:col-span-4">
     <p class="text-sm font-semibold text-gray-900">Preparaciones registradas</p>
     <div class="mt-3 space-y-2">
       {#if data.preparations.length === 0}
@@ -466,7 +466,7 @@
     </div>
   </Card>
 
-  <Card size="xl" class="p-6 shadow-sm xl:col-span-4">
+  <Card size="xl" class="border border-gray-200 p-4 shadow-none xl:col-span-4">
     <p class="text-sm font-semibold text-gray-900">Entregas registradas</p>
     <div class="mt-3 space-y-2">
       {#if data.deliveries.length === 0}

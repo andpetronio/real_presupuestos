@@ -1,5 +1,6 @@
 <script lang="ts">
-  import { Table, TableBody, TableBodyCell, TableBodyRow, TableHead, TableHeadCell } from 'flowbite-svelte';
+  import { TableBody, TableBodyCell, TableBodyRow, TableHead, TableHeadCell } from 'flowbite-svelte';
+  import DataTable from '$lib/components/admin/DataTable.svelte';
   import StatusBadge from '$lib/components/admin/StatusBadge.svelte';
   import SortableHeader from '$lib/components/admin/SortableHeader.svelte';
   import type { BudgetStatus } from '$lib/types/budget';
@@ -30,10 +31,10 @@
   let { budgets, formatDate, sortBy, sortDir, buildSortHref }: BudgetTableProps = $props();
 </script>
 
-<div class="hidden overflow-x-auto md:block" aria-label="Tabla de presupuestos">
-  <Table hoverable striped>
+<div class="hidden lg:block" aria-label="Tabla de presupuestos">
+  <DataTable ariaLabel="Tabla de presupuestos" scrollable={false}>
     <TableHead>
-      <TableHeadCell>
+      <TableHeadCell class="bg-gray-50 px-4 py-2.5 text-xs font-semibold uppercase tracking-wide text-gray-500">
         <SortableHeader
           label="Tutor"
           href={buildSortHref('tutor')}
@@ -41,7 +42,7 @@
           dir={sortDir}
         />
       </TableHeadCell>
-      <TableHeadCell>
+      <TableHeadCell class="bg-gray-50 px-4 py-2.5 text-xs font-semibold uppercase tracking-wide text-gray-500">
         <SortableHeader
           label="Estado"
           href={buildSortHref('status')}
@@ -49,9 +50,9 @@
           dir={sortDir}
         />
       </TableHeadCell>
-      <TableHeadCell class="text-right">Ingredientes</TableHeadCell>
-      <TableHeadCell class="text-right">Operativos</TableHeadCell>
-      <TableHeadCell class="text-right">
+      <TableHeadCell class="bg-gray-50 px-4 py-2.5 text-right text-xs font-semibold uppercase tracking-wide text-gray-500">Ingredientes</TableHeadCell>
+      <TableHeadCell class="bg-gray-50 px-4 py-2.5 text-right text-xs font-semibold uppercase tracking-wide text-gray-500">Operativos</TableHeadCell>
+      <TableHeadCell class="bg-gray-50 px-4 py-2.5 text-right text-xs font-semibold uppercase tracking-wide text-gray-500">
         <SortableHeader
           label="Costo total"
           href={buildSortHref('total_cost')}
@@ -59,7 +60,7 @@
           dir={sortDir}
         />
       </TableHeadCell>
-      <TableHeadCell class="text-right">
+      <TableHeadCell class="bg-gray-50 px-4 py-2.5 text-right text-xs font-semibold uppercase tracking-wide text-gray-500">
         <SortableHeader
           label="Precio venta"
           href={buildSortHref('final_sale_price')}
@@ -67,7 +68,7 @@
           dir={sortDir}
         />
       </TableHeadCell>
-      <TableHeadCell>
+      <TableHeadCell class="bg-gray-50 px-4 py-2.5 text-xs font-semibold uppercase tracking-wide text-gray-500">
         <SortableHeader
           label="Vence"
           href={buildSortHref('expires_at')}
@@ -75,29 +76,29 @@
           dir={sortDir}
         />
       </TableHeadCell>
-      <TableHeadCell>Acciones</TableHeadCell>
+      <TableHeadCell class="bg-gray-50 px-4 py-2.5 text-right text-xs font-semibold uppercase tracking-wide text-gray-500">Acciones</TableHeadCell>
     </TableHead>
     <TableBody>
       {#each budgets as budget (budget.id)}
-        <TableBodyRow>
-          <TableBodyCell class="font-medium text-gray-900">
+        <TableBodyRow class="border-gray-100 bg-white hover:bg-gray-50">
+          <TableBodyCell class="px-4 py-2.5 font-medium text-gray-900">
             {budget.tutor?.full_name ?? 'Sin tutor'}
           </TableBodyCell>
-          <TableBodyCell>
+          <TableBodyCell class="px-4 py-2.5">
             <StatusBadge status={budget.status} />
           </TableBodyCell>
-          <TableBodyCell class="text-right">{formatArs(budget.ingredient_total_global)}</TableBodyCell>
-          <TableBodyCell class="text-right">{formatArs(budget.operational_total_global)}</TableBodyCell>
-          <TableBodyCell class="text-right">{formatArs(budget.total_cost)}</TableBodyCell>
-          <TableBodyCell class="text-right font-semibold text-gray-900">
+          <TableBodyCell class="whitespace-nowrap px-4 py-2.5 text-right tabular-nums">{formatArs(budget.ingredient_total_global)}</TableBodyCell>
+          <TableBodyCell class="whitespace-nowrap px-4 py-2.5 text-right tabular-nums">{formatArs(budget.operational_total_global)}</TableBodyCell>
+          <TableBodyCell class="whitespace-nowrap px-4 py-2.5 text-right tabular-nums">{formatArs(budget.total_cost)}</TableBodyCell>
+          <TableBodyCell class="whitespace-nowrap px-4 py-2.5 text-right font-semibold text-gray-900 tabular-nums">
             {formatArs(budget.final_sale_price)}
           </TableBodyCell>
-          <TableBodyCell>{formatDate(budget.expires_at)}</TableBodyCell>
-          <TableBodyCell>
-            <BudgetActionsMenu {budget} />
+          <TableBodyCell class="whitespace-nowrap px-4 py-2.5">{formatDate(budget.expires_at)}</TableBodyCell>
+          <TableBodyCell class="px-4 py-2.5 text-right">
+            <BudgetActionsMenu {budget} renderContext="table" />
           </TableBodyCell>
         </TableBodyRow>
       {/each}
     </TableBody>
-  </Table>
+  </DataTable>
 </div>

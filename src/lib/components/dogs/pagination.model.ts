@@ -17,7 +17,7 @@ export const buildPaginationHref = (
 ): string => {
   const params = new URLSearchParams();
   if (filters.search) params.set("q", filters.search);
-  if (filters.status && filters.status !== "all")
+  if (filters.status && filters.status !== "active")
     params.set("status", filters.status);
   if (filters.sortBy) params.set("sortBy", filters.sortBy);
   if (filters.sortDir) params.set("sortDir", filters.sortDir);
@@ -33,5 +33,5 @@ export const hasActiveFilters = (filters: {
   search: string;
   status: string;
 }): boolean => {
-  return filters.search !== "" || filters.status !== "all";
+  return filters.search !== "" || filters.status !== "active";
 };

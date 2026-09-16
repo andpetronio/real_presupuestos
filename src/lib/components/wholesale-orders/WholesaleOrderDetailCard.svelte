@@ -1,5 +1,6 @@
 <script lang="ts">
-  import { Badge, Button, Card, Table, TableBody, TableBodyCell, TableBodyRow, TableHead, TableHeadCell } from 'flowbite-svelte';
+  import { Badge, Button, Card, TableBody, TableBodyCell, TableBodyRow, TableHead, TableHeadCell } from 'flowbite-svelte';
+  import DataTable from '$lib/components/admin/DataTable.svelte';
   import { formatArs } from '$lib/shared/currency';
   import type { WholesaleOrderDetailView } from '$lib/types/view-models/wholesale-orders';
 
@@ -77,7 +78,7 @@
   {/if}
 
   <div class="mt-4 overflow-x-auto">
-    <Table>
+    <DataTable ariaLabel="Detalle de productos del pedido">
       <TableHead>
         <TableHeadCell>Producto</TableHeadCell>
         <TableHeadCell>Cantidad</TableHeadCell>
@@ -99,6 +100,6 @@
           </TableBodyRow>
         {/each}
       </TableBody>
-    </Table>
+    </DataTable>
   </div>
 </Card>

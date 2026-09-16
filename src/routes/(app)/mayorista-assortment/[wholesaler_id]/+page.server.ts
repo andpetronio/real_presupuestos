@@ -8,7 +8,7 @@ const parseText = (value: FormDataEntryValue | null): string =>
 export const load: PageServerLoad = async ({ locals, params, url }) => {
   const filters = {
     search: url.searchParams.get("q")?.trim() ?? "",
-    status: url.searchParams.get("status")?.trim() ?? "all",
+    status: url.searchParams.get("status")?.trim() ?? "active",
     availability: url.searchParams.get("availability")?.trim() ?? "all",
   };
 

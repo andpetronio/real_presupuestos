@@ -42,7 +42,7 @@
   };
 </script>
 
-<div class='space-y-3 md:hidden' aria-label='Lista de categorías mayoristas'>
+<div class='space-y-3 lg:hidden' aria-label='Lista de categorías mayoristas'>
   {#each categories as category (category.id)}
     <Card class='p-4' role='listitem'>
       <div class='mb-3 flex items-start justify-between gap-2'>

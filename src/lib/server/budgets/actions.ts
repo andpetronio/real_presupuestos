@@ -11,6 +11,9 @@ type BudgetLifecycleAction = "undoSent" | "delete" | "accept" | "reject";
 
 type LocalsLike = { supabase: SupabaseClient };
 
+const canResolveBudgetAdministratively = (status: string): boolean =>
+  status === "sent" || status === "expired";
+
 const toLifecycleError = (
   actionType: BudgetLifecycleAction,
   operatorError: string,
@@ -167,23 +170,23 @@ export const acceptBudget = async (params: {
   });
   if (!budgetResult.ok) return budgetResult.response;
 
-  if (budgetResult.budget.status !== "sent") {
+  if (!canResolveBudgetAdministratively(budgetResult.budget.status)) {
     return toLifecycleError(
       "accept",
-      "Solo se pueden aceptar presupuestos en estado enviado.",
+      "Solo se pueden aceptar presupuestos en estado enviado o vencido.",
     );
   }
 
-  const now = new Date().toISOString();
-  const result = await updateBudgetStatus({
-    budgetId: budgetIdResult.budgetId,
-    supabase: locals.supabase,
-    status: "accepted",
-    extraFields: { accepted_at: now, viewed_at: now },
+  const { error } = await locals.supabase.rpc("accept_budget_and_snapshot", {
+    p_budget_id: budgetIdResult.budgetId,
+    p_accepted_at: new Date().toISOString(),
   });
 
-  if (!result.ok) {
-    return toLifecycleError("accept", result.message);
+  if (error) {
+    return toLifecycleError(
+      "accept",
+      "No pudimos aceptar y registrar los insumos del presupuesto.",
+    );
   }
 
   return {
@@ -212,10 +215,10 @@ export const rejectBudget = async (params: {
   });
   if (!budgetResult.ok) return budgetResult.response;
 
-  if (budgetResult.budget.status !== "sent") {
+  if (!canResolveBudgetAdministratively(budgetResult.budget.status)) {
     return toLifecycleError(
       "reject",
-      "Solo se pueden rechazar presupuestos en estado enviado.",
+      "Solo se pueden rechazar presupuestos en estado enviado o vencido.",
     );
   }
 

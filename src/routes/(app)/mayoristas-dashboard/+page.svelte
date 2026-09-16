@@ -1,5 +1,6 @@
 <script lang="ts">
-  import { Button, Card, Table, TableBody, TableBodyCell, TableBodyRow, TableHead, TableHeadCell } from 'flowbite-svelte';
+  import { Button, Card, TableBody, TableBodyCell, TableBodyRow, TableHead, TableHeadCell } from 'flowbite-svelte';
+  import DataTable from '$lib/components/admin/DataTable.svelte';
   import MetricCard from '$lib/components/admin/MetricCard.svelte';
   import { formatArs } from '$lib/shared/currency';
 
@@ -59,7 +60,7 @@
       </div>
 
       <div class="overflow-x-auto">
-        <Table>
+        <DataTable ariaLabel="Resumen por mayorista">
           <TableHead>
             <TableHeadCell>Mayorista</TableHeadCell>
             <TableHeadCell>Unidades</TableHeadCell>
@@ -74,7 +75,7 @@
               </TableBodyRow>
             {/each}
           </TableBody>
-        </Table>
+        </DataTable>
       </div>
     </Card>
 
@@ -88,7 +89,7 @@
       </div>
 
       <div class="overflow-x-auto">
-        <Table>
+        <DataTable ariaLabel="Resumen por producto">
           <TableHead>
             <TableHeadCell>Producto</TableHeadCell>
             <TableHeadCell>Unidades</TableHeadCell>
@@ -103,7 +104,7 @@
               </TableBodyRow>
             {/each}
           </TableBody>
-        </Table>
+        </DataTable>
       </div>
     </Card>
   </div>

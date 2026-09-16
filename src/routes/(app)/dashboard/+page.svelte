@@ -91,33 +91,39 @@
 </script>
 
 {#if data.pendingAcceptedCount > 0}
-  <Card class="mb-4 border-l-4 border-l-yellow-400 p-4 shadow-sm">
+  <section class="mb-4 rounded-lg border border-amber-200 border-l-4 border-l-amber-400 bg-amber-50/40 p-3" aria-labelledby="pending-budget-title">
     <div class="flex flex-wrap items-center justify-between gap-3">
       <div>
-        <p class="text-sm font-semibold text-gray-900">Tenés novedades para gestionar</p>
+        <h2 id="pending-budget-title" class="text-sm font-semibold text-gray-900">Tenés novedades para gestionar</h2>
         <p class="text-sm text-gray-600">
           Hay {data.pendingAcceptedCount} presupuesto{data.pendingAcceptedCount === 1 ? '' : 's'} aceptado{data.pendingAcceptedCount === 1 ? '' : 's'} sin revisar.
         </p>
       </div>
       <Button href="/seguimiento" color="light">Ir a seguimiento</Button>
     </div>
-  </Card>
+  </section>
 {/if}
 
 <DeliveryAlertBanner alerts={data.deliveryAlerts} showLink={true} />
 
-<div class="mb-4 flex items-center gap-2">
-  <form method="GET" class="flex items-center gap-2">
-    <Select name="period" value={data.period}>
-      {#each data.periodOptions as option}
-        <option value={option.key}>{option.label}</option>
-      {/each}
-    </Select>
-    <Button type="submit">Aplicar</Button>
-  </form>
-</div>
+<section aria-labelledby="dashboard-summary-title">
+  <div class="mb-3 flex flex-wrap items-center justify-between gap-3">
+    <div>
+      <h2 id="dashboard-summary-title" class="text-base font-semibold text-gray-900">Resumen del período</h2>
+      <p class="mt-0.5 text-sm text-gray-500">Indicadores comerciales y de cobranzas.</p>
+    </div>
+    <form method="GET" class="flex items-center gap-2">
+      <label for="dashboard-period" class="sr-only">Período</label>
+      <Select id="dashboard-period" name="period" value={data.period} size="sm">
+        {#each data.periodOptions as option}
+          <option value={option.key}>{option.label}</option>
+        {/each}
+      </Select>
+      <Button type="submit" size="sm">Aplicar</Button>
+    </form>
+  </div>
 
-<section class="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-12">
+<div class="grid grid-cols-1 gap-3 md:grid-cols-2 xl:grid-cols-12">
   <!-- Fila 1: Cobranzas + Aceptado -->
   <div class="flex h-full flex-col xl:col-span-6">
     <HighlightCard
@@ -156,26 +162,26 @@
     </MetricCard>
   </div>
 
-  <div class="flex h-full flex-col justify-between rounded-lg border border-gray-200 bg-white p-4 shadow-sm xl:col-span-4">
+  <div class="flex h-full flex-col justify-between rounded-lg border border-gray-200 bg-white p-4 xl:col-span-4">
     <p class="text-xs font-semibold uppercase tracking-wide text-gray-500">Rechazados</p>
     <div class="flex items-end justify-between">
-      <span class="text-3xl font-bold text-secondary-600">{data.metrics.rejected}</span>
-      <span class="text-lg font-semibold text-secondary-500">({rejectedPct}%)</span>
+      <span class="text-2xl font-semibold tracking-tight text-secondary-600">{data.metrics.rejected}</span>
+      <span class="text-sm font-semibold text-secondary-500">({rejectedPct}%)</span>
     </div>
     <p class="text-xs text-gray-400">sobre enviados</p>
   </div>
 
-  <div class="flex h-full flex-col justify-between rounded-lg border border-gray-200 bg-white p-4 shadow-sm xl:col-span-4">
+  <div class="flex h-full flex-col justify-between rounded-lg border border-gray-200 bg-white p-4 xl:col-span-4">
     <p class="text-xs font-semibold uppercase tracking-wide text-gray-500">Aceptados</p>
     <div class="flex items-end justify-between">
-      <span class="text-3xl font-bold text-accent-600">{data.metrics.accepted}</span>
-      <span class="text-lg font-semibold text-accent-500">({acceptedPct}%)</span>
+      <span class="text-2xl font-semibold tracking-tight text-accent-600">{data.metrics.accepted}</span>
+      <span class="text-sm font-semibold text-accent-500">({acceptedPct}%)</span>
     </div>
     <p class="text-xs text-gray-400">sobre enviados</p>
   </div>
 
-  <!-- Fila 3: Charts -->
-  <div class="rounded-lg border border-gray-200 bg-white p-4 shadow-sm xl:col-span-6">
+  <!-- Analysis remains secondary to operational information and metrics. -->
+  <div class="rounded-lg border border-gray-200 bg-white p-4 xl:col-span-6">
     <p class="mb-3 text-sm font-semibold text-gray-900">Evolución económica del período</p>
     {#if data.timeseries.length === 0}
       <p class="text-sm text-gray-500">No hay datos para este período.</p>
@@ -203,7 +209,7 @@
     {/if}
   </div>
 
-  <div class="rounded-lg border border-gray-200 bg-white p-4 shadow-sm xl:col-span-6">
+  <div class="rounded-lg border border-gray-200 bg-white p-4 xl:col-span-6">
     <div class="mb-3 flex items-center justify-between gap-2">
       <p class="text-sm font-semibold text-gray-900">Enviados vs Respondidos</p>
       <div class="flex items-center gap-3 text-xs text-gray-500">
@@ -228,4 +234,5 @@
       />
     {/if}
   </div>
+</div>
 </section>

@@ -15,6 +15,7 @@ import {
 export type AdminModule =
   | "dashboard"
   | "budgets"
+  | "purchases"
   | "tutors"
   | "veterinaries"
   | "dogs"
@@ -32,6 +33,7 @@ export type AdminModule =
 export type AdminHref =
   | "/dashboard"
   | "/budgets"
+  | "/purchases"
   | "/tutors"
   | "/veterinaries"
   | "/dogs"
@@ -53,6 +55,7 @@ export interface NavItem {
   href: AdminHref;
   label: string;
   icon: PhosphorIcon;
+  group: "Gestión" | "Clientes y producción" | "Mayoristas" | "Sistema";
   internalOnly: true;
 }
 
@@ -62,6 +65,7 @@ export const navItems: ReadonlyArray<NavItem> = [
     href: "/dashboard",
     label: "Dashboard",
     icon: Gauge,
+    group: "Gestión",
     internalOnly: true,
   },
   {
@@ -69,6 +73,15 @@ export const navItems: ReadonlyArray<NavItem> = [
     href: "/budgets",
     label: "Presupuestos",
     icon: CurrencyDollar,
+    group: "Gestión",
+    internalOnly: true,
+  },
+  {
+    key: "purchases",
+    href: "/purchases",
+    label: "Compras",
+    icon: Package,
+    group: "Gestión",
     internalOnly: true,
   },
   {
@@ -76,6 +89,7 @@ export const navItems: ReadonlyArray<NavItem> = [
     href: "/tutors",
     label: "Tutores",
     icon: Users,
+    group: "Clientes y producción",
     internalOnly: true,
   },
   {
@@ -83,6 +97,7 @@ export const navItems: ReadonlyArray<NavItem> = [
     href: "/veterinaries",
     label: "Veterinarias",
     icon: WarningCircle,
+    group: "Clientes y producción",
     internalOnly: true,
   },
   {
@@ -90,6 +105,7 @@ export const navItems: ReadonlyArray<NavItem> = [
     href: "/dogs",
     label: "Perros",
     icon: PawPrint,
+    group: "Clientes y producción",
     internalOnly: true,
   },
   {
@@ -97,6 +113,7 @@ export const navItems: ReadonlyArray<NavItem> = [
     href: "/recipes",
     label: "Recetas",
     icon: CookingPot,
+    group: "Clientes y producción",
     internalOnly: true,
   },
   {
@@ -104,6 +121,7 @@ export const navItems: ReadonlyArray<NavItem> = [
     href: "/raw-materials",
     label: "Materias primas",
     icon: Package,
+    group: "Clientes y producción",
     internalOnly: true,
   },
   {
@@ -111,6 +129,7 @@ export const navItems: ReadonlyArray<NavItem> = [
     href: "/seguimiento",
     label: "Seguimiento",
     icon: ChartLine,
+    group: "Gestión",
     internalOnly: true,
   },
   {
@@ -118,6 +137,7 @@ export const navItems: ReadonlyArray<NavItem> = [
     href: "/settings",
     label: "Configuración",
     icon: Gear,
+    group: "Sistema",
     internalOnly: true,
   },
   {
@@ -125,6 +145,7 @@ export const navItems: ReadonlyArray<NavItem> = [
     href: "/mayoristas-dashboard",
     label: "Dashboard mayoristas",
     icon: ChartLine,
+    group: "Mayoristas",
     internalOnly: true,
   },
   {
@@ -132,6 +153,7 @@ export const navItems: ReadonlyArray<NavItem> = [
     href: "/admin-mayoristas",
     label: "Mayoristas",
     icon: Users,
+    group: "Mayoristas",
     internalOnly: true,
   },
   {
@@ -139,6 +161,7 @@ export const navItems: ReadonlyArray<NavItem> = [
     href: "/mayorista-categories",
     label: "Categorías mayoristas",
     icon: Tag,
+    group: "Mayoristas",
     internalOnly: true,
   },
   {
@@ -146,6 +169,7 @@ export const navItems: ReadonlyArray<NavItem> = [
     href: "/mayorista-products",
     label: "Productos mayoristas",
     icon: Package,
+    group: "Mayoristas",
     internalOnly: true,
   },
   {
@@ -153,6 +177,7 @@ export const navItems: ReadonlyArray<NavItem> = [
     href: "/mayorista-assortment",
     label: "Surtido por mayorista",
     icon: Rows,
+    group: "Mayoristas",
     internalOnly: true,
   },
   {
@@ -160,6 +185,7 @@ export const navItems: ReadonlyArray<NavItem> = [
     href: "/mayorista-orders",
     label: "Pedidos mayoristas",
     icon: CurrencyDollar,
+    group: "Mayoristas",
     internalOnly: true,
   },
 ] as const;

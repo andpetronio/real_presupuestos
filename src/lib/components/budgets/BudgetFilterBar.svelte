@@ -1,5 +1,6 @@
 <script lang="ts">
-  import { Button, Search, Select, Label } from 'flowbite-svelte';
+  import { Button, Input, Select, Label } from 'flowbite-svelte';
+  import { MagnifyingGlassIcon } from 'phosphor-svelte';
   import type { BudgetStatus } from '$lib/types/budget';
 
   type TutorOption = { id: string; full_name: string };
@@ -37,13 +38,12 @@
 
   const statusOptions: StatusOption[] = [
     { value: 'open', label: 'Abiertos' },
-    { value: 'pending', label: 'Pendientes' },
+    { value: 'pending', label: 'Borradores' },
     { value: 'sent', label: 'Enviados' },
     { value: 'accepted', label: 'Aceptados' },
     { value: 'closed', label: 'Cerrados' },
     { value: 'rejected', label: 'Rechazados' },
-    { value: 'expired', label: 'Expirados' },
-    { value: 'discarded', label: 'Descartados' }
+    { value: 'expired', label: 'Expirados' }
   ];
 
   let searchValue = $state('');
@@ -77,22 +77,31 @@
   });
 </script>
 
-<form method="GET" class="mb-4 flex flex-wrap items-end gap-3" bind:this={filterForm} novalidate>
+<form method="GET" class="flex flex-col gap-3 lg:flex-row lg:items-end" bind:this={filterForm} novalidate>
   <!-- Search -->
   <div class="min-w-48 flex-1">
     <Label for="budget-search" class="mb-1">Buscar tutor</Label>
-    <Search
-      id="budget-search"
-      name="q"
-      placeholder="Nombre del tutor…"
-      required={false}
-      bind:value={searchValue}
-      oninput={handleSearchInput}
-    />
+    <div class="relative">
+      <MagnifyingGlassIcon
+        size={16}
+        class="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-gray-400"
+        aria-hidden="true"
+      />
+      <Input
+        id="budget-search"
+        name="q"
+        type="search"
+        placeholder="Nombre del tutor…"
+        required={false}
+        class="w-full pl-9"
+        bind:value={searchValue}
+        oninput={handleSearchInput}
+      />
+    </div>
   </div>
 
   <!-- Status filter -->
-  <div class="w-44">
+  <div class="w-full sm:w-44">
     <Label for="budget-status" class="mb-1">Estado</Label>
     <Select
       id="budget-status"
@@ -108,7 +117,7 @@
 
   <!-- Tutor filter -->
   {#if tutors.length > 0}
-    <div class="w-44">
+    <div class="w-full sm:w-44">
       <Label for="budget-tutor" class="mb-1">Tutor</Label>
       <Select
         id="budget-tutor"
@@ -125,7 +134,7 @@
   {/if}
 
   <!-- Actions -->
-  <div class="flex gap-2">
+  <div class="flex items-center gap-2 lg:pb-px">
     <Button type="submit" size="sm">Filtrar</Button>
     {#if hasActiveFilters}
       <Button

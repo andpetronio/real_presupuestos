@@ -7,8 +7,10 @@ describe("(app)/raw-materials/+page.server load", () => {
     const range = vi
       .fn()
       .mockResolvedValue({ data: [], count: 0, error: null });
+    const eq = vi.fn();
     const order = vi.fn();
-    const query = { order, range };
+    const query = { order, eq, range };
+    eq.mockReturnValue(query);
     order.mockReturnValue(query);
 
     const data = (await load(
@@ -29,6 +31,7 @@ describe("(app)/raw-materials/+page.server load", () => {
       ascending: false,
     });
     expect(order).toHaveBeenNthCalledWith(3, "id", { ascending: true });
+    expect(eq).toHaveBeenCalledWith("is_active", true);
     expect(data.tableState).toBe("empty");
   });
 

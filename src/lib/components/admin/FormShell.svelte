@@ -18,6 +18,7 @@
     actions?: Snippet;
     loading?: boolean;
     state?: 'idle' | 'error' | 'success';
+    density?: 'comfortable' | 'compact';
   };
 
   let {
@@ -32,7 +33,8 @@
     children,
     actions,
     loading = false,
-    state: _state
+    state: _state,
+    density = 'comfortable'
   }: FormShellProps = $props();
 
   let submitting = $state(false);
@@ -42,7 +44,7 @@
   };
 </script>
 
-<Card size="xl" class="w-full shadow-sm p-6" id="form-shell-card">
+<Card size="xl" class="w-full {density === 'compact' ? 'p-4 shadow-none' : 'p-6 shadow-sm'}" id="form-shell-card">
   <header class="space-y-1">
     <h2 class="text-lg font-semibold text-gray-900">{title}</h2>
     {#if description}

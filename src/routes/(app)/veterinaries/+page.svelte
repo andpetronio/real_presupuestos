@@ -70,7 +70,7 @@
     </div>
 
     <!-- Desktop table (hidden on < md) -->
-    <div class="hidden md:block">
+    <div class="hidden lg:block">
       <VeterinaryTable
         veterinaries={data.veterinaries}
         sortBy={data.sort.sortBy}

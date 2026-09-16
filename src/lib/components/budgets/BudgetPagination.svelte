@@ -30,7 +30,7 @@
 
 {#if totalPages > 1}
   <nav
-    class="mt-4 flex items-center justify-between"
+    class="flex flex-wrap items-center justify-between gap-2 border-t border-gray-100 px-4 py-3"
     aria-label="Paginación de presupuestos"
   >
     <!-- Previous -->
@@ -52,7 +52,7 @@
     </div>
 
     <!-- Page info -->
-    <p class="text-sm text-gray-600" aria-live="polite">
+    <p class="text-xs text-gray-600 sm:text-sm" aria-live="polite">
       Página <strong>{page}</strong> de <strong>{totalPages}</strong>
       &nbsp;·&nbsp;
       <span>{total} presupuesto{total !== 1 ? 's' : ''}</span>

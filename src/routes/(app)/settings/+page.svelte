@@ -7,8 +7,6 @@
     Checkbox,
     Input,
     Label,
-    Tabs,
-    TabItem,
     Textarea
   } from 'flowbite-svelte';
   import type { SettingsFormValues, SettingsRow } from '$lib/server/settings/validation';
@@ -37,6 +35,13 @@
   const values = $derived<SettingsFormValues>(form?.values ?? data.settingsForm);
   type SettingsTab = 'operativos' | 'comercial' | 'whatsapp' | 'encuesta' | 'cobros';
   let activeTab = $state<SettingsTab>('operativos');
+  const settingsTabs: ReadonlyArray<{ id: SettingsTab; label: string }> = [
+    { id: 'operativos', label: 'Costos operativos' },
+    { id: 'comercial', label: 'Comercial y reglas' },
+    { id: 'whatsapp', label: 'WhatsApp y general' },
+    { id: 'encuesta', label: 'Encuesta (opcional)' },
+    { id: 'cobros', label: 'Cobros' }
+  ];
 
   const enhanceWithFeedback = () => {
     return async () => {
@@ -71,8 +76,29 @@
   <form method="POST" action="?/update" class="space-y-6" use:enhance={enhanceWithFeedback()}>
     <input type="hidden" name="settingsSection" value={activeTab} />
 
-    <Tabs bind:selected={activeTab} tabStyle="underline" classes={{ content: 'pt-6' }}>
-      <TabItem key="operativos" title="Costos operativos">
+    <div role="tablist" aria-label="Secciones de configuración" class="flex flex-wrap gap-x-6 border-b border-gray-200">
+      {#each settingsTabs as tab (tab.id)}
+        <button
+          type="button"
+          id={`settings-tab-${tab.id}`}
+          role="tab"
+          aria-selected={activeTab === tab.id}
+          aria-controls={`settings-panel-${tab.id}`}
+          class="border-b-2 px-1 py-3 text-sm font-medium transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-teal-600 focus-visible:ring-offset-2 {activeTab === tab.id ? 'border-teal-600 text-teal-700' : 'border-transparent text-gray-500 hover:border-gray-300 hover:text-gray-700'}"
+          onclick={() => (activeTab = tab.id)}
+        >
+          {tab.label}
+        </button>
+      {/each}
+    </div>
+
+    <div
+      id={`settings-panel-${activeTab}`}
+      role="tabpanel"
+      aria-labelledby={`settings-tab-${activeTab}`}
+      class="pt-6"
+    >
+      {#if activeTab === 'operativos'}
         <section class="space-y-4">
           <div class="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
           <div class="grid gap-1"><Label for="vacuumBagSmallUnitCost">Costo bolsa al vacío chica</Label><Input id="vacuumBagSmallUnitCost" name="vacuumBagSmallUnitCost" type="number" min="0" step="0.01" required value={values.vacuumBagSmallUnitCost} /></div>
@@ -86,9 +112,8 @@
           <div class="grid gap-1"><Label for="deliveryLogisticsCost">Costo logístico por entrega</Label><Input id="deliveryLogisticsCost" name="deliveryLogisticsCost" type="number" min="0" step="0.01" required value={values.deliveryLogisticsCost} /></div>
           </div>
         </section>
-      </TabItem>
+      {:else if activeTab === 'comercial'}
 
-      <TabItem key="comercial" title="Comercial y reglas">
         <section class="space-y-4">
           <div class="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
           <div class="grid gap-1"><Label for="mealPlanMarginPercent">Margen comercial (%)</Label><Input id="mealPlanMarginPercent" name="mealPlanMarginPercent" type="number" min="0" max="90" step="0.01" required value={values.mealPlanMarginPercent} /></div>
@@ -104,9 +129,8 @@
           <Checkbox name="requireInternalNotes" checked={values.requireInternalNotes}>Exigir nota interna antes de pasar a “Listo para enviar”</Checkbox>
           </div>
         </section>
-      </TabItem>
+      {:else if activeTab === 'whatsapp'}
 
-      <TabItem key="whatsapp" title="WhatsApp y general">
         <section class="space-y-4">
           <div class="grid gap-4 md:grid-cols-2">
           <div class="grid gap-1"><Label for="businessName">Nombre comercial</Label><Input id="businessName" name="businessName" type="text" required value={values.businessName} /></div>
@@ -127,9 +151,8 @@
           <Checkbox name="enableWhatsappNotifications" checked={values.enableWhatsappNotifications}>Activar envío de notificaciones por WhatsApp</Checkbox>
           </div>
         </section>
-      </TabItem>
+      {:else if activeTab === 'encuesta'}
 
-      <TabItem key="encuesta" title="Encuesta (opcional)">
         <section class="space-y-4">
           <div class="grid gap-4 md:grid-cols-2">
           <div class="md:col-span-2">
@@ -139,9 +162,8 @@
           <div class="grid gap-1"><Label for="satisfactionSurveyMessage">Texto breve de invitación</Label><Input id="satisfactionSurveyMessage" name="satisfactionSurveyMessage" type="text" placeholder="Tu opinión nos ayuda a mejorar" value={values.satisfactionSurveyMessage} /></div>
           </div>
         </section>
-      </TabItem>
+      {:else}
 
-      <TabItem key="cobros" title="Cobros">
         <section class="space-y-4">
           <p class="text-sm text-gray-600">Datos bancarios para recibir transferencias. Estos datos pueden incluirse en el mensaje de WhatsApp usando los placeholders.</p>
           <div class="grid gap-4 md:grid-cols-2">
@@ -163,8 +185,8 @@
             </div>
           </div>
         </section>
-      </TabItem>
-    </Tabs>
+      {/if}
+    </div>
 
     <div class="flex justify-end border-t border-gray-200 pt-4">
       <Button type="submit">Guardar configuración</Button>

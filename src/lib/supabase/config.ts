@@ -40,3 +40,18 @@ export const resolveSupabasePublicEnv = (
 });
 
 export const supabasePublicEnv = resolveSupabasePublicEnv();
+
+export const resolveSupabaseAuthCookieName = (url: string): string => {
+  const projectRef = new URL(url).hostname.split(".")[0];
+  return `sb-${projectRef}-auth-token`;
+};
+
+export const supabaseAuthCookieName = resolveSupabaseAuthCookieName(
+  supabasePublicEnv.url,
+);
+
+export const isSupabaseAuthCookie = (name: string): boolean =>
+  name === supabaseAuthCookieName ||
+  new RegExp(
+    `^${supabaseAuthCookieName.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}\\.\\d+$`,
+  ).test(name);

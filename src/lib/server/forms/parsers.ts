@@ -32,6 +32,11 @@ export const parseWastagePercentage = (value: string): number | null => {
   return parsed !== null && parsed <= 100 ? parsed : null;
 };
 
+export const parseYieldFactor = (value: string): number | null => {
+  const parsed = parsePositiveNumber(value);
+  return parsed !== null && parsed >= 1 ? parsed : null;
+};
+
 // ─── Domain-specific parsers ──────────────────────────────────────────────────
 
 export type RecipeItemDraft = {

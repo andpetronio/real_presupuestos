@@ -56,7 +56,7 @@
       <WholesalerCategoryMobileCards categories={data.categories} />
     </div>
 
-    <div class='hidden md:block'>
+    <div class='hidden lg:block'>
       <WholesalerCategoryTable
         categories={data.categories}
         sortBy={data.sort.sortBy}

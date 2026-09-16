@@ -204,7 +204,7 @@ export const readRecipeDailyCosts = async (
   const { data, error } = await supabase
     .from("recipe_items")
     .select(
-      "recipe_id, daily_quantity, raw_material:raw_materials(derived_unit_cost, cost_with_wastage, purchase_quantity)",
+      "recipe_id, daily_quantity, raw_material:raw_materials(recipe_unit_cost, cost_with_wastage, purchase_quantity)",
     )
     .in("recipe_id", recipeIds);
 
@@ -215,12 +215,12 @@ export const readRecipeDailyCosts = async (
   for (const row of data ?? []) {
     const rawMaterialRelation = row.raw_material as
       | {
-          derived_unit_cost: number | null;
+          recipe_unit_cost: number | null;
           cost_with_wastage: number | null;
           purchase_quantity: number | null;
         }
       | Array<{
-          derived_unit_cost: number | null;
+          recipe_unit_cost: number | null;
           cost_with_wastage: number | null;
           purchase_quantity: number | null;
         }>
@@ -231,7 +231,7 @@ export const readRecipeDailyCosts = async (
       : rawMaterialRelation;
 
     const typedRawMaterial = rawMaterial as {
-      derived_unit_cost: number | null;
+      recipe_unit_cost: number | null;
       cost_with_wastage: number | null;
       purchase_quantity: number | null;
     } | null;
@@ -241,7 +241,7 @@ export const readRecipeDailyCosts = async (
     const rawCost = typedRawMaterial.cost_with_wastage ?? 0;
     const rawQty = typedRawMaterial.purchase_quantity ?? 1;
     const fallbackDerived = rawQty > 0 ? rawCost / rawQty : 0;
-    const unitCost = typedRawMaterial.derived_unit_cost ?? fallbackDerived;
+    const unitCost = typedRawMaterial.recipe_unit_cost ?? fallbackDerived;
     const subtotal = unitCost * Number(row.daily_quantity);
 
     const existing = map.get(row.recipe_id) ?? 0;

@@ -1,7 +1,8 @@
 <script lang="ts">
   import { applyAction, enhance } from '$app/forms';
   import { invalidateAll } from '$app/navigation';
-  import { Badge, Button, Table, TableBody, TableBodyCell, TableBodyRow, TableHead, TableHeadCell } from 'flowbite-svelte';
+  import { Badge, Button, TableBody, TableBodyCell, TableBodyRow, TableHead, TableHeadCell } from 'flowbite-svelte';
+  import DataTable from '$lib/components/admin/DataTable.svelte';
   import SortableHeader from '$lib/components/admin/SortableHeader.svelte';
   import { formatArs } from '$lib/shared/currency';
   import { route } from '$lib/shared/navigation';
@@ -42,7 +43,7 @@
   };
 </script>
 
-<Table hoverable striped aria-label="Tabla de pedidos mayoristas" class="text-center">
+<DataTable ariaLabel="Tabla de pedidos mayoristas">
   <TableHead>
     <TableHeadCell>Pedido</TableHeadCell>
     <TableHeadCell>
@@ -160,4 +161,4 @@
       </TableBodyRow>
     {/each}
   </TableBody>
-</Table>
+</DataTable>

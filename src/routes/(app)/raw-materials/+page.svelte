@@ -18,6 +18,7 @@
     purchase_quantity: number;
     base_cost: number;
     wastage_percentage: number;
+    yield_factor: number;
     cost_with_wastage: number;
     is_active: boolean;
   };
@@ -84,7 +85,7 @@
     </div>
 
     <!-- Desktop table (hidden on < md) -->
-    <div class="hidden md:block">
+    <div class="hidden lg:block">
       <RawMaterialTable
         rawMaterials={data.rawMaterials}
         sortBy={data.sort.sortBy}

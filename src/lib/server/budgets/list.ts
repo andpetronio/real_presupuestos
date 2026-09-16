@@ -13,7 +13,6 @@ const allowedStatusFilters = new Set<BudgetListStatusFilter>([
   "accepted",
   "rejected",
   "expired",
-  "discarded",
   "closed",
 ]);
 

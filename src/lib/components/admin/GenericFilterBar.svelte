@@ -11,6 +11,7 @@
     filterName?: string;
     filterOptions?: ReadonlyArray<FilterOption>;
     currentFilter?: string;
+    defaultFilter?: string;
     showSubmitButton?: boolean;
     currentSortBy?: string;
     currentSortDir?: 'asc' | 'desc';
@@ -24,6 +25,7 @@
     filterName = 'status',
     filterOptions = [],
     currentFilter = 'all',
+    defaultFilter = 'all',
     showSubmitButton = false,
     currentSortBy = '',
     currentSortDir = 'asc'
@@ -42,7 +44,7 @@
   });
 
   const hasActiveFilters = $derived(
-    currentSearch !== '' || (currentFilter !== 'all' && currentFilter !== '')
+    currentSearch !== '' || (currentFilter !== defaultFilter && currentFilter !== '')
   );
 
   const clearHref = $derived.by(() => {

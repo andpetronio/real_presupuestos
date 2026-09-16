@@ -14,9 +14,12 @@ export type BudgetFormData = BudgetOptions & {
 export async function loadBudgetFormData(params: {
   supabase: SupabaseClient;
   editingBudgetId: string | null;
+  activeOnly?: boolean;
 }): Promise<BudgetFormData> {
   const [options, { editingBudget, editingRows }] = await Promise.all([
-    loadBudgetOptions(params.supabase),
+    params.activeOnly
+      ? loadBudgetOptions(params.supabase, { activeOnly: true })
+      : loadBudgetOptions(params.supabase),
     loadEditingBudget({
       supabase: params.supabase,
       editingBudgetId: params.editingBudgetId,

@@ -48,7 +48,7 @@
   };
 </script>
 
-<div class="space-y-3 md:hidden" aria-label="Lista de recetas">
+<div class="space-y-3 lg:hidden" aria-label="Lista de recetas">
   {#each recipes as recipe (recipe.id)}
     <Card class="p-4" role="listitem">
       <!-- Nombre + Estado -->

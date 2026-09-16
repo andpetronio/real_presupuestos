@@ -45,7 +45,7 @@ describe("/logout POST", () => {
       location: "/?next=%2Frecipes%3Ftab%3Dactive",
     });
 
-    expect(signOut).toHaveBeenCalledTimes(1);
+    expect(signOut).toHaveBeenCalledWith({ scope: "local" });
   });
 
   it("normaliza next inseguro en logout", async () => {

@@ -31,11 +31,11 @@
   const deltaText = $derived(delta === null ? '' : `${formatDeltaBadge(delta)} ${deltaLabel}`);
 </script>
 
-<div class="rounded-lg border border-gray-200 bg-white p-4 shadow-sm">
+<div class="rounded-lg border border-gray-200 bg-white p-4">
   <div class="flex items-start justify-between gap-3">
     <div class="min-w-0 flex-1">
       <p class="text-xs uppercase tracking-wide text-gray-500">{label}</p>
-      <p class="mt-2 text-3xl font-bold {valueColorClass}">{value}</p>
+      <p class="mt-1.5 text-2xl font-semibold tracking-tight {valueColorClass}">{value}</p>
       {#if delta !== null && deltaText}
         <p class="mt-1 text-xs {deltaColorClass}">{deltaText}</p>
       {/if}
@@ -48,5 +48,5 @@
     {/if}
   </div>
 
-    <p class="text-xs text-gray-400">en el período</p>
+  <p class="mt-2 text-xs text-gray-400">en el período</p>
 </div>

@@ -12,6 +12,7 @@ describe("(app)/raw-materials/[raw_material_id]/update actions.update", () => {
     formData.set("purchaseQuantity", "1000");
     formData.set("baseCost", "2000");
     formData.set("wastagePercentage", "30");
+    formData.set("yieldFactor", "1");
 
     await expect(
       actions.update(
@@ -29,10 +30,12 @@ describe("(app)/raw-materials/[raw_material_id]/update actions.update", () => {
       purchase_quantity: 1000,
       base_cost: 2000,
       wastage_percentage: 30,
+      yield_factor: 1,
       cost_with_wastage: 2600,
       purchase_unit: "g",
       purchase_cost: 2000,
       derived_unit_cost: 2.6,
+      recipe_unit_cost: 2.6,
     });
     expect(eq).toHaveBeenCalledWith("id", "rm-1");
   });

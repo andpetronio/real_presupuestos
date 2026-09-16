@@ -76,7 +76,7 @@
     </div>
 
     <!-- Desktop table (hidden on < md) -->
-    <div class="hidden md:block">
+    <div class="hidden lg:block">
       <RecipeTable
         recipes={data.recipes}
         sortBy={data.sort.sortBy}

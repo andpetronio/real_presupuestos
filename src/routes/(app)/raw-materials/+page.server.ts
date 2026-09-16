@@ -29,14 +29,14 @@ export const load: PageServerLoad = async ({ locals, url }) => {
   });
   const filters = {
     search: url.searchParams.get("q")?.trim() ?? "",
-    status: url.searchParams.get("status") ?? "all",
+    status: url.searchParams.get("status") ?? "active",
   };
 
   try {
     let query = locals.supabase
       .from("raw_materials")
       .select(
-        "id, name, base_unit, purchase_quantity, base_cost, wastage_percentage, cost_with_wastage, is_active, created_at",
+        "id, name, base_unit, purchase_quantity, base_cost, wastage_percentage, yield_factor, cost_with_wastage, is_active, created_at",
         { count: "exact" },
       );
 
