@@ -683,6 +683,47 @@ describe("(app)/budgets/+page.server actions.create", () => {
 });
 
 describe("(app)/budgets/+page.server actions.accept", () => {
+  it("acepta un presupuesto vencido y registra la fecha de aceptación", async () => {
+    vi.useFakeTimers();
+    vi.setSystemTime(new Date("2026-09-16T12:00:00.000Z"));
+
+    const budgetSelect = vi.fn().mockResolvedValue({
+      data: { id: "b-1", status: "expired" },
+      error: null,
+    });
+    const updateEq = vi.fn().mockResolvedValue({ error: null });
+    const update = vi.fn().mockReturnValue({ eq: updateEq });
+    const from = vi.fn((table: string) => {
+      if (table === "budgets") {
+        return {
+          select: () => ({
+            eq: () => ({ maybeSingle: budgetSelect }),
+          }),
+          update,
+        };
+      }
+      return { select: vi.fn() };
+    });
+    const formData = new FormData();
+    formData.set("budgetId", "b-1");
+
+    const result = (await actions.accept(
+      asActionEvent<Parameters<(typeof actions)["accept"]>[0]>({
+        request: { formData: async () => formData },
+        locals: { supabase: { from } },
+      }),
+    )) as { operatorSuccess: string };
+
+    expect(update).toHaveBeenCalledWith({
+      status: "accepted",
+      accepted_at: "2026-09-16T12:00:00.000Z",
+      viewed_at: "2026-09-16T12:00:00.000Z",
+    });
+    expect(updateEq).toHaveBeenCalledWith("id", "b-1");
+    expect(result.operatorSuccess).toContain("aceptado");
+    vi.useRealTimers();
+  });
+
   it("falla si el presupuesto no existe", async () => {
     const budgetSelect = vi.fn().mockResolvedValue({ data: null, error: null });
     const budgetSelectEq = vi.fn().mockReturnValue({
@@ -748,6 +789,46 @@ describe("(app)/budgets/+page.server actions.accept", () => {
 });
 
 describe("(app)/budgets/+page.server actions.reject", () => {
+  it("rechaza un presupuesto vencido y registra la fecha de rechazo", async () => {
+    vi.useFakeTimers();
+    vi.setSystemTime(new Date("2026-09-16T12:00:00.000Z"));
+
+    const budgetSelect = vi.fn().mockResolvedValue({
+      data: { id: "b-1", status: "expired" },
+      error: null,
+    });
+    const updateEq = vi.fn().mockResolvedValue({ error: null });
+    const update = vi.fn().mockReturnValue({ eq: updateEq });
+    const from = vi.fn((table: string) => {
+      if (table === "budgets") {
+        return {
+          select: () => ({
+            eq: () => ({ maybeSingle: budgetSelect }),
+          }),
+          update,
+        };
+      }
+      return { select: vi.fn() };
+    });
+    const formData = new FormData();
+    formData.set("budgetId", "b-1");
+
+    const result = (await actions.reject(
+      asActionEvent<Parameters<(typeof actions)["reject"]>[0]>({
+        request: { formData: async () => formData },
+        locals: { supabase: { from } },
+      }),
+    )) as { operatorSuccess: string };
+
+    expect(update).toHaveBeenCalledWith({
+      status: "rejected",
+      rejected_at: "2026-09-16T12:00:00.000Z",
+    });
+    expect(updateEq).toHaveBeenCalledWith("id", "b-1");
+    expect(result.operatorSuccess).toContain("rechazado");
+    vi.useRealTimers();
+  });
+
   it("falla si el presupuesto no está en estado sent", async () => {
     const budgetSelect = vi.fn().mockResolvedValue({
       data: { id: "b-1", status: "accepted" },

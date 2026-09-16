@@ -38,13 +38,12 @@
 
   const statusOptions: StatusOption[] = [
     { value: 'open', label: 'Abiertos' },
-    { value: 'pending', label: 'Pendientes' },
+    { value: 'pending', label: 'Borradores' },
     { value: 'sent', label: 'Enviados' },
     { value: 'accepted', label: 'Aceptados' },
     { value: 'closed', label: 'Cerrados' },
     { value: 'rejected', label: 'Rechazados' },
-    { value: 'expired', label: 'Expirados' },
-    { value: 'discarded', label: 'Descartados' }
+    { value: 'expired', label: 'Expirados' }
   ];
 
   let searchValue = $state('');

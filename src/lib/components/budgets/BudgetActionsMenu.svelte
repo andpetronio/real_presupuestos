@@ -206,7 +206,7 @@
       </DropdownItem>
     {/if}
 
-    {#if budget.status === 'sent'}
+    {#if budget.status === 'sent' || budget.status === 'expired'}
       <DropdownDivider />
       <DropdownItem
         aClass="w-full cursor-pointer text-green-600 dark:text-green-500"

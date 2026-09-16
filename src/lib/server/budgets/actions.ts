@@ -11,6 +11,9 @@ type BudgetLifecycleAction = "undoSent" | "delete" | "accept" | "reject";
 
 type LocalsLike = { supabase: SupabaseClient };
 
+const canResolveBudgetAdministratively = (status: string): boolean =>
+  status === "sent" || status === "expired";
+
 const toLifecycleError = (
   actionType: BudgetLifecycleAction,
   operatorError: string,
@@ -167,10 +170,10 @@ export const acceptBudget = async (params: {
   });
   if (!budgetResult.ok) return budgetResult.response;
 
-  if (budgetResult.budget.status !== "sent") {
+  if (!canResolveBudgetAdministratively(budgetResult.budget.status)) {
     return toLifecycleError(
       "accept",
-      "Solo se pueden aceptar presupuestos en estado enviado.",
+      "Solo se pueden aceptar presupuestos en estado enviado o vencido.",
     );
   }
 
@@ -212,10 +215,10 @@ export const rejectBudget = async (params: {
   });
   if (!budgetResult.ok) return budgetResult.response;
 
-  if (budgetResult.budget.status !== "sent") {
+  if (!canResolveBudgetAdministratively(budgetResult.budget.status)) {
     return toLifecycleError(
       "reject",
-      "Solo se pueden rechazar presupuestos en estado enviado.",
+      "Solo se pueden rechazar presupuestos en estado enviado o vencido.",
     );
   }
 

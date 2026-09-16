@@ -1,6 +1,9 @@
 import { describe, expect, it } from "vitest";
 import { navItems } from "$lib/constants/navigation";
 import sidebarSource from "$lib/components/admin/SidebarNav.svelte?raw";
+import sidebarSectionSource from "$lib/components/admin/SidebarSection.svelte?raw";
+import appLayoutSource from "./(app)/+layout.svelte?raw";
+import viteConfigSource from "../../vite.config.ts?raw";
 
 const publicRouteModules = import.meta.glob(
   "./budget-response/[token]/+page.svelte",
@@ -38,5 +41,16 @@ describe("smoke: navegación admin e aislamiento público", () => {
     expect(sidebarSource).toContain("<a");
     expect(sidebarSource).toContain("aria-current");
     expect(sidebarSource).toContain("onclick={() => onNavigate?.(item)}");
+  });
+
+  it("renderiza cada sección del sidebar con contenido obligatorio", () => {
+    expect(appLayoutSource).toContain("<SidebarSection label={group.label} {collapsed}>");
+    expect(sidebarSectionSource).toContain("children: Snippet;");
+    expect(sidebarSectionSource).toContain("{@render children()}");
+    expect(sidebarSectionSource).not.toContain("{@render children?.()}");
+  });
+
+  it("compila los íconos de Phosphor como componentes Svelte de la aplicación", () => {
+    expect(viteConfigSource).toContain('sveltePhosphorOptimize(), sveltekit()');
   });
 });

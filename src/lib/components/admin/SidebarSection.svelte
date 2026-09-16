@@ -4,7 +4,7 @@
   type SidebarSectionProps = {
     label: string;
     collapsed?: boolean;
-    children?: Snippet;
+    children: Snippet;
   };
 
   let { label, collapsed = false, children }: SidebarSectionProps = $props();
@@ -17,6 +17,6 @@
     <div class="mx-2 mb-1 border-t border-gray-200" aria-hidden="true"></div>
   {/if}
   <ul class="space-y-0.5">
-    {@render children?.()}
+    {@render children()}
   </ul>
 </section>
