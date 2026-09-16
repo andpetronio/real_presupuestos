@@ -12,6 +12,7 @@
       purchaseQuantity: string;
       baseCost: string;
       wastagePercentage: string;
+      yieldFactor: string;
     };
   };
 
@@ -24,7 +25,8 @@
     baseUnit: form?.values?.baseUnit ?? 'g',
     purchaseQuantity: form?.values?.purchaseQuantity ?? '',
     baseCost: form?.values?.baseCost ?? '',
-    wastagePercentage: form?.values?.wastagePercentage ?? '0'
+    wastagePercentage: form?.values?.wastagePercentage ?? '0',
+    yieldFactor: form?.values?.yieldFactor ?? '1'
   });
 
   let submitting = $state(false);
@@ -64,6 +66,10 @@
       <Input id="wastagePercentage" name="wastagePercentage" type="number" min="0" max="100" step="0.01" required value={values.wastagePercentage} />
     </div>
     <div class="grid gap-1">
+      <Label for="yieldFactor" class="mb-1">Factor de rendimiento</Label>
+      <Input id="yieldFactor" name="yieldFactor" type="number" min="1" step="0.01" required value={values.yieldFactor} />
+    </div>
+    <div class="grid gap-1">
       <Label for="costWithWastage" class="mb-1">Costo con merma (calculado)</Label>
       <Input
         id="costWithWastage"
@@ -77,6 +83,7 @@
       />
     </div>
   </div>
+  <p class="text-sm text-gray-500">Usá 1 para materias sin expansión. Por ejemplo, arroz cocido puede rendir 3.</p>
 
   {#snippet actions()}
     <Button href={rawMaterialsPath} color="light">Cancelar</Button>

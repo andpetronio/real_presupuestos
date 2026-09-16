@@ -177,16 +177,16 @@ export const acceptBudget = async (params: {
     );
   }
 
-  const now = new Date().toISOString();
-  const result = await updateBudgetStatus({
-    budgetId: budgetIdResult.budgetId,
-    supabase: locals.supabase,
-    status: "accepted",
-    extraFields: { accepted_at: now, viewed_at: now },
+  const { error } = await locals.supabase.rpc("accept_budget_and_snapshot", {
+    p_budget_id: budgetIdResult.budgetId,
+    p_accepted_at: new Date().toISOString(),
   });
 
-  if (!result.ok) {
-    return toLifecycleError("accept", result.message);
+  if (error) {
+    return toLifecycleError(
+      "accept",
+      "No pudimos aceptar y registrar los insumos del presupuesto.",
+    );
   }
 
   return {

@@ -17,6 +17,7 @@
     purchase_quantity: number;
     base_cost: number;
     wastage_percentage: number;
+    yield_factor: number;
     cost_with_wastage: number;
     is_active: boolean;
   };
@@ -54,6 +55,7 @@
     <TableHeadCell>Cantidad comprada</TableHeadCell>
     <TableHeadCell>Costo base</TableHeadCell>
     <TableHeadCell>% Merma</TableHeadCell>
+    <TableHeadCell>Rendimiento</TableHeadCell>
     <TableHeadCell>
       <SortableHeader
         label="Costo con merma"
@@ -80,6 +82,7 @@
         <TableBodyCell>{formatQuantity(material.purchase_quantity)} {material.base_unit}</TableBodyCell>
         <TableBodyCell>{formatArs(material.base_cost)}</TableBodyCell>
         <TableBodyCell>{material.wastage_percentage.toFixed(2)}%</TableBodyCell>
+        <TableBodyCell>{material.yield_factor.toFixed(2)}×</TableBodyCell>
         <TableBodyCell>{formatArs(material.cost_with_wastage)}</TableBodyCell>
         <TableBodyCell>
           <ActiveStatusBadge

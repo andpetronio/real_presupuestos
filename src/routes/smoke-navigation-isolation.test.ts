@@ -16,6 +16,7 @@ describe("smoke: navegación admin e aislamiento público", () => {
     expect(hrefs).toEqual([
       "/dashboard",
       "/budgets",
+      "/purchases",
       "/tutors",
       "/veterinaries",
       "/dogs",

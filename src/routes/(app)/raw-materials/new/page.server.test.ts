@@ -11,6 +11,7 @@ describe("(app)/raw-materials/new actions.create", () => {
     formData.set("purchaseQuantity", "1000");
     formData.set("baseCost", "1000");
     formData.set("wastagePercentage", "30");
+    formData.set("yieldFactor", "1");
 
     await expect(
       actions.create(
@@ -27,10 +28,12 @@ describe("(app)/raw-materials/new actions.create", () => {
       purchase_quantity: 1000,
       base_cost: 1000,
       wastage_percentage: 30,
+      yield_factor: 1,
       cost_with_wastage: 1300,
       purchase_unit: "g",
       purchase_cost: 1000,
       derived_unit_cost: 1.3,
+      recipe_unit_cost: 1.3,
       is_active: true,
     });
   });
@@ -43,6 +46,7 @@ describe("(app)/raw-materials/new actions.create", () => {
     formData.set("purchaseQuantity", "1000");
     formData.set("baseCost", "1000");
     formData.set("wastagePercentage", "101");
+    formData.set("yieldFactor", "1");
 
     const result = (await actions.create(
       asActionEvent<Parameters<(typeof actions)["create"]>[0]>({
@@ -57,5 +61,33 @@ describe("(app)/raw-materials/new actions.create", () => {
     expect(result.status).toBe(400);
     expect(result.data.operatorError).toContain("merma");
     expect(insert).not.toHaveBeenCalled();
+  });
+
+  it("calcula el costo de receta con el factor de rendimiento", async () => {
+    const insert = vi.fn().mockResolvedValue({ error: null });
+    const formData = new FormData();
+    formData.set("name", "Arroz");
+    formData.set("baseUnit", "g");
+    formData.set("purchaseQuantity", "500");
+    formData.set("baseCost", "300");
+    formData.set("wastagePercentage", "0");
+    formData.set("yieldFactor", "3");
+
+    await expect(
+      actions.create(
+        asActionEvent<Parameters<(typeof actions)["create"]>[0]>({
+          request: { formData: async () => formData },
+          locals: { supabase: { from: vi.fn().mockReturnValue({ insert }) } },
+        }),
+      ),
+    ).rejects.toMatchObject({ status: 303, location: "/raw-materials" });
+
+    expect(insert).toHaveBeenCalledWith(
+      expect.objectContaining({
+        yield_factor: 3,
+        derived_unit_cost: 0.6,
+        recipe_unit_cost: 0.2,
+      }),
+    );
   });
 });

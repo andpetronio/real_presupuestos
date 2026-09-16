@@ -15,6 +15,7 @@
     purchase_quantity: number;
     base_cost: number;
     wastage_percentage: number;
+    yield_factor: number;
     cost_with_wastage: number;
     is_active: boolean;
   };
@@ -61,6 +62,10 @@
       <div class="mb-3 text-sm">
         <p class="text-xs text-gray-500">Merma</p>
         <p class="font-medium">{material.wastage_percentage.toFixed(2)}%</p>
+      </div>
+      <div class="mb-3 text-sm">
+        <p class="text-xs text-gray-500">Rendimiento</p>
+        <p class="font-medium">{material.yield_factor.toFixed(2)}×</p>
       </div>
 
       <!-- Acciones -->

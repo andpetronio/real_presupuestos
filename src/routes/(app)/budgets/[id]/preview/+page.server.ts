@@ -198,7 +198,7 @@ export const load: PageServerLoad = async ({ params, locals }) => {
     // Query 6: raw_materials
     const rawMaterialsResult = await locals.supabase
       .from("raw_materials")
-      .select("id, name, base_unit, derived_unit_cost")
+      .select("id, name, base_unit, recipe_unit_cost")
       .in("id", rawMaterialIds);
 
     if (rawMaterialsResult.error) throw rawMaterialsResult.error;
@@ -209,7 +209,7 @@ export const load: PageServerLoad = async ({ params, locals }) => {
         {
           name: rm.name,
           baseUnit: rm.base_unit,
-          cost: Number(rm.derived_unit_cost),
+          cost: Number(rm.recipe_unit_cost),
         },
       ]),
     );

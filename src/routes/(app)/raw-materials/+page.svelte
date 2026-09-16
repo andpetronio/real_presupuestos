@@ -18,6 +18,7 @@
     purchase_quantity: number;
     base_cost: number;
     wastage_percentage: number;
+    yield_factor: number;
     cost_with_wastage: number;
     is_active: boolean;
   };

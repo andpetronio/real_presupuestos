@@ -15,6 +15,7 @@ import {
 export type AdminModule =
   | "dashboard"
   | "budgets"
+  | "purchases"
   | "tutors"
   | "veterinaries"
   | "dogs"
@@ -32,6 +33,7 @@ export type AdminModule =
 export type AdminHref =
   | "/dashboard"
   | "/budgets"
+  | "/purchases"
   | "/tutors"
   | "/veterinaries"
   | "/dogs"
@@ -71,6 +73,14 @@ export const navItems: ReadonlyArray<NavItem> = [
     href: "/budgets",
     label: "Presupuestos",
     icon: CurrencyDollar,
+    group: "Gestión",
+    internalOnly: true,
+  },
+  {
+    key: "purchases",
+    href: "/purchases",
+    label: "Compras",
+    icon: Package,
     group: "Gestión",
     internalOnly: true,
   },

@@ -5,6 +5,7 @@ import {
   parseNonNegativeNumber,
   parsePositiveNumber,
   parseWastagePercentage,
+  parseYieldFactor,
   calculateCostWithWastage,
   getRawMaterialError,
 } from "$lib/server/forms/parsers";
@@ -22,10 +23,12 @@ export const actions: Actions = {
     const wastagePercentageRaw = parseFormValue(
       formData.get("wastagePercentage"),
     );
+    const yieldFactorRaw = parseFormValue(formData.get("yieldFactor"));
 
     const purchaseQuantity = parsePositiveNumber(purchaseQuantityRaw);
     const baseCost = parseNonNegativeNumber(baseCostRaw);
     const wastagePercentage = parseWastagePercentage(wastagePercentageRaw);
+    const yieldFactor = parseYieldFactor(yieldFactorRaw);
 
     if (
       !name ||
@@ -33,16 +36,18 @@ export const actions: Actions = {
       purchaseQuantity === null ||
       baseCost === null ||
       wastagePercentage === null
+      || yieldFactor === null
     ) {
       return fail(400, {
         operatorError:
-          "Completá nombre, unidad base y cantidad comprada (> 0). El costo base debe ser mayor o igual a 0 y la merma entre 0 y 100%.",
+            "Completá nombre, unidad base y cantidad comprada (> 0). El costo base debe ser mayor o igual a 0, la merma entre 0 y 100% y el rendimiento mayor o igual a 1.",
         values: {
           name,
           baseUnit,
           purchaseQuantity: purchaseQuantityRaw,
           baseCost: baseCostRaw,
           wastagePercentage: wastagePercentageRaw,
+          yieldFactor: yieldFactorRaw,
         },
       });
     }
@@ -54,6 +59,7 @@ export const actions: Actions = {
     const derivedUnitCost = Number(
       (costWithWastage / purchaseQuantity).toFixed(6),
     );
+    const recipeUnitCost = Number((derivedUnitCost / yieldFactor).toFixed(6));
 
     const { error } = await locals.supabase.from("raw_materials").insert({
       name,
@@ -61,10 +67,12 @@ export const actions: Actions = {
       purchase_quantity: purchaseQuantity,
       base_cost: baseCost,
       wastage_percentage: wastagePercentage,
+      yield_factor: yieldFactor,
       cost_with_wastage: costWithWastage,
       purchase_unit: baseUnit,
       purchase_cost: baseCost,
       derived_unit_cost: derivedUnitCost,
+      recipe_unit_cost: recipeUnitCost,
       is_active: true,
     });
 
@@ -77,6 +85,7 @@ export const actions: Actions = {
           purchaseQuantity: purchaseQuantityRaw,
           baseCost: baseCostRaw,
           wastagePercentage: wastagePercentageRaw,
+          yieldFactor: yieldFactorRaw,
         },
       });
     }

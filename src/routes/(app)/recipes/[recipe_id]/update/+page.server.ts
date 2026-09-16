@@ -38,7 +38,7 @@ export const load: PageServerLoad = async ({ locals, params }) => {
         .order("name", { ascending: true }),
       locals.supabase
         .from("raw_materials")
-        .select("id, name, base_unit, derived_unit_cost")
+        .select("id, name, base_unit, recipe_unit_cost")
         .eq("is_active", true)
         .order("name", { ascending: true }),
     ]);
@@ -50,7 +50,7 @@ export const load: PageServerLoad = async ({ locals, params }) => {
   const rawMaterialCosts = new Map(
     (rawMaterialsResult.data ?? []).map((m) => [
       m.id,
-      Number(m.derived_unit_cost),
+      Number(m.recipe_unit_cost),
     ]),
   );
 
